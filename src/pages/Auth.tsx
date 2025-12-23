@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { z } from 'zod';
 import { BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,8 +7,20 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/hooks/useAuth';
+
+type AppRole = 'aluno' | 'professor' | 'coordenacao' | 'diretor';
+
+type DemoCreds = { email: string; password: string };
+
+const DEMO_CREDENTIALS: Record<AppRole, DemoCreds> = {
+  aluno: { email: 'aluno@gmail.com', password: '123456789' },
+  professor: { email: 'professor@gmail.com', password: '123456789' },
+  coordenacao: { email: 'coordenacao@gmail.com', password: '123456789' },
+  diretor: { email: 'diretor@gmail.com', password: '123456789' },
+};
+
+const allowedEmails = Object.values(DEMO_CREDENTIALS).map((c) => c.email.toLowerCase());
 
 const loginSchema = z.object({
   email: z.string().email('Email inválido'),
@@ -16,41 +28,52 @@ const loginSchema = z.object({
 });
 
 const signupSchema = z.object({
-  email: z.string().email('Email inválido'),
+  email: z
+    .string()
+    .email('Email inválido')
+    .refine((v) => allowedEmails.includes(v.toLowerCase()), {
+      message: 'Use um email de teste (aluno/professor/coordenacao/diretor).',
+    }),
   password: z.string().min(6, 'Senha deve ter no mínimo 6 caracteres'),
-  role: z.enum(['aluno', 'professor', 'coordenacao', 'diretor']),
 });
 
-type AppRole = 'aluno' | 'professor' | 'coordenacao' | 'diretor';
-
-const ROLE_LABELS: Record<AppRole, string> = {
-  aluno: 'Aluno',
-  professor: 'Professor',
-  coordenacao: 'Coordenação',
-  diretor: 'Diretor',
-};
+function isAppRole(v: string | null): v is AppRole {
+  return v === 'aluno' || v === 'professor' || v === 'coordenacao' || v === 'diretor';
+}
 
 export default function Auth() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user, role, loading, signIn, signUp } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
+  const prefillRole = useMemo(() => {
+    const r = searchParams.get('role');
+    return isAppRole(r) ? r : null;
+  }, [searchParams]);
+
   // Login form state
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginErrors, setLoginErrors] = useState<{ email?: string; password?: string }>({});
-  
+
   // Signup form state
   const [signupEmail, setSignupEmail] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
-  const [signupRole, setSignupRole] = useState<AppRole>('aluno');
-  const [signupErrors, setSignupErrors] = useState<{ email?: string; password?: string; role?: string }>({});
+  const [signupErrors, setSignupErrors] = useState<{ email?: string; password?: string }>({});
 
   useEffect(() => {
     if (!loading && user && role) {
-      navigate('/');
+      navigate('/app');
     }
   }, [user, role, loading, navigate]);
+
+  useEffect(() => {
+    if (!prefillRole) return;
+    const creds = DEMO_CREDENTIALS[prefillRole];
+    setLoginEmail(creds.email);
+    setLoginPassword(creds.password);
+  }, [prefillRole]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,7 +95,7 @@ export default function Auth() {
     setIsSubmitting(false);
 
     if (!error) {
-      navigate('/');
+      navigate('/app');
     }
   };
 
@@ -80,36 +103,30 @@ export default function Auth() {
     e.preventDefault();
     setSignupErrors({});
 
-    const result = signupSchema.safeParse({ 
-      email: signupEmail, 
-      password: signupPassword, 
-      role: signupRole 
-    });
-    
+    const result = signupSchema.safeParse({ email: signupEmail, password: signupPassword });
     if (!result.success) {
-      const fieldErrors: { email?: string; password?: string; role?: string } = {};
+      const fieldErrors: { email?: string; password?: string } = {};
       result.error.errors.forEach((err) => {
         if (err.path[0] === 'email') fieldErrors.email = err.message;
         if (err.path[0] === 'password') fieldErrors.password = err.message;
-        if (err.path[0] === 'role') fieldErrors.role = err.message;
       });
       setSignupErrors(fieldErrors);
       return;
     }
 
     setIsSubmitting(true);
-    const { error } = await signUp(signupEmail, signupPassword, signupRole);
+    const { error } = await signUp(signupEmail, signupPassword);
     setIsSubmitting(false);
 
     if (!error) {
-      navigate('/');
+      navigate('/app');
     }
   };
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
       </div>
     );
   }
@@ -124,15 +141,16 @@ export default function Auth() {
             </div>
           </div>
           <CardTitle className="text-2xl">EducAI</CardTitle>
-          <CardDescription>Plataforma educacional com IA</CardDescription>
+          <CardDescription>Entre para acessar sua área</CardDescription>
         </CardHeader>
+
         <CardContent>
           <Tabs defaultValue="login" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="login">Entrar</TabsTrigger>
-              <TabsTrigger value="signup">Cadastrar</TabsTrigger>
+              <TabsTrigger value="signup">Cadastrar (teste)</TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="login">
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-2">
@@ -144,10 +162,9 @@ export default function Auth() {
                     value={loginEmail}
                     onChange={(e) => setLoginEmail(e.target.value)}
                   />
-                  {loginErrors.email && (
-                    <p className="text-sm text-destructive">{loginErrors.email}</p>
-                  )}
+                  {loginErrors.email && <p className="text-sm text-destructive">{loginErrors.email}</p>}
                 </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="login-password">Senha</Label>
                   <Input
@@ -157,62 +174,49 @@ export default function Auth() {
                     value={loginPassword}
                     onChange={(e) => setLoginPassword(e.target.value)}
                   />
-                  {loginErrors.password && (
-                    <p className="text-sm text-destructive">{loginErrors.password}</p>
-                  )}
+                  {loginErrors.password && <p className="text-sm text-destructive">{loginErrors.password}</p>}
                 </div>
+
                 <Button type="submit" className="w-full" disabled={isSubmitting}>
                   {isSubmitting ? 'Entrando...' : 'Entrar'}
                 </Button>
+
+                <Button type="button" variant="ghost" className="w-full" onClick={() => navigate('/')}
+                >
+                  Voltar
+                </Button>
               </form>
             </TabsContent>
-            
+
             <TabsContent value="signup">
               <form onSubmit={handleSignup} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email</Label>
+                  <Label htmlFor="signup-email">Email (somente contas de teste)</Label>
                   <Input
                     id="signup-email"
                     type="email"
-                    placeholder="seu@email.com"
+                    placeholder="aluno@gmail.com"
                     value={signupEmail}
                     onChange={(e) => setSignupEmail(e.target.value)}
                   />
-                  {signupErrors.email && (
-                    <p className="text-sm text-destructive">{signupErrors.email}</p>
-                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Use: aluno@gmail.com, professor@gmail.com, coordenacao@gmail.com ou diretor@gmail.com
+                  </p>
+                  {signupErrors.email && <p className="text-sm text-destructive">{signupErrors.email}</p>}
                 </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="signup-password">Senha</Label>
                   <Input
                     id="signup-password"
                     type="password"
-                    placeholder="••••••••"
+                    placeholder="123456789"
                     value={signupPassword}
                     onChange={(e) => setSignupPassword(e.target.value)}
                   />
-                  {signupErrors.password && (
-                    <p className="text-sm text-destructive">{signupErrors.password}</p>
-                  )}
+                  {signupErrors.password && <p className="text-sm text-destructive">{signupErrors.password}</p>}
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="signup-role">Tipo de usuário</Label>
-                  <Select value={signupRole} onValueChange={(v) => setSignupRole(v as AppRole)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione seu perfil" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(ROLE_LABELS).map(([value, label]) => (
-                        <SelectItem key={value} value={value}>
-                          {label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {signupErrors.role && (
-                    <p className="text-sm text-destructive">{signupErrors.role}</p>
-                  )}
-                </div>
+
                 <Button type="submit" className="w-full" disabled={isSubmitting}>
                   {isSubmitting ? 'Cadastrando...' : 'Cadastrar'}
                 </Button>

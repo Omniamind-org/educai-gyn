@@ -1,5 +1,6 @@
 import { ReactNode } from 'react';
 import { LogOut, BookOpen } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { AISidebar } from './AISidebar';
@@ -16,10 +17,12 @@ const ROLE_LABELS: Record<string, string> = {
 };
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
+  const navigate = useNavigate();
   const { role, signOut } = useAuth();
 
-  const handleLogout = () => {
-    signOut();
+  const handleLogout = async () => {
+    await signOut();
+    navigate('/');
   };
 
   return (
@@ -34,9 +37,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             </div>
             <div>
               <h1 className="text-xl font-bold text-foreground">EducAI</h1>
-              <p className="text-sm text-muted-foreground">
-                {role && ROLE_LABELS[role]}
-              </p>
+              <p className="text-sm text-muted-foreground">{role && ROLE_LABELS[role]}</p>
             </div>
           </div>
           <Button variant="ghost" size="sm" onClick={handleLogout} className="gap-2">
@@ -46,9 +47,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         </header>
 
         {/* Page Content */}
-        <div className="animate-fade-in">
-          {children}
-        </div>
+        <div className="animate-fade-in">{children}</div>
       </main>
 
       {/* AI Sidebar - Always Fixed */}

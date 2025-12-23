@@ -68,6 +68,10 @@ export type Database = {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
       }
+      role_from_email: {
+        Args: { _email: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
     }
     Enums: {
       app_role: "aluno" | "professor" | "coordenacao" | "diretor"

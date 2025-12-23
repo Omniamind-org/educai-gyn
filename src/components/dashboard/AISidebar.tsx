@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Send, Bot, Sparkles, Loader2 } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 import { useApp } from '@/contexts/AppContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-
 // Student activities data - will be passed to AI as context
 const STUDENT_ACTIVITIES = [
   {
@@ -96,17 +96,18 @@ const INITIAL_MESSAGES: Record<string, ChatMessage[]> = {
 };
 
 export function AISidebar() {
-  const { currentRole, aiPersona, setAiPersona } = useApp();
+  const { role } = useAuth();
+  const { aiPersona, setAiPersona } = useApp();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
-    if (currentRole) {
-      setMessages(INITIAL_MESSAGES[currentRole] || []);
+    if (role) {
+      setMessages(INITIAL_MESSAGES[role] || []);
     }
-  }, [currentRole]);
+  }, [role]);
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
@@ -128,12 +129,12 @@ export function AISidebar() {
         .map(m => ({ role: m.role, content: m.content }));
 
       // Build context based on role
-      const context = currentRole === 'aluno' ? STUDENT_CONTEXT : undefined;
+      const context = role === 'aluno' ? STUDENT_CONTEXT : undefined;
 
       const { data, error } = await supabase.functions.invoke('chat-ai', {
         body: {
           messages: apiMessages,
-          role: currentRole,
+          role: role,
           persona: aiPersona,
           context,
         },
@@ -202,7 +203,7 @@ export function AISidebar() {
         </div>
 
         {/* Persona Selector (only for professors) */}
-        {currentRole === 'professor' && (
+        {role === 'professor' && (
           <Select value={aiPersona} onValueChange={setAiPersona}>
             <SelectTrigger className="w-full">
               <div className="flex items-center gap-2">

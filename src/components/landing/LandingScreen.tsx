@@ -1,10 +1,15 @@
 import { BookOpen } from 'lucide-react';
-import { useApp } from '@/contexts/AppContext';
+import { useNavigate } from 'react-router-dom';
 import { ROLE_CONFIGS } from '@/types/roles';
 import { RoleCard } from './RoleCard';
 
 export function LandingScreen() {
-  const { setCurrentRole } = useApp();
+  const navigate = useNavigate();
+
+  const handleRoleClick = (role: 'aluno' | 'professor' | 'coordenacao' | 'diretor' | null) => {
+    if (!role) return;
+    navigate(`/auth?role=${role}`);
+  };
 
   return (
     <div className="min-h-screen bg-card flex flex-col items-center justify-center p-8">
@@ -16,9 +21,7 @@ export function LandingScreen() {
           </div>
           <h1 className="text-4xl font-bold text-foreground">EducAI</h1>
         </div>
-        <p className="text-lg text-muted-foreground">
-          Plataforma de Gestão Educacional Inteligente
-        </p>
+        <p className="text-lg text-muted-foreground">Plataforma de Gestão Educacional Inteligente</p>
       </div>
 
       {/* Role Selection Grid */}
@@ -27,7 +30,7 @@ export function LandingScreen() {
           <RoleCard
             key={config.id}
             config={config}
-            onClick={setCurrentRole}
+            onClick={handleRoleClick}
             delay={100 + index * 100}
           />
         ))}
@@ -35,7 +38,7 @@ export function LandingScreen() {
 
       {/* Footer */}
       <p className="mt-12 text-sm text-muted-foreground animate-fade-in" style={{ animationDelay: '600ms' }}>
-        Selecione seu perfil para acessar a plataforma
+        Selecione seu perfil para entrar com as credenciais de teste
       </p>
     </div>
   );

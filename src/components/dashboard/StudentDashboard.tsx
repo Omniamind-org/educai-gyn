@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Flame, Star, Trophy, FileText, Calculator, BookOpen, Clock, ArrowLeft } from 'lucide-react';
+import { Flame, Star, Trophy, FileText, Calculator, BookOpen, Clock, ArrowLeft, MessageCircle, Video, Users } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const ACTIVITIES = [
   {
@@ -42,8 +43,71 @@ const ACTIVITIES = [
   },
 ];
 
+const SUBJECTS = [
+  { id: 'portugues', name: 'Português', color: 'bg-primary/10 text-primary', icon: FileText },
+  { id: 'matematica', name: 'Matemática', color: 'bg-success/10 text-success', icon: Calculator },
+  { id: 'historia', name: 'História', color: 'bg-warning/10 text-warning', icon: BookOpen },
+  { id: 'biologia', name: 'Biologia', color: 'bg-destructive/10 text-destructive', icon: BookOpen },
+];
+
+const SUBJECT_DATA: Record<string, { tasks: any[]; lessons: any[]; discussions: any[] }> = {
+  portugues: {
+    tasks: [
+      { id: 1, title: 'Redação: Tecnologia na Educação', dueDate: '25 Dez', xp: 150 },
+      { id: 2, title: 'Interpretação de Texto', dueDate: '28 Dez', xp: 80 },
+    ],
+    lessons: [
+      { id: 1, title: 'Coesão e Coerência', duration: '15 min', type: 'video' },
+      { id: 2, title: 'Figuras de Linguagem', duration: '20 min', type: 'video' },
+      { id: 3, title: 'Material: Redação ENEM', type: 'pdf' },
+    ],
+    discussions: [
+      { id: 1, author: 'Maria Silva', avatar: 'maria', message: 'Alguém pode me ajudar com a estrutura da redação?', time: '2h atrás' },
+      { id: 2, author: 'João Santos', avatar: 'joao', message: 'Como usar conectivos no desenvolvimento?', time: '5h atrás' },
+    ],
+  },
+  matematica: {
+    tasks: [
+      { id: 1, title: 'Funções do 2º Grau', dueDate: '27 Dez', xp: 100 },
+      { id: 2, title: 'Exercícios de Logaritmos', dueDate: '30 Dez', xp: 90 },
+    ],
+    lessons: [
+      { id: 1, title: 'Introdução a Funções', duration: '25 min', type: 'video' },
+      { id: 2, title: 'Gráficos de Parábolas', duration: '18 min', type: 'video' },
+    ],
+    discussions: [
+      { id: 1, author: 'Pedro Lima', avatar: 'pedro', message: 'Como encontrar o vértice da parábola?', time: '1h atrás' },
+    ],
+  },
+  historia: {
+    tasks: [
+      { id: 1, title: 'Quiz: Revolução Industrial', dueDate: '28 Dez', xp: 80 },
+    ],
+    lessons: [
+      { id: 1, title: 'Era das Revoluções', duration: '30 min', type: 'video' },
+      { id: 2, title: 'Linha do Tempo: Séc. XVIII', type: 'pdf' },
+    ],
+    discussions: [
+      { id: 1, author: 'Ana Costa', avatar: 'ana', message: 'Qual a diferença entre as fases da Rev. Industrial?', time: '3h atrás' },
+    ],
+  },
+  biologia: {
+    tasks: [
+      { id: 1, title: 'Ecossistemas Brasileiros', dueDate: '30 Dez', xp: 120 },
+    ],
+    lessons: [
+      { id: 1, title: 'Biomas do Brasil', duration: '22 min', type: 'video' },
+      { id: 2, title: 'Cadeias Alimentares', duration: '15 min', type: 'video' },
+    ],
+    discussions: [
+      { id: 1, author: 'Lucas Mendes', avatar: 'lucas', message: 'Quais são as características do Cerrado?', time: '4h atrás' },
+    ],
+  },
+};
+
 export function StudentDashboard() {
   const [selectedActivity, setSelectedActivity] = useState<typeof ACTIVITIES[0] | null>(null);
+  const [selectedSubject, setSelectedSubject] = useState<typeof SUBJECTS[0] | null>(null);
   const [essayContent, setEssayContent] = useState('');
 
   const handleActivityClick = (activity: typeof ACTIVITIES[0]) => {
@@ -67,6 +131,125 @@ export function StudentDashboard() {
     }
   };
 
+  const handleSubjectClick = (subject: typeof SUBJECTS[0]) => {
+    setSelectedSubject(subject);
+    setSelectedActivity(null);
+  };
+
+  // View: Selected Subject with 3 columns
+  if (selectedSubject) {
+    const subjectData = SUBJECT_DATA[selectedSubject.id];
+    const SubjectIcon = selectedSubject.icon;
+
+    return (
+      <div className="space-y-6">
+        <Button 
+          variant="ghost" 
+          className="gap-2"
+          onClick={() => setSelectedSubject(null)}
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Voltar às Matérias
+        </Button>
+
+        <div className="flex items-center gap-3 mb-6">
+          <div className={`p-3 rounded-xl ${selectedSubject.color}`}>
+            <SubjectIcon className="w-6 h-6" />
+          </div>
+          <h1 className="text-2xl font-bold">{selectedSubject.name}</h1>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Column 1: Tasks */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 mb-3">
+              <FileText className="w-5 h-5 text-primary" />
+              <h2 className="font-semibold text-lg">Tarefas</h2>
+            </div>
+            <ScrollArea className="h-[400px] pr-4">
+              <div className="space-y-3">
+                {subjectData.tasks.map((task) => (
+                  <Card key={task.id} className="cursor-pointer hover:border-primary/50 transition-colors">
+                    <CardContent className="p-4">
+                      <h3 className="font-medium mb-2">{task.title}</h3>
+                      <div className="flex items-center justify-between text-sm">
+                        <Badge variant="outline">Entrega: {task.dueDate}</Badge>
+                        <Badge className="bg-primary/10 text-primary hover:bg-primary/20">
+                          +{task.xp} XP
+                        </Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </ScrollArea>
+          </div>
+
+          {/* Column 2: Lessons & Content */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Video className="w-5 h-5 text-success" />
+              <h2 className="font-semibold text-lg">Aulas e Conteúdos</h2>
+            </div>
+            <ScrollArea className="h-[400px] pr-4">
+              <div className="space-y-3">
+                {subjectData.lessons.map((lesson) => (
+                  <Card key={lesson.id} className="cursor-pointer hover:border-success/50 transition-colors">
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-3">
+                        <div className={`p-2 rounded-lg ${lesson.type === 'video' ? 'bg-success/10 text-success' : 'bg-muted text-muted-foreground'}`}>
+                          {lesson.type === 'video' ? <Video className="w-4 h-4" /> : <FileText className="w-4 h-4" />}
+                        </div>
+                        <div>
+                          <h3 className="font-medium">{lesson.title}</h3>
+                          {lesson.duration && (
+                            <span className="text-sm text-muted-foreground">{lesson.duration}</span>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </ScrollArea>
+          </div>
+
+          {/* Column 3: Discussions */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Users className="w-5 h-5 text-warning" />
+              <h2 className="font-semibold text-lg">Comentários e Dúvidas</h2>
+            </div>
+            <ScrollArea className="h-[400px] pr-4">
+              <div className="space-y-3">
+                {subjectData.discussions.map((discussion) => (
+                  <Card key={discussion.id} className="cursor-pointer hover:border-warning/50 transition-colors">
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-3">
+                        <Avatar className="w-8 h-8">
+                          <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${discussion.avatar}`} />
+                          <AvatarFallback>{discussion.author[0]}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="font-medium text-sm">{discussion.author}</span>
+                            <span className="text-xs text-muted-foreground">{discussion.time}</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground">{discussion.message}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </ScrollArea>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // View: Selected Activity (essay)
   if (selectedActivity) {
     return (
       <div className="space-y-6">
@@ -115,6 +298,7 @@ export function StudentDashboard() {
     );
   }
 
+  // Main Dashboard View
   return (
     <div className="space-y-6">
       {/* Gamification Stats */}
@@ -188,6 +372,35 @@ export function StudentDashboard() {
               </CardContent>
             </Card>
           ))}
+        </div>
+      </div>
+
+      {/* Subjects Section */}
+      <div>
+        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+          <BookOpen className="w-5 h-5 text-primary" />
+          Minhas Matérias
+        </h2>
+        
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {SUBJECTS.map((subject, index) => {
+            const SubjectIcon = subject.icon;
+            return (
+              <Card 
+                key={subject.id}
+                className="cursor-pointer hover:border-primary/50 transition-all hover:scale-105 opacity-0 animate-fade-in"
+                style={{ animationDelay: `${index * 100}ms` }}
+                onClick={() => handleSubjectClick(subject)}
+              >
+                <CardContent className="p-6 flex flex-col items-center justify-center text-center">
+                  <div className={`p-4 rounded-xl mb-3 ${subject.color}`}>
+                    <SubjectIcon className="w-8 h-8" />
+                  </div>
+                  <h3 className="font-semibold">{subject.name}</h3>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       </div>
     </div>

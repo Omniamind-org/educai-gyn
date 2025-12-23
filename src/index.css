@@ -1,96 +1,137 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* EducAI Design System - Google Classroom Inspired */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-
+    /* Google Classroom Blue Primary */
+    --primary: 217 91% 50%;
+    --primary-foreground: 0 0% 100%;
+    
+    /* Backgrounds */
+    --background: 220 14% 96%;
+    --foreground: 222 47% 11%;
+    
+    /* Cards - Clean White */
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-
+    --card-foreground: 222 47% 11%;
+    
+    /* Popover */
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-
-    --radius: 0.5rem;
-
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
+    --popover-foreground: 222 47% 11%;
+    
+    /* Secondary - Light Gray */
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 222 47% 11%;
+    
+    /* Muted */
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
+    
+    /* Accent - Light Blue Tint */
+    --accent: 217 91% 96%;
+    --accent-foreground: 217 91% 50%;
+    
+    /* Status Colors */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+    
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    
+    /* Role Colors */
+    --student: 217 91% 50%;
+    --student-foreground: 0 0% 100%;
+    
+    --teacher: 142 76% 36%;
+    --teacher-foreground: 0 0% 100%;
+    
+    --coordinator: 38 92% 50%;
+    --coordinator-foreground: 0 0% 100%;
+    
+    --director: 271 81% 56%;
+    --director-foreground: 0 0% 100%;
+    
+    /* Borders & Inputs */
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 217 91% 50%;
+    
+    --radius: 0.75rem;
+    
+    /* AI Sidebar */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: 217 91% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 217 91% 96%;
+    --sidebar-accent-foreground: 217 91% 50%;
     --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-ring: 217 91% 50%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+    
+    --background: 222 47% 8%;
     --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
+    
+    --card: 222 47% 11%;
     --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
+    
+    --popover: 222 47% 11%;
     --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
+    
+    --secondary: 217 32% 17%;
     --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
+    
+    --muted: 217 32% 17%;
+    --muted-foreground: 215 20% 65%;
+    
+    --accent: 217 91% 20%;
+    --accent-foreground: 217 91% 70%;
+    
+    --destructive: 0 62% 30%;
     --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    
+    --success: 142 76% 30%;
+    --success-foreground: 0 0% 100%;
+    
+    --warning: 38 92% 40%;
+    --warning-foreground: 0 0% 100%;
+    
+    --student: 217 91% 60%;
+    --student-foreground: 0 0% 100%;
+    
+    --teacher: 142 76% 45%;
+    --teacher-foreground: 0 0% 100%;
+    
+    --coordinator: 38 92% 55%;
+    --coordinator-foreground: 0 0% 100%;
+    
+    --director: 271 81% 65%;
+    --director-foreground: 0 0% 100%;
+    
+    --border: 217 32% 17%;
+    --input: 217 32% 17%;
+    --ring: 217 91% 60%;
+    
+    --sidebar-background: 222 47% 11%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 217 91% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 217 91% 20%;
+    --sidebar-accent-foreground: 217 91% 70%;
+    --sidebar-border: 217 32% 17%;
+    --sidebar-ring: 217 91% 60%;
   }
 }
 
@@ -100,6 +141,102 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+}
+
+@layer components {
+  .role-card {
+    @apply rounded-xl bg-card shadow-sm border border-border p-8 cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+  }
+  
+  .role-card-student:hover {
+    @apply border-student/50 shadow-student/20;
+  }
+  
+  .role-card-teacher:hover {
+    @apply border-success/50 shadow-success/20;
+  }
+  
+  .role-card-coordinator:hover {
+    @apply border-warning/50 shadow-warning/20;
+  }
+  
+  .role-card-director:hover {
+    @apply border-[hsl(271,81%,56%)]/50 shadow-[hsl(271,81%,56%)]/20;
+  }
+  
+  .ai-sidebar {
+    @apply fixed right-0 top-0 h-screen w-[28%] min-w-[320px] bg-sidebar-background border-l border-sidebar-border flex flex-col;
+  }
+  
+  .main-content {
+    @apply w-[72%] min-h-screen bg-background p-6 overflow-y-auto;
+  }
+  
+  .activity-card {
+    @apply rounded-xl bg-card shadow-sm border border-border overflow-hidden transition-all duration-200 hover:shadow-md cursor-pointer;
+  }
+  
+  .stat-badge {
+    @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium;
+  }
+  
+  .chat-bubble {
+    @apply rounded-2xl px-4 py-3 max-w-[85%];
+  }
+  
+  .chat-bubble-ai {
+    @apply bg-accent text-accent-foreground rounded-tl-sm;
+  }
+  
+  .chat-bubble-user {
+    @apply bg-primary text-primary-foreground rounded-tr-sm ml-auto;
+  }
+}
+
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 0.4s ease-out forwards;
+  }
+  
+  .animate-slide-up {
+    animation: slideUp 0.5s ease-out forwards;
+  }
+  
+  .animate-scale-in {
+    animation: scaleIn 0.3s ease-out forwards;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }

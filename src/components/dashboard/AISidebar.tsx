@@ -106,8 +106,12 @@ export function AISidebar() {
             description: 'Por favor, faça login novamente.',
             variant: 'destructive',
           });
-          // Sign out to clear invalid session
-          await supabase.auth.signOut();
+          // Clear invalid local session (server may already have removed it)
+          try {
+            await supabase.auth.signOut({ scope: 'local' });
+          } catch {
+            // ignore
+          }
           return;
         }
         throw new Error(error.message);

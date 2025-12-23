@@ -8,6 +8,109 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Validation constants
+const MAX_MESSAGE_LENGTH = 4000;
+const MAX_MESSAGES_COUNT = 50;
+const VALID_ROLES = ['aluno', 'professor', 'coordenacao', 'diretor'];
+const VALID_PERSONAS = ['Padrão', 'Cora Coralina (Regional)', 'Cientista'];
+
+// Validation functions
+const validateMessages = (messages: unknown): { role: string; content: string }[] => {
+  if (!Array.isArray(messages)) {
+    throw new Error('Messages must be an array');
+  }
+  
+  if (messages.length > MAX_MESSAGES_COUNT) {
+    throw new Error(`Maximum ${MAX_MESSAGES_COUNT} messages allowed`);
+  }
+  
+  return messages.map((msg, index) => {
+    if (typeof msg !== 'object' || msg === null) {
+      throw new Error(`Message at index ${index} must be an object`);
+    }
+    
+    const { role, content } = msg as { role?: unknown; content?: unknown };
+    
+    if (typeof role !== 'string' || !['user', 'assistant'].includes(role)) {
+      throw new Error(`Invalid message role at index ${index}`);
+    }
+    
+    if (typeof content !== 'string') {
+      throw new Error(`Message content at index ${index} must be a string`);
+    }
+    
+    if (content.length > MAX_MESSAGE_LENGTH) {
+      throw new Error(`Message at index ${index} exceeds ${MAX_MESSAGE_LENGTH} characters`);
+    }
+    
+    return { role, content: content.trim() };
+  });
+};
+
+const validateRole = (role: unknown): string => {
+  if (typeof role !== 'string' || !VALID_ROLES.includes(role)) {
+    return 'aluno'; // Default to 'aluno' if invalid
+  }
+  return role;
+};
+
+const validatePersona = (persona: unknown): string => {
+  if (typeof persona !== 'string' || !VALID_PERSONAS.includes(persona)) {
+    return 'Padrão'; // Default to 'Padrão' if invalid
+  }
+  return persona;
+};
+
+const validateContext = (context: unknown): { activities?: any[]; studentName?: string; level?: number; xp?: number; streak?: number } | undefined => {
+  if (context === undefined || context === null) {
+    return undefined;
+  }
+  
+  if (typeof context !== 'object') {
+    return undefined;
+  }
+  
+  const ctx = context as Record<string, unknown>;
+  const validated: { activities?: any[]; studentName?: string; level?: number; xp?: number; streak?: number } = {};
+  
+  // Validate studentName
+  if (typeof ctx.studentName === 'string' && ctx.studentName.length <= 100) {
+    validated.studentName = ctx.studentName.trim();
+  }
+  
+  // Validate level
+  if (typeof ctx.level === 'number' && ctx.level >= 0 && ctx.level <= 100) {
+    validated.level = Math.floor(ctx.level);
+  }
+  
+  // Validate xp
+  if (typeof ctx.xp === 'number' && ctx.xp >= 0 && ctx.xp <= 1000000) {
+    validated.xp = Math.floor(ctx.xp);
+  }
+  
+  // Validate streak
+  if (typeof ctx.streak === 'number' && ctx.streak >= 0 && ctx.streak <= 365) {
+    validated.streak = Math.floor(ctx.streak);
+  }
+  
+  // Validate activities array
+  if (Array.isArray(ctx.activities)) {
+    validated.activities = ctx.activities.slice(0, 20).map(act => {
+      if (typeof act !== 'object' || act === null) return null;
+      const a = act as Record<string, unknown>;
+      return {
+        title: typeof a.title === 'string' ? a.title.slice(0, 100) : '',
+        subject: typeof a.subject === 'string' ? a.subject.slice(0, 50) : '',
+        dueDate: typeof a.dueDate === 'string' ? a.dueDate.slice(0, 20) : '',
+        type: typeof a.type === 'string' ? a.type.slice(0, 20) : '',
+        xp: typeof a.xp === 'number' ? Math.floor(a.xp) : 0,
+      };
+    }).filter(Boolean);
+  }
+  
+  return validated;
+};
+
 const buildStudentPrompt = (context?: { activities?: any[]; studentName?: string; level?: number; xp?: number; streak?: number }) => {
   let prompt = `Você é um assistente de estudos inteligente e amigável chamado EducAI. Você ajuda alunos com:
 - Explicações de conteúdo de forma clara e didática
@@ -87,24 +190,32 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, role, persona, context } = await req.json();
+    const body = await req.json();
+    
+    // Validate all inputs
+    const validatedMessages = validateMessages(body.messages);
+    const validatedRole = validateRole(body.role);
+    const validatedPersona = validatePersona(body.persona);
+    const validatedContext = validateContext(body.context);
 
     if (!openAIApiKey) {
       throw new Error('OPENAI_API_KEY não está configurada');
     }
 
+    console.log('Validated request - role:', validatedRole, 'persona:', validatedPersona, 'messages:', validatedMessages.length);
+
     let systemPrompt: string;
-    if (role === 'aluno') {
-      systemPrompt = buildStudentPrompt(context);
+    if (validatedRole === 'aluno') {
+      systemPrompt = buildStudentPrompt(validatedContext);
     } else {
-      systemPrompt = ROLE_SYSTEM_PROMPTS[role] || buildStudentPrompt();
+      systemPrompt = ROLE_SYSTEM_PROMPTS[validatedRole] || buildStudentPrompt();
     }
     
-    const personaStyle = PERSONA_STYLES[persona] || '';
+    const personaStyle = PERSONA_STYLES[validatedPersona] || '';
     const fullSystemPrompt = personaStyle ? `${systemPrompt}\n\n${personaStyle}` : systemPrompt;
 
-    console.log('Calling OpenAI with role:', role, 'persona:', persona);
-    console.log('Messages count:', messages.length);
+    console.log('Calling OpenAI with role:', validatedRole, 'persona:', validatedPersona);
+    console.log('Messages count:', validatedMessages.length);
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -116,7 +227,7 @@ serve(async (req) => {
         model: 'gpt-5-mini-2025-08-07',
         messages: [
           { role: 'system', content: fullSystemPrompt },
-          ...messages.map((m: { role: string; content: string }) => ({
+          ...validatedMessages.map((m: { role: string; content: string }) => ({
             role: m.role,
             content: m.content,
           })),

@@ -1,5 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.89.0";
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
@@ -190,8 +191,36 @@ serve(async (req) => {
   }
 
   try {
+    const authHeader = req.headers.get('authorization') ?? '';
+    const token = authHeader.toLowerCase().startsWith('bearer ') ? authHeader.slice(7) : '';
+
+    if (!token) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
+    if (!supabaseUrl || !supabaseAnonKey) {
+      throw new Error('Backend auth is not configured');
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    if (userError || !user) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const body = await req.json();
-    
+
     // Validate all inputs
     const validatedMessages = validateMessages(body.messages);
     const validatedRole = validateRole(body.role);
@@ -202,7 +231,7 @@ serve(async (req) => {
       throw new Error('OPENAI_API_KEY não está configurada');
     }
 
-    console.log('Validated request - role:', validatedRole, 'persona:', validatedPersona, 'messages:', validatedMessages.length);
+    console.log('Validated request - user:', user.id, 'role:', validatedRole, 'persona:', validatedPersona, 'messages:', validatedMessages.length);
 
     let systemPrompt: string;
     if (validatedRole === 'aluno') {

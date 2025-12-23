@@ -8,15 +8,48 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const ROLE_SYSTEM_PROMPTS: Record<string, string> = {
-  aluno: `Você é um assistente de estudos inteligente e amigável chamado EducAI. Você ajuda alunos com:
+const buildStudentPrompt = (context?: { activities?: any[]; studentName?: string; level?: number; xp?: number; streak?: number }) => {
+  let prompt = `Você é um assistente de estudos inteligente e amigável chamado EducAI. Você ajuda alunos com:
 - Explicações de conteúdo de forma clara e didática
 - Correção de textos e redações (sem dar respostas prontas, apenas dicas)
 - Dúvidas sobre atividades e exercícios
 - Motivação e dicas de estudo
 - Gamificação e metas de aprendizado
-Sempre seja encorajador e use emojis ocasionalmente. Responda em português brasileiro.`,
+Sempre seja encorajador e use emojis ocasionalmente. Responda em português brasileiro.`;
 
+  if (context) {
+    prompt += `\n\n=== CONTEXTO DO ALUNO ===`;
+    
+    if (context.studentName) {
+      prompt += `\nNome do aluno: ${context.studentName}`;
+    }
+    if (context.level) {
+      prompt += `\nNível atual: ${context.level}`;
+    }
+    if (context.xp) {
+      prompt += `\nXP: ${context.xp}`;
+    }
+    if (context.streak) {
+      prompt += `\nSequência de dias estudando: ${context.streak} dias`;
+    }
+    
+    if (context.activities && context.activities.length > 0) {
+      prompt += `\n\nATIVIDADES PENDENTES DO ALUNO:`;
+      context.activities.forEach((act, i) => {
+        prompt += `\n${i + 1}. ${act.title}`;
+        prompt += `\n   - Matéria: ${act.subject}`;
+        prompt += `\n   - Data de entrega: ${act.dueDate}`;
+        prompt += `\n   - Tipo: ${act.type === 'essay' ? 'Redação' : act.type === 'exercise' ? 'Exercício' : 'Quiz'}`;
+        prompt += `\n   - XP: ${act.xp}`;
+      });
+      prompt += `\n\nUse essas informações para responder perguntas sobre entregas, prazos e atividades do aluno.`;
+    }
+  }
+
+  return prompt;
+};
+
+const ROLE_SYSTEM_PROMPTS: Record<string, string> = {
   professor: `Você é um assistente pedagógico inteligente chamado EducAI para professores. Você ajuda com:
 - Criação de planos de aula alinhados à BNCC
 - Sugestões de atividades e metodologias ativas
@@ -54,13 +87,19 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, role, persona } = await req.json();
+    const { messages, role, persona, context } = await req.json();
 
     if (!openAIApiKey) {
       throw new Error('OPENAI_API_KEY não está configurada');
     }
 
-    const systemPrompt = ROLE_SYSTEM_PROMPTS[role] || ROLE_SYSTEM_PROMPTS.aluno;
+    let systemPrompt: string;
+    if (role === 'aluno') {
+      systemPrompt = buildStudentPrompt(context);
+    } else {
+      systemPrompt = ROLE_SYSTEM_PROMPTS[role] || buildStudentPrompt();
+    }
+    
     const personaStyle = PERSONA_STYLES[persona] || '';
     const fullSystemPrompt = personaStyle ? `${systemPrompt}\n\n${personaStyle}` : systemPrompt;
 

@@ -99,6 +99,17 @@ export function AISidebar() {
       });
 
       if (error) {
+        // Check for authentication errors
+        if (error.message?.includes('401') || error.message?.includes('Invalid JWT') || error.message?.includes('Unauthorized')) {
+          toast({
+            title: 'Sessão expirada',
+            description: 'Por favor, faça login novamente.',
+            variant: 'destructive',
+          });
+          // Sign out to clear invalid session
+          await supabase.auth.signOut();
+          return;
+        }
         throw new Error(error.message);
       }
 

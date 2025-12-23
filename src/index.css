@@ -168,7 +168,9 @@
   }
   
   .ai-sidebar {
-    @apply fixed right-0 top-0 h-screen w-[28%] min-w-[320px] bg-sidebar-background border-l border-sidebar-border flex flex-col;
+    @apply fixed right-0 top-0 h-screen bg-card border-l border-sidebar-border flex flex-col;
+    width: 28%;
+    min-width: 320px;
   }
   
   .main-content {

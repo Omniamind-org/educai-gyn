@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Flame, Star, Trophy, FileText, Calculator, BookOpen, Clock, ArrowLeft, MessageCircle, Video, Users } from 'lucide-react';
+import { Flame, Star, Trophy, FileText, Calculator, BookOpen, Clock, ArrowLeft, MessageCircle, Video, Users, LucideIcon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
@@ -7,117 +7,27 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { STUDENT_ACTIVITIES, SUBJECTS, SUBJECT_DATA, STUDENT_CONTEXT, Activity } from '@/data/studentData';
 
-const ACTIVITIES = [
-  {
-    id: 1,
-    title: 'Redação: O Papel da Tecnologia na Educação',
-    subject: 'Português',
-    dueDate: '25 Dez',
-    type: 'essay',
-    xp: 150,
-  },
-  {
-    id: 2,
-    title: 'Funções do 2º Grau',
-    subject: 'Matemática',
-    dueDate: '27 Dez',
-    type: 'exercise',
-    xp: 100,
-  },
-  {
-    id: 3,
-    title: 'Revolução Industrial',
-    subject: 'História',
-    dueDate: '28 Dez',
-    type: 'quiz',
-    xp: 80,
-  },
-  {
-    id: 4,
-    title: 'Ecossistemas Brasileiros',
-    subject: 'Biologia',
-    dueDate: '30 Dez',
-    type: 'exercise',
-    xp: 120,
-  },
-];
-
-const SUBJECTS = [
-  { id: 'portugues', name: 'Português', color: 'bg-primary/10 text-primary', icon: FileText },
-  { id: 'matematica', name: 'Matemática', color: 'bg-success/10 text-success', icon: Calculator },
-  { id: 'historia', name: 'História', color: 'bg-warning/10 text-warning', icon: BookOpen },
-  { id: 'biologia', name: 'Biologia', color: 'bg-destructive/10 text-destructive', icon: BookOpen },
-];
-
-const SUBJECT_DATA: Record<string, { tasks: any[]; lessons: any[]; discussions: any[] }> = {
-  portugues: {
-    tasks: [
-      { id: 1, title: 'Redação: Tecnologia na Educação', dueDate: '25 Dez', xp: 150 },
-      { id: 2, title: 'Interpretação de Texto', dueDate: '28 Dez', xp: 80 },
-    ],
-    lessons: [
-      { id: 1, title: 'Coesão e Coerência', duration: '15 min', type: 'video' },
-      { id: 2, title: 'Figuras de Linguagem', duration: '20 min', type: 'video' },
-      { id: 3, title: 'Material: Redação ENEM', type: 'pdf' },
-    ],
-    discussions: [
-      { id: 1, author: 'Maria Silva', avatar: 'maria', message: 'Alguém pode me ajudar com a estrutura da redação?', time: '2h atrás' },
-      { id: 2, author: 'João Santos', avatar: 'joao', message: 'Como usar conectivos no desenvolvimento?', time: '5h atrás' },
-    ],
-  },
-  matematica: {
-    tasks: [
-      { id: 1, title: 'Funções do 2º Grau', dueDate: '27 Dez', xp: 100 },
-      { id: 2, title: 'Exercícios de Logaritmos', dueDate: '30 Dez', xp: 90 },
-    ],
-    lessons: [
-      { id: 1, title: 'Introdução a Funções', duration: '25 min', type: 'video' },
-      { id: 2, title: 'Gráficos de Parábolas', duration: '18 min', type: 'video' },
-    ],
-    discussions: [
-      { id: 1, author: 'Pedro Lima', avatar: 'pedro', message: 'Como encontrar o vértice da parábola?', time: '1h atrás' },
-    ],
-  },
-  historia: {
-    tasks: [
-      { id: 1, title: 'Quiz: Revolução Industrial', dueDate: '28 Dez', xp: 80 },
-    ],
-    lessons: [
-      { id: 1, title: 'Era das Revoluções', duration: '30 min', type: 'video' },
-      { id: 2, title: 'Linha do Tempo: Séc. XVIII', type: 'pdf' },
-    ],
-    discussions: [
-      { id: 1, author: 'Ana Costa', avatar: 'ana', message: 'Qual a diferença entre as fases da Rev. Industrial?', time: '3h atrás' },
-    ],
-  },
-  biologia: {
-    tasks: [
-      { id: 1, title: 'Ecossistemas Brasileiros', dueDate: '30 Dez', xp: 120 },
-    ],
-    lessons: [
-      { id: 1, title: 'Biomas do Brasil', duration: '22 min', type: 'video' },
-      { id: 2, title: 'Cadeias Alimentares', duration: '15 min', type: 'video' },
-    ],
-    discussions: [
-      { id: 1, author: 'Lucas Mendes', avatar: 'lucas', message: 'Quais são as características do Cerrado?', time: '4h atrás' },
-    ],
-  },
+const iconMap: Record<string, LucideIcon> = {
+  FileText,
+  Calculator,
+  BookOpen,
 };
 
 export function StudentDashboard() {
-  const [selectedActivity, setSelectedActivity] = useState<typeof ACTIVITIES[0] | null>(null);
+  const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const [selectedSubject, setSelectedSubject] = useState<typeof SUBJECTS[0] | null>(null);
   const [essayContent, setEssayContent] = useState('');
 
-  const handleActivityClick = (activity: typeof ACTIVITIES[0]) => {
+  const handleActivityClick = (activity: Activity) => {
     setSelectedActivity(activity);
     
     // Trigger AI message when essay is opened
     if (activity.type === 'essay' && (window as any).addAIMessage) {
       setTimeout(() => {
         (window as any).addAIMessage(
-          'Olá! Vi que você vai escrever sobre "O Papel da Tecnologia na Educação". Quer que eu analise a coesão do seu texto enquanto você escreve? Posso dar dicas sem revelar as respostas! 📝'
+          `Olá! Vi que você vai trabalhar na atividade "${activity.title}". Quer que eu te ajude com dicas ou analise seu progresso? 📝`
         );
       }, 500);
     }
@@ -139,7 +49,7 @@ export function StudentDashboard() {
   // View: Selected Subject with 3 columns
   if (selectedSubject) {
     const subjectData = SUBJECT_DATA[selectedSubject.id];
-    const SubjectIcon = selectedSubject.icon;
+    const SubjectIcon = iconMap[selectedSubject.icon] || BookOpen;
 
     return (
       <div className="space-y-6">
@@ -311,20 +221,20 @@ export function StudentDashboard() {
         <div className="flex items-center gap-6 flex-1">
           <div className="flex items-center gap-2">
             <Trophy className="w-5 h-5 text-warning" />
-            <span className="font-semibold">Nível 5</span>
+            <span className="font-semibold">Nível {STUDENT_CONTEXT.level}</span>
           </div>
           
           <div className="flex-1 max-w-[200px]">
             <div className="flex justify-between text-sm mb-1">
               <span className="text-muted-foreground">XP</span>
-              <span className="font-medium">1.250 / 2.000</span>
+              <span className="font-medium">{STUDENT_CONTEXT.xp.toLocaleString()} / 2.000</span>
             </div>
-            <Progress value={62.5} className="h-2" />
+            <Progress value={(STUDENT_CONTEXT.xp / 2000) * 100} className="h-2" />
           </div>
           
           <div className="flex items-center gap-2">
             <Flame className="w-5 h-5 text-destructive" />
-            <span className="font-semibold">12 Dias</span>
+            <span className="font-semibold">{STUDENT_CONTEXT.streak} Dias</span>
             <span className="text-sm text-muted-foreground">de sequência</span>
           </div>
         </div>
@@ -334,14 +244,14 @@ export function StudentDashboard() {
       <div>
         <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <Clock className="w-5 h-5 text-primary" />
-          Atividades Pendentes
+          Atividades Pendentes ({STUDENT_ACTIVITIES.length})
         </h2>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {ACTIVITIES.map((activity, index) => (
+          {STUDENT_ACTIVITIES.map((activity, index) => (
             <Card 
               key={activity.id}
-              className="activity-card opacity-0 animate-fade-in"
+              className="activity-card opacity-0 animate-fade-in cursor-pointer"
               style={{ animationDelay: `${index * 100}ms` }}
               onClick={() => handleActivityClick(activity)}
             >
@@ -384,7 +294,7 @@ export function StudentDashboard() {
         
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {SUBJECTS.map((subject, index) => {
-            const SubjectIcon = subject.icon;
+            const SubjectIcon = iconMap[subject.icon] || BookOpen;
             return (
               <Card 
                 key={subject.id}

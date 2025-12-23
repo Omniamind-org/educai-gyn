@@ -1,5 +1,6 @@
-import { useApp } from '@/contexts/AppContext';
-import { LandingScreen } from '@/components/landing/LandingScreen';
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { StudentDashboard } from '@/components/dashboard/StudentDashboard';
 import { TeacherDashboard } from '@/components/dashboard/TeacherDashboard';
@@ -7,16 +8,30 @@ import { CoordinatorDashboard } from '@/components/dashboard/CoordinatorDashboar
 import { DirectorDashboard } from '@/components/dashboard/DirectorDashboard';
 
 const Index = () => {
-  const { currentRole } = useApp();
+  const navigate = useNavigate();
+  const { user, role, loading } = useAuth();
 
-  // Show landing if no role selected
-  if (!currentRole) {
-    return <LandingScreen />;
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate('/auth');
+    }
+  }, [user, loading, navigate]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!user || !role) {
+    return null;
   }
 
   // Render role-specific dashboard
   const renderDashboard = () => {
-    switch (currentRole) {
+    switch (role) {
       case 'aluno':
         return <StudentDashboard />;
       case 'professor':

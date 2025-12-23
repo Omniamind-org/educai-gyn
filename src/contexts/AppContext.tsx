@@ -1,9 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { UserRole } from '@/types/roles';
 
 interface AppContextType {
-  currentRole: UserRole;
-  setCurrentRole: (role: UserRole) => void;
   aiPersona: string;
   setAiPersona: (persona: string) => void;
 }
@@ -11,14 +8,9 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [currentRole, setCurrentRole] = useState<UserRole>(null);
   const [aiPersona, setAiPersona] = useState<string>('Padrão');
 
-  return (
-    <AppContext.Provider value={{ currentRole, setCurrentRole, aiPersona, setAiPersona }}>
-      {children}
-    </AppContext.Provider>
-  );
+  return <AppContext.Provider value={{ aiPersona, setAiPersona }}>{children}</AppContext.Provider>;
 }
 
 export function useApp() {

@@ -5,17 +5,33 @@ import { useToast } from '@/hooks/use-toast';
 
 type AppRole = 'aluno' | 'professor' | 'coordenacao' | 'diretor';
 
+type SignInResult = { error: Error | null };
+
+type SignUpResult = { error: Error | null };
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   role: AppRole | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signUp: (email: string, password: string, role: AppRole) => Promise<{ error: Error | null }>;
+  signIn: (email: string, password: string) => Promise<SignInResult>;
+  signUp: (email: string, password: string) => Promise<SignUpResult>;
   signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+const ROLE_BY_EMAIL: Record<string, AppRole> = {
+  'aluno@gmail.com': 'aluno',
+  'professor@gmail.com': 'professor',
+  'coordenacao@gmail.com': 'coordenacao',
+  'diretor@gmail.com': 'diretor',
+};
+
+function deriveRoleFromEmail(email?: string | null): AppRole | null {
+  if (!email) return null;
+  return ROLE_BY_EMAIL[email.toLowerCase()] ?? null;
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -32,42 +48,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .maybeSingle();
 
     if (error) {
-      console.error('Error fetching role:', error);
       return null;
     }
 
-    return data?.role as AppRole | null;
+    return (data?.role as AppRole | null) ?? null;
+  };
+
+  const ensureUserRole = async (u: User) => {
+    const existing = await fetchUserRole(u.id);
+    if (existing) return existing;
+
+    const derived = deriveRoleFromEmail(u.email);
+    if (!derived) return null;
+
+    // Try to insert (policy only allows role mapped from JWT email)
+    const { error: insertError } = await supabase
+      .from('user_roles')
+      .insert({ user_id: u.id, role: derived });
+
+    // Ignore errors (e.g., if it was created in parallel)
+    if (insertError) {
+      // no console.log of sensitive data
+    }
+
+    return await fetchUserRole(u.id);
   };
 
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
 
-        // Defer role fetching with setTimeout to avoid deadlock
-        if (session?.user) {
-          setTimeout(async () => {
-            const userRole = await fetchUserRole(session.user.id);
-            setRole(userRole);
-            setLoading(false);
-          }, 0);
-        } else {
-          setRole(null);
+      if (session?.user) {
+        setTimeout(async () => {
+          const ensuredRole = await ensureUserRole(session.user);
+          setRole(ensuredRole);
           setLoading(false);
-        }
+        }, 0);
+      } else {
+        setRole(null);
+        setLoading(false);
       }
-    );
+    });
 
-    // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
 
       if (session?.user) {
-        fetchUserRole(session.user.id).then((userRole) => {
-          setRole(userRole);
+        ensureUserRole(session.user).then((ensuredRole) => {
+          setRole(ensuredRole);
           setLoading(false);
         });
       } else {
@@ -78,11 +108,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+  const signIn = async (email: string, password: string): Promise<SignInResult> => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
       toast({
@@ -96,15 +123,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: null };
   };
 
-  const signUp = async (email: string, password: string, selectedRole: AppRole) => {
-    const redirectUrl = `${window.location.origin}/`;
+  const signUp = async (email: string, password: string): Promise<SignUpResult> => {
+    const derivedRole = deriveRoleFromEmail(email);
+    if (!derivedRole) {
+      const error = new Error('Email não permitido para cadastro de teste.');
+      toast({
+        title: 'Cadastro indisponível',
+        description: 'Use um dos emails de teste (aluno/professor/coordenacao/diretor).',
+        variant: 'destructive',
+      });
+      return { error };
+    }
+
+    const redirectUrl = `${window.location.origin}/auth`;
 
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: {
-        emailRedirectTo: redirectUrl,
-      },
+      options: { emailRedirectTo: redirectUrl },
     });
 
     if (error) {
@@ -116,20 +152,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { error };
     }
 
-    // Add role after signup
     if (data.user) {
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .insert({ user_id: data.user.id, role: selectedRole });
-
-      if (roleError) {
-        console.error('Error adding role:', roleError);
-      }
+      // Ensure role row exists (RLS allows only mapped role)
+      await supabase.from('user_roles').insert({ user_id: data.user.id, role: derivedRole });
+      setRole(derivedRole);
     }
 
     toast({
       title: 'Conta criada!',
-      description: 'Você foi cadastrado com sucesso.',
+      description: 'Você já pode entrar com seu email e senha.',
     });
 
     return { error: null };

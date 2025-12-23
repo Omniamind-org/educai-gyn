@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Send, Bot, Sparkles, Loader2 } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,50 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+
+// Student activities data - will be passed to AI as context
+const STUDENT_ACTIVITIES = [
+  {
+    id: 1,
+    title: 'Redação: O Papel da Tecnologia na Educação',
+    subject: 'Português',
+    dueDate: '25 Dez',
+    type: 'essay',
+    xp: 150,
+  },
+  {
+    id: 2,
+    title: 'Funções do 2º Grau',
+    subject: 'Matemática',
+    dueDate: '27 Dez',
+    type: 'exercise',
+    xp: 100,
+  },
+  {
+    id: 3,
+    title: 'Revolução Industrial',
+    subject: 'História',
+    dueDate: '28 Dez',
+    type: 'quiz',
+    xp: 80,
+  },
+  {
+    id: 4,
+    title: 'Ecossistemas Brasileiros',
+    subject: 'Biologia',
+    dueDate: '30 Dez',
+    type: 'exercise',
+    xp: 120,
+  },
+];
+
+const STUDENT_CONTEXT = {
+  studentName: 'Aluno',
+  level: 5,
+  xp: 1250,
+  streak: 12,
+  activities: STUDENT_ACTIVITIES,
+};
 
 interface ChatMessage {
   id: string;
@@ -83,11 +127,15 @@ export function AISidebar() {
         .filter(m => m.id !== '1') // Remove initial greeting
         .map(m => ({ role: m.role, content: m.content }));
 
+      // Build context based on role
+      const context = currentRole === 'aluno' ? STUDENT_CONTEXT : undefined;
+
       const { data, error } = await supabase.functions.invoke('chat-ai', {
         body: {
           messages: apiMessages,
           role: currentRole,
           persona: aiPersona,
+          context,
         },
       });
 

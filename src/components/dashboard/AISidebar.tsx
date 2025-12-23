@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
-import { Send, Bot, Sparkles } from 'lucide-react';
+import { Send, Bot, Sparkles, Loader2 } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface ChatMessage {
   id: string;
-  role: 'ai' | 'user';
+  role: 'assistant' | 'user';
   content: string;
 }
 
@@ -22,29 +24,29 @@ const INITIAL_MESSAGES: Record<string, ChatMessage[]> = {
   aluno: [
     {
       id: '1',
-      role: 'ai',
-      content: 'Olá! 👋 Sou seu assistente de estudos. Vi que você tem algumas atividades pendentes. Posso te ajudar com a redação ou matemática?',
+      role: 'assistant',
+      content: 'Olá! 👋 Sou seu assistente de estudos com IA. Posso ajudar com suas atividades, tirar dúvidas ou revisar seus textos. Como posso ajudar?',
     },
   ],
   professor: [
     {
       id: '1',
-      role: 'ai',
-      content: 'Olá, Professor! 📚 Estou aqui para ajudar a criar materiais didáticos personalizados. Que tal começarmos com um plano de aula?',
+      role: 'assistant',
+      content: 'Olá, Professor! 📚 Estou aqui para ajudar a criar materiais didáticos, planos de aula e atividades gamificadas. O que gostaria de criar hoje?',
     },
   ],
   coordenacao: [
     {
       id: '1',
-      role: 'ai',
-      content: 'Bem-vindo(a)! 📋 Posso analisar planos de aula e verificar aderência à BNCC. Selecione um plano para começar a análise.',
+      role: 'assistant',
+      content: 'Bem-vindo(a)! 📋 Posso analisar planos de aula e verificar aderência à BNCC. Selecione um plano ou me descreva o que precisa analisar.',
     },
   ],
   diretor: [
     {
       id: '1',
-      role: 'ai',
-      content: 'Bom dia! 🏫 Estou pronto para ajudar com gestão escolar. Posso gerar relatórios, documentos ou analisar indicadores financeiros.',
+      role: 'assistant',
+      content: 'Bom dia! 🏫 Posso ajudar com gestão escolar, gerar documentos formais ou analisar indicadores. O que precisa hoje?',
     },
   ],
 };
@@ -53,6 +55,8 @@ export function AISidebar() {
   const { currentRole, aiPersona, setAiPersona } = useApp();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (currentRole) {
@@ -60,8 +64,8 @@ export function AISidebar() {
     }
   }, [currentRole]);
 
-  const handleSend = () => {
-    if (!input.trim()) return;
+  const handleSend = async () => {
+    if (!input.trim() || isLoading) return;
 
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
@@ -69,20 +73,59 @@ export function AISidebar() {
       content: input,
     };
 
-    const aiResponse: ChatMessage = {
-      id: (Date.now() + 1).toString(),
-      role: 'ai',
-      content: 'Entendi! Estou processando sua solicitação. Em breve terei uma resposta personalizada para você.',
-    };
-
-    setMessages((prev) => [...prev, userMessage, aiResponse]);
+    setMessages((prev) => [...prev, userMessage]);
     setInput('');
+    setIsLoading(true);
+
+    try {
+      // Prepare messages for API (excluding initial greeting)
+      const apiMessages = [...messages, userMessage]
+        .filter(m => m.id !== '1') // Remove initial greeting
+        .map(m => ({ role: m.role, content: m.content }));
+
+      const { data, error } = await supabase.functions.invoke('chat-ai', {
+        body: {
+          messages: apiMessages,
+          role: currentRole,
+          persona: aiPersona,
+        },
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      const aiResponse: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: data.message,
+      };
+
+      setMessages((prev) => [...prev, aiResponse]);
+    } catch (error) {
+      console.error('Error calling AI:', error);
+      toast({
+        title: 'Erro ao conectar com IA',
+        description: error instanceof Error ? error.message : 'Tente novamente',
+        variant: 'destructive',
+      });
+
+      // Add error message to chat
+      const errorMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: '❌ Desculpe, ocorreu um erro ao processar sua mensagem. Por favor, tente novamente.',
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const addAIMessage = (content: string) => {
     const aiMessage: ChatMessage = {
       id: Date.now().toString(),
-      role: 'ai',
+      role: 'assistant',
       content,
     };
     setMessages((prev) => [...prev, aiMessage]);
@@ -106,7 +149,7 @@ export function AISidebar() {
           </div>
           <div>
             <h2 className="font-semibold text-sidebar-foreground">IA Assistente</h2>
-            <p className="text-xs text-muted-foreground">Sempre aqui para ajudar</p>
+            <p className="text-xs text-muted-foreground">Powered by GPT-5 Mini</p>
           </div>
         </div>
 
@@ -136,21 +179,30 @@ export function AISidebar() {
           <div
             key={message.id}
             className={cn(
-              'flex opacity-0 animate-fade-in',
-              message.role === 'user' ? 'justify-end' : 'justify-start'
+              'flex',
+              message.role === 'user' ? 'justify-end' : 'justify-start',
+              index === messages.length - 1 && 'animate-fade-in'
             )}
-            style={{ animationDelay: `${index * 100}ms` }}
           >
             <div
               className={cn(
                 'chat-bubble',
-                message.role === 'ai' ? 'chat-bubble-ai' : 'chat-bubble-user'
+                message.role === 'assistant' ? 'chat-bubble-ai' : 'chat-bubble-user'
               )}
             >
-              <p className="text-sm">{message.content}</p>
+              <p className="text-sm whitespace-pre-wrap">{message.content}</p>
             </div>
           </div>
         ))}
+        
+        {isLoading && (
+          <div className="flex justify-start animate-fade-in">
+            <div className="chat-bubble chat-bubble-ai flex items-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span className="text-sm">Pensando...</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Input Area */}
@@ -161,10 +213,11 @@ export function AISidebar() {
             onChange={(e) => setInput(e.target.value)}
             placeholder="Digite sua mensagem..."
             className="flex-1"
-            onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+            onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
+            disabled={isLoading}
           />
-          <Button size="icon" onClick={handleSend}>
-            <Send className="w-4 h-4" />
+          <Button size="icon" onClick={handleSend} disabled={isLoading || !input.trim()}>
+            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </Button>
         </div>
       </div>

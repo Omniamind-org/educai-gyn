@@ -7,6 +7,7 @@ import { StudentDashboard } from '@/components/dashboard/StudentDashboard';
 import { TeacherDashboard } from '@/components/dashboard/TeacherDashboard';
 import { CoordinatorDashboard } from '@/components/dashboard/CoordinatorDashboard';
 import { DirectorDashboard } from '@/components/dashboard/DirectorDashboard';
+import { SecretaryDashboard } from '@/components/dashboard/SecretaryDashboard';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function Dashboard() {
@@ -70,6 +71,8 @@ export default function Dashboard() {
         return <CoordinatorDashboard />;
       case 'diretor':
         return <DirectorDashboard />;
+      case 'secretaria':
+        return <SecretaryDashboard />;
       default:
         return null;
     }

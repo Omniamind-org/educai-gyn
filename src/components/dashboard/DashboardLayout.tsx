@@ -14,6 +14,7 @@ const ROLE_LABELS: Record<string, string> = {
   professor: "Professor",
   coordenacao: "Coordenação",
   diretor: "Diretor",
+  secretaria: "Secretaria",
 };
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {

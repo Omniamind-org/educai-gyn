@@ -3,7 +3,7 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-type AppRole = 'aluno' | 'professor' | 'coordenacao' | 'diretor';
+type AppRole = 'aluno' | 'professor' | 'coordenacao' | 'diretor' | 'secretaria';
 
 type SignInResult = { error: Error | null };
 
@@ -26,6 +26,7 @@ const ROLE_BY_EMAIL: Record<string, AppRole> = {
   'professor@gmail.com': 'professor',
   'coordenacao@gmail.com': 'coordenacao',
   'diretor@gmail.com': 'diretor',
+  'secretaria@gmail.com': 'secretaria',
 };
 
 function deriveRoleFromEmail(email?: string | null): AppRole | null {

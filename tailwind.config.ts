@@ -74,6 +74,10 @@ export default {
           DEFAULT: "hsl(var(--director))",
           foreground: "hsl(var(--director-foreground))",
         },
+        secretary: {
+          DEFAULT: "hsl(var(--secretary))",
+          foreground: "hsl(var(--secretary-foreground))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",

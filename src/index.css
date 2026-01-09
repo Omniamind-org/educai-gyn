@@ -59,6 +59,9 @@
     --director: 271 81% 56%;
     --director-foreground: 0 0% 100%;
 
+    --secretary: 199 89% 48%;
+    --secretary-foreground: 0 0% 100%;
+
     /* Borders & Inputs */
     --border: 220 13% 91%;
     --input: 220 13% 91%;
@@ -119,6 +122,9 @@
 
     --director: 271 81% 65%;
     --director-foreground: 0 0% 100%;
+
+    --secretary: 199 89% 55%;
+    --secretary-foreground: 0 0% 100%;
 
     --border: 217 32% 17%;
     --input: 217 32% 17%;

@@ -1,19 +1,19 @@
-import { ReactNode } from 'react';
-import { LogOut, BookOpen } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
-import { Button } from '@/components/ui/button';
-import { AISidebar } from './AISidebar';
+import { ReactNode } from "react";
+import { LogOut, BookOpen } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
+import { AISidebar } from "./AISidebar";
 
 interface DashboardLayoutProps {
   children: ReactNode;
 }
 
 const ROLE_LABELS: Record<string, string> = {
-  aluno: 'Aluno',
-  professor: 'Professor',
-  coordenacao: 'Coordenação',
-  diretor: 'Diretor',
+  aluno: "Aluno",
+  professor: "Professor",
+  coordenacao: "Coordenação",
+  diretor: "Diretor",
 };
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
@@ -22,7 +22,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const handleLogout = async () => {
     await signOut();
-    navigate('/');
+    navigate("/");
   };
 
   return (
@@ -36,7 +36,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               <BookOpen className="w-6 h-6 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-foreground">EducAI</h1>
+              <h1 className="text-xl font-bold text-foreground">Aprendu</h1>
               <p className="text-sm text-muted-foreground">{role && ROLE_LABELS[role]}</p>
             </div>
           </div>

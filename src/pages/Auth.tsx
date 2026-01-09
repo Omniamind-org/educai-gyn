@@ -1,44 +1,44 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { z } from 'zod';
-import { BookOpen } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useAuth } from '@/hooks/useAuth';
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { z } from "zod";
+import { BookOpen } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from "@/hooks/useAuth";
 
-type AppRole = 'aluno' | 'professor' | 'coordenacao' | 'diretor';
+type AppRole = "aluno" | "professor" | "coordenacao" | "diretor";
 
 type DemoCreds = { email: string; password: string };
 
 const DEMO_CREDENTIALS: Record<AppRole, DemoCreds> = {
-  aluno: { email: 'aluno@gmail.com', password: '123456789' },
-  professor: { email: 'professor@gmail.com', password: '123456789' },
-  coordenacao: { email: 'coordenacao@gmail.com', password: '123456789' },
-  diretor: { email: 'diretor@gmail.com', password: '123456789' },
+  aluno: { email: "aluno@gmail.com", password: "123456789" },
+  professor: { email: "professor@gmail.com", password: "123456789" },
+  coordenacao: { email: "coordenacao@gmail.com", password: "123456789" },
+  diretor: { email: "diretor@gmail.com", password: "123456789" },
 };
 
 const allowedEmails = Object.values(DEMO_CREDENTIALS).map((c) => c.email.toLowerCase());
 
 const loginSchema = z.object({
-  email: z.string().email('Email inválido'),
-  password: z.string().min(6, 'Senha deve ter no mínimo 6 caracteres'),
+  email: z.string().email("Email inválido"),
+  password: z.string().min(6, "Senha deve ter no mínimo 6 caracteres"),
 });
 
 const signupSchema = z.object({
   email: z
     .string()
-    .email('Email inválido')
+    .email("Email inválido")
     .refine((v) => allowedEmails.includes(v.toLowerCase()), {
-      message: 'Use um email de teste (aluno/professor/coordenacao/diretor).',
+      message: "Use um email de teste (aluno/professor/coordenacao/diretor).",
     }),
-  password: z.string().min(6, 'Senha deve ter no mínimo 6 caracteres'),
+  password: z.string().min(6, "Senha deve ter no mínimo 6 caracteres"),
 });
 
 function isAppRole(v: string | null): v is AppRole {
-  return v === 'aluno' || v === 'professor' || v === 'coordenacao' || v === 'diretor';
+  return v === "aluno" || v === "professor" || v === "coordenacao" || v === "diretor";
 }
 
 export default function Auth() {
@@ -48,23 +48,23 @@ export default function Auth() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const prefillRole = useMemo(() => {
-    const r = searchParams.get('role');
+    const r = searchParams.get("role");
     return isAppRole(r) ? r : null;
   }, [searchParams]);
 
   // Login form state
-  const [loginEmail, setLoginEmail] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
   const [loginErrors, setLoginErrors] = useState<{ email?: string; password?: string }>({});
 
   // Signup form state
-  const [signupEmail, setSignupEmail] = useState('');
-  const [signupPassword, setSignupPassword] = useState('');
+  const [signupEmail, setSignupEmail] = useState("");
+  const [signupPassword, setSignupPassword] = useState("");
   const [signupErrors, setSignupErrors] = useState<{ email?: string; password?: string }>({});
 
   useEffect(() => {
     if (!loading && user && role) {
-      navigate('/app');
+      navigate("/app");
     }
   }, [user, role, loading, navigate]);
 
@@ -83,8 +83,8 @@ export default function Auth() {
     if (!result.success) {
       const fieldErrors: { email?: string; password?: string } = {};
       result.error.errors.forEach((err) => {
-        if (err.path[0] === 'email') fieldErrors.email = err.message;
-        if (err.path[0] === 'password') fieldErrors.password = err.message;
+        if (err.path[0] === "email") fieldErrors.email = err.message;
+        if (err.path[0] === "password") fieldErrors.password = err.message;
       });
       setLoginErrors(fieldErrors);
       return;
@@ -95,7 +95,7 @@ export default function Auth() {
     setIsSubmitting(false);
 
     if (!error) {
-      navigate('/app');
+      navigate("/app");
     }
   };
 
@@ -107,8 +107,8 @@ export default function Auth() {
     if (!result.success) {
       const fieldErrors: { email?: string; password?: string } = {};
       result.error.errors.forEach((err) => {
-        if (err.path[0] === 'email') fieldErrors.email = err.message;
-        if (err.path[0] === 'password') fieldErrors.password = err.message;
+        if (err.path[0] === "email") fieldErrors.email = err.message;
+        if (err.path[0] === "password") fieldErrors.password = err.message;
       });
       setSignupErrors(fieldErrors);
       return;
@@ -119,7 +119,7 @@ export default function Auth() {
     setIsSubmitting(false);
 
     if (!error) {
-      navigate('/app');
+      navigate("/app");
     }
   };
 
@@ -140,7 +140,7 @@ export default function Auth() {
               <BookOpen className="w-8 h-8 text-primary-foreground" />
             </div>
           </div>
-          <CardTitle className="text-2xl">EducAI</CardTitle>
+          <CardTitle className="text-2xl">Aprendu</CardTitle>
           <CardDescription>Entre para acessar sua área</CardDescription>
         </CardHeader>
 
@@ -178,11 +178,10 @@ export default function Auth() {
                 </div>
 
                 <Button type="submit" className="w-full" disabled={isSubmitting}>
-                  {isSubmitting ? 'Entrando...' : 'Entrar'}
+                  {isSubmitting ? "Entrando..." : "Entrar"}
                 </Button>
 
-                <Button type="button" variant="ghost" className="w-full" onClick={() => navigate('/')}
-                >
+                <Button type="button" variant="ghost" className="w-full" onClick={() => navigate("/")}>
                   Voltar
                 </Button>
               </form>
@@ -218,7 +217,7 @@ export default function Auth() {
                 </div>
 
                 <Button type="submit" className="w-full" disabled={isSubmitting}>
-                  {isSubmitting ? 'Cadastrando...' : 'Cadastrar'}
+                  {isSubmitting ? "Cadastrando..." : "Cadastrar"}
                 </Button>
               </form>
             </TabsContent>

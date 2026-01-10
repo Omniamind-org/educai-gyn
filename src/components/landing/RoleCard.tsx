@@ -39,21 +39,21 @@ export function RoleCard({ config, onClick, delay }: RoleCardProps) {
     <button
       onClick={() => onClick(config.id)}
       className={cn(
-        'group role-card flex flex-col items-center justify-center gap-4 text-center',
+        'group role-card flex flex-col items-center justify-center gap-2 text-center p-4 md:p-5',
         colorStyles[config.colorClass],
         'animate-fade-in'
       )}
       style={{ animationDelay: `${delay}ms` }}
     >
       <div className={cn(
-        'p-4 rounded-2xl bg-muted transition-all duration-300',
+        'p-2.5 rounded-xl bg-muted transition-all duration-300',
         iconColors[config.colorClass]
       )}>
-        <Icon className="w-12 h-12 transition-transform duration-300" />
+        <Icon className="w-7 h-7 md:w-8 md:h-8 transition-transform duration-300" />
       </div>
       <div>
-        <h3 className="text-xl font-semibold text-foreground mb-1">{config.title}</h3>
-        <p className="text-sm text-muted-foreground">{config.description}</p>
+        <h3 className="text-base md:text-lg font-semibold text-foreground mb-0.5">{config.title}</h3>
+        <p className="text-xs text-muted-foreground line-clamp-2">{config.description}</p>
       </div>
     </button>
   );

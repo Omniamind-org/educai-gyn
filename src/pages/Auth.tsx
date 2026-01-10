@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 
-type AppRole = "aluno" | "professor" | "coordenacao" | "diretor";
+type AppRole = "aluno" | "professor" | "coordenacao" | "diretor" | "secretaria";
 
 type DemoCreds = { email: string; password: string };
 
@@ -18,6 +18,7 @@ const DEMO_CREDENTIALS: Record<AppRole, DemoCreds> = {
   professor: { email: "professor@gmail.com", password: "123456789" },
   coordenacao: { email: "coordenacao@gmail.com", password: "123456789" },
   diretor: { email: "diretor@gmail.com", password: "123456789" },
+  secretaria: { email: "secretaria@gmail.com", password: "123456789" },
 };
 
 const allowedEmails = Object.values(DEMO_CREDENTIALS).map((c) => c.email.toLowerCase());
@@ -32,13 +33,13 @@ const signupSchema = z.object({
     .string()
     .email("Email inválido")
     .refine((v) => allowedEmails.includes(v.toLowerCase()), {
-      message: "Use um email de teste (aluno/professor/coordenacao/diretor).",
+      message: "Use um email de teste (aluno/professor/coordenacao/diretor/secretaria).",
     }),
   password: z.string().min(6, "Senha deve ter no mínimo 6 caracteres"),
 });
 
 function isAppRole(v: string | null): v is AppRole {
-  return v === "aluno" || v === "professor" || v === "coordenacao" || v === "diretor";
+  return v === "aluno" || v === "professor" || v === "coordenacao" || v === "diretor" || v === "secretaria";
 }
 
 export default function Auth() {
@@ -199,7 +200,7 @@ export default function Auth() {
                     onChange={(e) => setSignupEmail(e.target.value)}
                   />
                   <p className="text-xs text-muted-foreground">
-                    Use: aluno@gmail.com, professor@gmail.com, coordenacao@gmail.com ou diretor@gmail.com
+                    Use: aluno@gmail.com, professor@gmail.com, coordenacao@gmail.com, diretor@gmail.com ou secretaria@gmail.com
                   </p>
                   {signupErrors.email && <p className="text-sm text-destructive">{signupErrors.email}</p>}
                 </div>

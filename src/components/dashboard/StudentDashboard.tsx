@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Flame, Star, Trophy, FileText, Calculator, BookOpen, Clock, ArrowLeft, MessageCircle, Video, Users, LucideIcon } from 'lucide-react';
+import { Flame, Star, Trophy, FileText, Calculator, BookOpen, Clock, ArrowLeft, MessageCircle, Video, Users, LucideIcon, TrendingUp } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { STUDENT_ACTIVITIES, SUBJECTS, SUBJECT_DATA, STUDENT_CONTEXT, Activity } from '@/data/studentData';
+import { LearningProgressView } from './student/LearningProgressView';
+import { ObjectiveSelectionView, StudyObjective } from './student/ObjectiveSelectionView';
+import { StudyChatView } from './student/StudyChatView';
 
 const iconMap: Record<string, LucideIcon> = {
   FileText,
@@ -15,7 +18,11 @@ const iconMap: Record<string, LucideIcon> = {
   BookOpen,
 };
 
+type StudentView = 'dashboard' | 'progress' | 'objectives' | 'study-chat';
+
 export function StudentDashboard() {
+  const [currentView, setCurrentView] = useState<StudentView>('dashboard');
+  const [selectedObjective, setSelectedObjective] = useState<StudyObjective | null>(null);
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const [selectedSubject, setSelectedSubject] = useState<typeof SUBJECTS[0] | null>(null);
   const [essayContent, setEssayContent] = useState('');
@@ -45,6 +52,44 @@ export function StudentDashboard() {
     setSelectedSubject(subject);
     setSelectedActivity(null);
   };
+
+  const handleObjectiveSelect = (objective: StudyObjective) => {
+    setSelectedObjective(objective);
+    setCurrentView('study-chat');
+  };
+
+  // View: Study Chat with selected objective
+  if (currentView === 'study-chat' && selectedObjective) {
+    return (
+      <StudyChatView
+        objective={selectedObjective}
+        onBack={() => {
+          setCurrentView('objectives');
+          setSelectedObjective(null);
+        }}
+      />
+    );
+  }
+
+  // View: Objective Selection
+  if (currentView === 'objectives') {
+    return (
+      <ObjectiveSelectionView
+        onBack={() => setCurrentView('progress')}
+        onSelectObjective={handleObjectiveSelect}
+      />
+    );
+  }
+
+  // View: Learning Progress
+  if (currentView === 'progress') {
+    return (
+      <LearningProgressView
+        onStudyNow={() => setCurrentView('objectives')}
+        onBack={() => setCurrentView('dashboard')}
+      />
+    );
+  }
 
   // View: Selected Subject with 3 columns
   if (selectedSubject) {
@@ -239,6 +284,27 @@ export function StudentDashboard() {
           </div>
         </div>
       </div>
+
+      {/* Learning Progress Button */}
+      <Card 
+        className="cursor-pointer hover:border-primary/50 transition-all group"
+        onClick={() => setCurrentView('progress')}
+      >
+        <CardContent className="p-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="p-3 rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+              <TrendingUp className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-lg">Meu Progresso de Aprendizagem</h3>
+              <p className="text-muted-foreground text-sm">Acompanhe seu engajamento, sessões e dificuldades</p>
+            </div>
+          </div>
+          <Button variant="outline" className="gap-2">
+            Acessar
+          </Button>
+        </CardContent>
+      </Card>
 
       {/* Pending Activities */}
       <div>

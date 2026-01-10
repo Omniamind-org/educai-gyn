@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Users, Plus, Lightbulb, BookOpen, Target, Calendar } from 'lucide-react';
+import { Users, Plus, Lightbulb, BookOpen, Target, Calendar, BarChart2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { StudentProgressAnalysis } from './teacher/StudentProgressAnalysis';
 
 const CLASSES = [
   { id: 1, name: '3º Ano A', students: 28, subject: 'História', nextClass: 'Hoje, 14h' },
@@ -22,7 +23,10 @@ const BNCC_OBJECTIVES = [
   'EF09HI03 - Identificar impactos ambientais',
 ];
 
+type TeacherView = 'dashboard' | 'progress-analysis';
+
 export function TeacherDashboard() {
+  const [currentView, setCurrentView] = useState<TeacherView>('dashboard');
   const [lessonTopic, setLessonTopic] = useState('');
   const [selectedSeries, setSelectedSeries] = useState('');
   const [selectedBncc, setSelectedBncc] = useState('');
@@ -41,8 +45,46 @@ export function TeacherDashboard() {
     }
   };
 
+  // Show Progress Analysis View
+  if (currentView === 'progress-analysis') {
+    return (
+      <StudentProgressAnalysis
+        onBack={() => setCurrentView('dashboard')}
+        onStartPlanning={() => {
+          // Trigger AI message for planning
+          if ((window as any).addAIMessage) {
+            (window as any).addAIMessage(
+              '🎯 Vamos criar um plano pedagógico personalizado! Me conte: qual é o tema que você quer trabalhar e para qual turma? Posso sugerir atividades, trilhas de aprendizagem e materiais adaptados.'
+            );
+          }
+        }}
+      />
+    );
+  }
+
   return (
     <div className="space-y-6">
+      {/* Progress Analysis Card */}
+      <Card 
+        className="cursor-pointer hover:border-primary/50 transition-all group"
+        onClick={() => setCurrentView('progress-analysis')}
+      >
+        <CardContent className="p-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="p-3 rounded-xl bg-success/10 text-success group-hover:bg-success group-hover:text-success-foreground transition-colors">
+              <BarChart2 className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-lg">Análise de Progresso dos Alunos</h3>
+              <p className="text-muted-foreground text-sm">Monitore sessões, alertas de risco e fluxo de atividades</p>
+            </div>
+          </div>
+          <Button variant="outline" className="gap-2">
+            Acessar
+          </Button>
+        </CardContent>
+      </Card>
+
       {/* Agent Maker Form */}
       <Card>
         <CardHeader>

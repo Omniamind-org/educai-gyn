@@ -183,7 +183,7 @@ export function StudentProgressAnalysis({ onBack, onStartPlanning }: StudentProg
               <h3 className="text-xl font-bold">Lógica de Alerta Precoce</h3>
             </div>
             <p className="text-muted-foreground mb-4">
-              O EducAI monitora sinais de baixa performance e desengajamento. O sistema dispara alertas quando:
+              O Aprendu monitora sinais de baixa performance e desengajamento. O sistema dispara alertas quando:
             </p>
             <ul className="space-y-3">
               <li className="flex items-start gap-2">

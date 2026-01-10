@@ -60,7 +60,7 @@ export function LearningProgressView({ onStudyNow, onBack, onActivityClick }: Le
             <GraduationCap className="w-8 h-8 text-primary" />
             <div>
               <h1 className="text-2xl font-bold">
-                Educ <span className="text-primary">AI</span> Aluno
+                Aprendu <span className="text-primary">Aluno</span>
               </h1>
               <p className="text-muted-foreground">Meu Progresso de Aprendizagem</p>
             </div>

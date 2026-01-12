@@ -270,30 +270,29 @@ export function StudentDashboard() {
   return (
     <div className="space-y-6">
       {/* Gamification Stats */}
-      <div className="flex items-center gap-4 p-4 bg-card rounded-xl border border-border">
-        <Avatar className="w-12 h-12 border-2 border-primary">
-          <AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg?seed=student" />
-          <AvatarFallback>AL</AvatarFallback>
-        </Avatar>
-        
-        <div className="flex items-center gap-6 flex-1">
-          <div className="flex items-center gap-2">
+      <div className="p-4 bg-card rounded-xl border border-border">
+        <div className="flex items-center gap-3">
+          <Avatar className="w-12 h-12 border-2 border-primary shrink-0">
+            <AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg?seed=student" />
+            <AvatarFallback>AL</AvatarFallback>
+          </Avatar>
+          
+          <div className="flex items-center gap-2 shrink-0">
             <Trophy className="w-5 h-5 text-warning" />
-            <span className="font-semibold">Nível {STUDENT_CONTEXT.level}</span>
+            <span className="font-semibold text-sm">Nível {STUDENT_CONTEXT.level}</span>
           </div>
           
-          <div className="flex-1 max-w-[200px]">
-            <div className="flex justify-between text-sm mb-1">
+          <div className="flex-1 min-w-0">
+            <div className="flex justify-between text-xs mb-1">
               <span className="text-muted-foreground">XP</span>
               <span className="font-medium">{STUDENT_CONTEXT.xp.toLocaleString()} / 2.000</span>
             </div>
             <Progress value={(STUDENT_CONTEXT.xp / 2000) * 100} className="h-2" />
           </div>
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 shrink-0">
             <Flame className="w-5 h-5 text-destructive" />
-            <span className="font-semibold">{STUDENT_CONTEXT.streak} Dias</span>
-            <span className="text-sm text-muted-foreground">de sequência</span>
+            <span className="font-semibold text-sm whitespace-nowrap">{STUDENT_CONTEXT.streak} Dias</span>
           </div>
         </div>
       </div>

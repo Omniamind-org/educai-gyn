@@ -20,7 +20,8 @@ export default function Dashboard() {
     }
   }, [loading, user, navigate]);
 
-  if (loading) {
+  // Show loading while auth is loading OR while we have a user but role is still being fetched
+  if (loading || (user && role === null)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />

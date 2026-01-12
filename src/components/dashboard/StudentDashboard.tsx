@@ -116,16 +116,25 @@ export function StudentDashboard() {
         </div>
 
         <Tabs defaultValue="tasks" className="w-full">
-          <TabsList className="w-full grid grid-cols-3 mb-4">
-            <TabsTrigger value="tasks" className="gap-2">
+          <TabsList className="w-full grid grid-cols-3 mb-4 bg-muted/50 p-1 rounded-lg">
+            <TabsTrigger 
+              value="tasks" 
+              className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md rounded-md transition-all"
+            >
               <FileText className="w-4 h-4" />
               Tarefas
             </TabsTrigger>
-            <TabsTrigger value="content" className="gap-2">
+            <TabsTrigger 
+              value="content" 
+              className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md rounded-md transition-all"
+            >
               <Video className="w-4 h-4" />
               Conteúdos
             </TabsTrigger>
-            <TabsTrigger value="comments" className="gap-2">
+            <TabsTrigger 
+              value="comments" 
+              className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md rounded-md transition-all"
+            >
               <Users className="w-4 h-4" />
               Comentários
             </TabsTrigger>

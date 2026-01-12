@@ -179,8 +179,24 @@
     min-width: 320px;
   }
 
+  @media (max-width: 767px) {
+    .ai-sidebar {
+      @apply hidden;
+    }
+  }
+
   .main-content {
     @apply w-[72%] min-h-screen bg-background p-6 overflow-y-auto;
+  }
+
+  @media (max-width: 767px) {
+    .main-content {
+      @apply w-full p-4;
+    }
+  }
+
+  .pb-safe {
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
   }
 
   .activity-card {

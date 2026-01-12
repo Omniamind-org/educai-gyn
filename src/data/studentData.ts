@@ -163,5 +163,6 @@ export const STUDENT_CONTEXT = {
   level: 5,
   xp: 1250,
   streak: 12,
+  subjects: SUBJECTS.map(s => s.name),
   activities: STUDENT_ACTIVITIES,
 };

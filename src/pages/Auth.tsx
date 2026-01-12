@@ -69,12 +69,7 @@ export default function Auth() {
     }
   }, [user, role, loading, navigate]);
 
-  useEffect(() => {
-    if (!prefillRole) return;
-    const creds = DEMO_CREDENTIALS[prefillRole];
-    setLoginEmail(creds.email);
-    setLoginPassword(creds.password);
-  }, [prefillRole]);
+  // Role from URL is available but we don't pre-fill credentials anymore
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { STUDENT_ACTIVITIES, SUBJECTS, SUBJECT_DATA, STUDENT_CONTEXT, Activity } from '@/data/studentData';
 import { LearningProgressView } from './student/LearningProgressView';
 import { ObjectiveSelectionView, StudyObjective } from './student/ObjectiveSelectionView';
@@ -91,7 +92,7 @@ export function StudentDashboard() {
     );
   }
 
-  // View: Selected Subject with 3 columns
+  // View: Selected Subject with tabs
   if (selectedSubject) {
     const subjectData = SUBJECT_DATA[selectedSubject.id];
     const SubjectIcon = iconMap[selectedSubject.icon] || BookOpen;
@@ -107,21 +108,32 @@ export function StudentDashboard() {
           Voltar às Matérias
         </Button>
 
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-center gap-3 mb-4">
           <div className={`p-3 rounded-xl ${selectedSubject.color}`}>
             <SubjectIcon className="w-6 h-6" />
           </div>
           <h1 className="text-2xl font-bold">{selectedSubject.name}</h1>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Column 1: Tasks */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 mb-3">
-              <FileText className="w-5 h-5 text-primary" />
-              <h2 className="font-semibold text-lg">Tarefas</h2>
-            </div>
-            <ScrollArea className="h-[400px] pr-4">
+        <Tabs defaultValue="tasks" className="w-full">
+          <TabsList className="w-full grid grid-cols-3 mb-4">
+            <TabsTrigger value="tasks" className="gap-2">
+              <FileText className="w-4 h-4" />
+              Tarefas
+            </TabsTrigger>
+            <TabsTrigger value="content" className="gap-2">
+              <Video className="w-4 h-4" />
+              Conteúdos
+            </TabsTrigger>
+            <TabsTrigger value="comments" className="gap-2">
+              <Users className="w-4 h-4" />
+              Comentários
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Tasks Tab */}
+          <TabsContent value="tasks">
+            <ScrollArea className="h-[calc(100vh-320px)] pr-4">
               <div className="space-y-3">
                 {subjectData.tasks.map((task) => (
                   <Card key={task.id} className="cursor-pointer hover:border-primary/50 transition-colors">
@@ -138,15 +150,11 @@ export function StudentDashboard() {
                 ))}
               </div>
             </ScrollArea>
-          </div>
+          </TabsContent>
 
-          {/* Column 2: Lessons & Content */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Video className="w-5 h-5 text-success" />
-              <h2 className="font-semibold text-lg">Aulas e Conteúdos</h2>
-            </div>
-            <ScrollArea className="h-[400px] pr-4">
+          {/* Content Tab */}
+          <TabsContent value="content">
+            <ScrollArea className="h-[calc(100vh-320px)] pr-4">
               <div className="space-y-3">
                 {subjectData.lessons.map((lesson) => (
                   <Card key={lesson.id} className="cursor-pointer hover:border-success/50 transition-colors">
@@ -167,15 +175,11 @@ export function StudentDashboard() {
                 ))}
               </div>
             </ScrollArea>
-          </div>
+          </TabsContent>
 
-          {/* Column 3: Discussions */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Users className="w-5 h-5 text-warning" />
-              <h2 className="font-semibold text-lg">Comentários e Dúvidas</h2>
-            </div>
-            <ScrollArea className="h-[400px] pr-4">
+          {/* Comments Tab */}
+          <TabsContent value="comments">
+            <ScrollArea className="h-[calc(100vh-320px)] pr-4">
               <div className="space-y-3">
                 {subjectData.discussions.map((discussion) => (
                   <Card key={discussion.id} className="cursor-pointer hover:border-warning/50 transition-colors">
@@ -198,8 +202,8 @@ export function StudentDashboard() {
                 ))}
               </div>
             </ScrollArea>
-          </div>
-        </div>
+          </TabsContent>
+        </Tabs>
       </div>
     );
   }

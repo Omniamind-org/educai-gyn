@@ -227,7 +227,7 @@ export function MobileChatBar() {
 
       {/* Fixed Bottom Chat Bar */}
       <div className={cn(
-        "fixed bottom-0 left-0 right-0 z-30 bg-card border-t border-border p-3 pb-safe",
+        "fixed bottom-0 left-0 right-0 z-30 bg-muted/50 border-t border-border rounded-t-2xl p-3 pb-safe shadow-lg",
         isExpanded && "hidden"
       )}>
         {/* Input Row */}

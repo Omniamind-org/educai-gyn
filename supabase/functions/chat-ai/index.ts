@@ -62,9 +62,19 @@ const validatePersona = (persona: unknown): string => {
   return persona;
 };
 
-const validateContext = (
-  context: unknown,
-): { activities?: any[]; studentName?: string; level?: number; xp?: number; streak?: number } | undefined => {
+interface ValidatedContext {
+  activities?: any[];
+  studentName?: string;
+  userName?: string;
+  teacherName?: string;
+  level?: number;
+  xp?: number;
+  streak?: number;
+  subjects?: string[];
+  currentSection?: string;
+}
+
+const validateContext = (context: unknown): ValidatedContext | undefined => {
   if (context === undefined || context === null) {
     return undefined;
   }
@@ -74,11 +84,17 @@ const validateContext = (
   }
 
   const ctx = context as Record<string, unknown>;
-  const validated: { activities?: any[]; studentName?: string; level?: number; xp?: number; streak?: number } = {};
+  const validated: ValidatedContext = {};
 
-  // Validate studentName
+  // Validate names
   if (typeof ctx.studentName === "string" && ctx.studentName.length <= 100) {
     validated.studentName = ctx.studentName.trim();
+  }
+  if (typeof ctx.userName === "string" && ctx.userName.length <= 100) {
+    validated.userName = ctx.userName.trim();
+  }
+  if (typeof ctx.teacherName === "string" && ctx.teacherName.length <= 100) {
+    validated.teacherName = ctx.teacherName.trim();
   }
 
   // Validate level
@@ -94,6 +110,19 @@ const validateContext = (
   // Validate streak
   if (typeof ctx.streak === "number" && ctx.streak >= 0 && ctx.streak <= 365) {
     validated.streak = Math.floor(ctx.streak);
+  }
+
+  // Validate currentSection
+  if (typeof ctx.currentSection === "string" && ctx.currentSection.length <= 100) {
+    validated.currentSection = ctx.currentSection.trim();
+  }
+
+  // Validate subjects array
+  if (Array.isArray(ctx.subjects)) {
+    validated.subjects = ctx.subjects
+      .filter((s): s is string => typeof s === "string")
+      .slice(0, 10)
+      .map(s => s.slice(0, 50));
   }
 
   // Validate activities array
@@ -117,48 +146,141 @@ const validateContext = (
   return validated;
 };
 
-const buildStudentPrompt = (context?: {
-  activities?: any[];
-  studentName?: string;
-  level?: number;
-  xp?: number;
-  streak?: number;
-}) => {
-  let prompt = `Você é um assistente de estudos inteligente e amigável chamado Aprendu. Você ajuda alunos com:
-- Explicações de conteúdo de forma clara e didática
-- Correção de textos e redações (sem dar respostas prontas, apenas dicas)
-- Dúvidas sobre atividades e exercícios
-- Motivação e dicas de estudo
-- Gamificação e metas de aprendizado
-Sempre seja encorajador e use emojis ocasionalmente. Responda em português brasileiro.`;
+const buildStudentPrompt = (context?: ValidatedContext) => {
+  let prompt = `Você é o APRENDU, a inteligência artificial da plataforma educacional Aprendu. 
+
+IMPORTANTE - SUA IDENTIDADE:
+- Você É a plataforma Aprendu. Nunca mencione outras plataformas (Google Classroom, Moodle, etc.)
+- Nunca pergunte "qual plataforma você usa?" - você JÁ É a plataforma deles
+- Trate o usuário pelo nome quando souber
+- Seja acolhedor, motivador e use emojis com moderação 🎯
+
+SUAS CAPACIDADES:
+- Explicar conteúdos de qualquer matéria de forma clara e didática
+- Ajudar com dúvidas sobre atividades e exercícios pendentes
+- Corrigir textos e redações (dar dicas, não respostas prontas)
+- Informar sobre prazos, tarefas e próximas entregas
+- Motivar e dar dicas de estudo
+- Acompanhar o progresso de gamificação (XP, nível, sequência)
+
+REGRAS:
+- Sempre responda em português brasileiro
+- Se perguntarem sobre tarefas/atividades, use os dados fornecidos no contexto
+- Seja proativo em lembrar prazos próximos quando relevante
+- Personalize as respostas com base no perfil do aluno`;
 
   if (context) {
-    prompt += `\n\n=== CONTEXTO DO ALUNO ===`;
+    prompt += `\n\n══════════════════════════════════════
+DADOS DO ALUNO (USE ESTAS INFORMAÇÕES!)
+══════════════════════════════════════`;
 
     if (context.studentName) {
-      prompt += `\nNome do aluno: ${context.studentName}`;
+      prompt += `\n👤 Nome: ${context.studentName}`;
     }
     if (context.level) {
-      prompt += `\nNível atual: ${context.level}`;
+      prompt += `\n⭐ Nível: ${context.level}`;
     }
     if (context.xp) {
-      prompt += `\nXP: ${context.xp}`;
+      prompt += `\n🏆 XP Total: ${context.xp} pontos`;
     }
     if (context.streak) {
-      prompt += `\nSequência de dias estudando: ${context.streak} dias`;
+      prompt += `\n🔥 Sequência de estudos: ${context.streak} dias consecutivos`;
+    }
+    if (context.subjects && context.subjects.length > 0) {
+      prompt += `\n📚 Matérias: ${context.subjects.join(', ')}`;
+    }
+    if (context.currentSection) {
+      prompt += `\n📍 Seção atual: ${context.currentSection}`;
     }
 
     if (context.activities && context.activities.length > 0) {
-      prompt += `\n\nATIVIDADES PENDENTES DO ALUNO:`;
+      prompt += `\n\n📋 ATIVIDADES PENDENTES:`;
       context.activities.forEach((act, i) => {
-        prompt += `\n${i + 1}. ${act.title}`;
-        prompt += `\n   - Matéria: ${act.subject}`;
-        prompt += `\n   - Data de entrega: ${act.dueDate}`;
-        prompt += `\n   - Tipo: ${act.type === "essay" ? "Redação" : act.type === "exercise" ? "Exercício" : "Quiz"}`;
-        prompt += `\n   - XP: ${act.xp}`;
+        prompt += `\n\n${i + 1}. "${act.title}"`;
+        prompt += `\n   📖 Matéria: ${act.subject}`;
+        prompt += `\n   📅 Prazo: ${act.dueDate}`;
+        prompt += `\n   📝 Tipo: ${act.type === "essay" ? "Redação" : act.type === "exercise" ? "Exercício" : "Quiz"}`;
+        prompt += `\n   ⭐ XP: ${act.xp} pontos`;
       });
-      prompt += `\n\nUse essas informações para responder perguntas sobre entregas, prazos e atividades do aluno.`;
+      
+      prompt += `\n\n⚠️ IMPORTANTE: Quando o aluno perguntar sobre próxima tarefa, atividades pendentes, ou o que precisa fazer, USE ESTAS INFORMAÇÕES ACIMA para responder de forma específica e útil!`;
     }
+  }
+
+  return prompt;
+};
+
+const buildTeacherPrompt = (context?: ValidatedContext) => {
+  let prompt = `Você é o APRENDU, a inteligência artificial da plataforma educacional Aprendu para PROFESSORES.
+
+IMPORTANTE - SUA IDENTIDADE:
+- Você É a plataforma Aprendu
+- Nunca mencione outras plataformas
+- Trate o professor pelo nome quando souber
+
+SUAS CAPACIDADES:
+- Criar planos de aula alinhados à BNCC
+- Sugerir atividades e metodologias ativas
+- Criar quizzes e avaliações gamificadas
+- Dar ideias para aulas mais engajadoras
+- Analisar desempenho de turmas
+- Gerar materiais didáticos
+
+Seja profissional mas acessível. Responda em português brasileiro.`;
+
+  if (context) {
+    if (context.teacherName) {
+      prompt += `\n\n👤 Professor(a): ${context.teacherName}`;
+    }
+    if (context.currentSection) {
+      prompt += `\n📍 Seção atual: ${context.currentSection}`;
+    }
+  }
+
+  return prompt;
+};
+
+const buildCoordinatorPrompt = (context?: ValidatedContext) => {
+  let prompt = `Você é o APRENDU, a inteligência artificial da plataforma educacional Aprendu para COORDENAÇÃO PEDAGÓGICA.
+
+IMPORTANTE - SUA IDENTIDADE:
+- Você É a plataforma Aprendu
+- Nunca mencione outras plataformas
+
+SUAS CAPACIDADES:
+- Analisar aderência de planos de aula à BNCC
+- Identificar lacunas em competências
+- Sugerir adequações curriculares
+- Acompanhamento pedagógico
+- Gerar relatórios e indicadores educacionais
+
+Seja objetivo e fundamentado. Responda em português brasileiro.`;
+
+  if (context?.userName) {
+    prompt += `\n\n👤 Coordenador(a): ${context.userName}`;
+  }
+
+  return prompt;
+};
+
+const buildDirectorPrompt = (context?: ValidatedContext) => {
+  let prompt = `Você é o APRENDU, a inteligência artificial da plataforma educacional Aprendu para DIRETORES.
+
+IMPORTANTE - SUA IDENTIDADE:
+- Você É a plataforma Aprendu
+- Nunca mencione outras plataformas
+
+SUAS CAPACIDADES:
+- Gerar documentos formais (advertências, declarações, ofícios)
+- Analisar indicadores financeiros e administrativos
+- Auxiliar no planejamento estratégico
+- Gestão de projetos
+- Comunicação institucional
+
+Seja formal e profissional. Responda em português brasileiro.`;
+
+  if (context?.userName) {
+    prompt += `\n\n👤 Diretor(a): ${context.userName}`;
   }
 
   return prompt;
@@ -260,8 +382,14 @@ serve(async (req) => {
     let systemPrompt: string;
     if (validatedRole === "aluno") {
       systemPrompt = buildStudentPrompt(validatedContext);
+    } else if (validatedRole === "professor") {
+      systemPrompt = buildTeacherPrompt(validatedContext);
+    } else if (validatedRole === "coordenacao") {
+      systemPrompt = buildCoordinatorPrompt(validatedContext);
+    } else if (validatedRole === "diretor") {
+      systemPrompt = buildDirectorPrompt(validatedContext);
     } else {
-      systemPrompt = ROLE_SYSTEM_PROMPTS[validatedRole] || buildStudentPrompt();
+      systemPrompt = buildStudentPrompt(validatedContext);
     }
 
     const personaStyle = PERSONA_STYLES[validatedPersona] || "";

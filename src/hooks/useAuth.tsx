@@ -39,6 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [role, setRole] = useState<AppRole | null>(null);
   const [loading, setLoading] = useState(true);
+  const [roleLoading, setRoleLoading] = useState(false);
   const { toast } = useToast();
 
   const fetchUserRole = async (userId: string) => {
@@ -81,13 +82,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(session?.user ?? null);
 
       if (session?.user) {
+        setRoleLoading(true);
         setTimeout(async () => {
           const ensuredRole = await ensureUserRole(session.user);
           setRole(ensuredRole);
+          setRoleLoading(false);
           setLoading(false);
         }, 0);
       } else {
         setRole(null);
+        setRoleLoading(false);
         setLoading(false);
       }
     });
@@ -97,8 +101,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(session?.user ?? null);
 
       if (session?.user) {
+        setRoleLoading(true);
         ensureUserRole(session.user).then((ensuredRole) => {
           setRole(ensuredRole);
+          setRoleLoading(false);
           setLoading(false);
         });
       } else {

@@ -270,29 +270,27 @@ export function StudentDashboard() {
   return (
     <div className="space-y-6">
       {/* Gamification Stats */}
-      <div className="p-4 bg-card rounded-xl border border-border">
-        <div className="flex items-center gap-3">
-          <Avatar className="w-12 h-12 border-2 border-primary shrink-0">
+      <div className="p-3 bg-card rounded-xl border border-border">
+        <div className="flex items-center gap-2">
+          <Avatar className="w-10 h-10 border-2 border-primary shrink-0">
             <AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg?seed=student" />
             <AvatarFallback>AL</AvatarFallback>
           </Avatar>
           
-          <div className="flex items-center gap-2 shrink-0">
-            <Trophy className="w-5 h-5 text-warning" />
-            <span className="font-semibold text-sm">Nível {STUDENT_CONTEXT.level}</span>
+          <div className="flex items-center gap-1 shrink-0">
+            <Trophy className="w-4 h-4 text-warning" />
+            <span className="font-semibold text-xs">Nível {STUDENT_CONTEXT.level}</span>
           </div>
           
-          <div className="flex-1 min-w-0">
-            <div className="flex justify-between text-xs mb-1">
-              <span className="text-muted-foreground">XP</span>
-              <span className="font-medium">{STUDENT_CONTEXT.xp.toLocaleString()} / 2.000</span>
-            </div>
-            <Progress value={(STUDENT_CONTEXT.xp / 2000) * 100} className="h-2" />
+          <div className="flex items-center gap-1 flex-1 min-w-0">
+            <span className="text-xs text-muted-foreground shrink-0">XP</span>
+            <span className="text-xs font-medium shrink-0">{STUDENT_CONTEXT.xp.toLocaleString()}/2k</span>
+            <Progress value={(STUDENT_CONTEXT.xp / 2000) * 100} className="h-1.5 flex-1 min-w-[40px]" />
           </div>
           
           <div className="flex items-center gap-1 shrink-0">
-            <Flame className="w-5 h-5 text-destructive" />
-            <span className="font-semibold text-sm whitespace-nowrap">{STUDENT_CONTEXT.streak} Dias</span>
+            <Flame className="w-4 h-4 text-destructive" />
+            <span className="font-semibold text-xs">{STUDENT_CONTEXT.streak} Dias</span>
           </div>
         </div>
       </div>

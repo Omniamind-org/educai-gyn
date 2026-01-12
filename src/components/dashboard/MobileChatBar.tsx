@@ -227,12 +227,12 @@ export function MobileChatBar() {
 
       {/* Fixed Bottom Chat Bar */}
       <div className={cn(
-        "fixed bottom-0 left-0 right-0 z-30 bg-muted/50 border-t border-border rounded-t-2xl p-3 pb-safe shadow-lg",
+        "fixed bottom-0 left-0 right-0 z-30 bg-secondary border-t border-border rounded-t-2xl p-3 pb-safe shadow-lg",
         isExpanded && "hidden"
       )}>
         {/* Input Row */}
         <div 
-          className="bg-muted rounded-xl px-4 py-3 mb-2 cursor-pointer"
+          className="bg-muted-foreground/20 rounded-xl px-4 py-3 mb-2 cursor-pointer"
           onClick={() => setIsExpanded(true)}
         >
           <span className="text-muted-foreground text-sm">Pergunte ao Aprendu</span>

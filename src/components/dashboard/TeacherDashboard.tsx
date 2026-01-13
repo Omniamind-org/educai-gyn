@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Users, Plus, Lightbulb, BookOpen, Target, Calendar, BarChart2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Users, Plus, Lightbulb, BookOpen, Target, Calendar, BarChart2, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,12 +9,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { StudentProgressAnalysis } from './teacher/StudentProgressAnalysis';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
-const CLASSES = [
-  { id: 1, name: '3º Ano A', students: 28, subject: 'História', nextClass: 'Hoje, 14h' },
-  { id: 2, name: '2º Ano B', students: 32, subject: 'História', nextClass: 'Amanhã, 10h' },
-  { id: 3, name: '1º Ano C', students: 30, subject: 'História', nextClass: 'Quarta, 8h' },
-];
+interface ClassWithDetails {
+  id: string;
+  name: string;
+  grade: string;
+  year: number;
+  student_count: number;
+}
 
 const SERIES = ['1º Ano', '2º Ano', '3º Ano'];
 const BNCC_OBJECTIVES = [
@@ -26,11 +30,94 @@ const BNCC_OBJECTIVES = [
 type TeacherView = 'dashboard' | 'progress-analysis';
 
 export function TeacherDashboard() {
+  const { toast } = useToast();
   const [currentView, setCurrentView] = useState<TeacherView>('dashboard');
   const [lessonTopic, setLessonTopic] = useState('');
   const [selectedSeries, setSelectedSeries] = useState('');
   const [selectedBncc, setSelectedBncc] = useState('');
   const [lessonDescription, setLessonDescription] = useState('');
+  const [classes, setClasses] = useState<ClassWithDetails[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetchTeacherClasses();
+  }, []);
+
+  const fetchTeacherClasses = async () => {
+    setIsLoading(true);
+    try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
+
+      // Get teacher record
+      const { data: teacherData } = await supabase
+        .from('teachers')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (!teacherData) {
+        setIsLoading(false);
+        return;
+      }
+
+      // Get classes assigned to this teacher
+      const { data: classTeacherData } = await supabase
+        .from('class_teachers')
+        .select('class_id')
+        .eq('teacher_id', teacherData.id);
+
+      if (!classTeacherData || classTeacherData.length === 0) {
+        setClasses([]);
+        setIsLoading(false);
+        return;
+      }
+
+      const classIds = classTeacherData.map(ct => ct.class_id);
+
+      // Get class details
+      const { data: classesData } = await supabase
+        .from('classes')
+        .select('*')
+        .in('id', classIds);
+
+      if (!classesData) {
+        setClasses([]);
+        setIsLoading(false);
+        return;
+      }
+
+      // Get student counts for each class
+      const classesWithCounts = await Promise.all(
+        classesData.map(async (cls) => {
+          const { count } = await supabase
+            .from('class_students')
+            .select('id', { count: 'exact' })
+            .eq('class_id', cls.id);
+          
+          return {
+            ...cls,
+            student_count: count || 0,
+          };
+        })
+      );
+
+      setClasses(classesWithCounts);
+    } catch (error) {
+      console.error('Error fetching classes:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível carregar suas turmas.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleTopicChange = (value: string) => {
     setLessonTopic(value);
@@ -167,46 +254,60 @@ export function TeacherDashboard() {
           Minhas Turmas
         </h2>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {CLASSES.map((cls, index) => (
-            <Card 
-              key={cls.id}
-              className="activity-card opacity-0 animate-fade-in"
-              style={{ animationDelay: `${index * 100}ms` }}
-            >
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="p-2 rounded-xl bg-success/10">
-                    <BookOpen className="w-5 h-5 text-success" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold">{cls.name}</h3>
-                    <p className="text-sm text-muted-foreground">{cls.subject}</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="flex -space-x-2">
-                      {[1, 2, 3].map((i) => (
-                        <Avatar key={i} className="w-6 h-6 border-2 border-card">
-                          <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=student${cls.id}${i}`} />
-                          <AvatarFallback>A</AvatarFallback>
-                        </Avatar>
-                      ))}
+        {isLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        ) : classes.length === 0 ? (
+          <Card>
+            <CardContent className="p-8 text-center text-muted-foreground">
+              <BookOpen className="w-12 h-12 mx-auto mb-4 opacity-50" />
+              <p className="text-lg font-medium">Nenhuma turma atribuída</p>
+              <p className="text-sm">A secretaria ainda não atribuiu turmas para você.</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {classes.map((cls, index) => (
+              <Card 
+                key={cls.id}
+                className="activity-card opacity-0 animate-fade-in"
+                style={{ animationDelay: `${index * 100}ms` }}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="p-2 rounded-xl bg-success/10">
+                      <BookOpen className="w-5 h-5 text-success" />
                     </div>
-                    <span className="text-muted-foreground">{cls.students} alunos</span>
+                    <div>
+                      <h3 className="font-semibold">{cls.name}</h3>
+                      <p className="text-sm text-muted-foreground">{cls.grade}</p>
+                    </div>
                   </div>
                   
-                  <Badge variant="outline" className="gap-1">
-                    <Calendar className="w-3 h-3" />
-                    {cls.nextClass}
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="flex -space-x-2">
+                        {[1, 2, 3].map((i) => (
+                          <Avatar key={i} className="w-6 h-6 border-2 border-card">
+                            <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=student${cls.id}${i}`} />
+                            <AvatarFallback>A</AvatarFallback>
+                          </Avatar>
+                        ))}
+                      </div>
+                      <span className="text-muted-foreground">{cls.student_count} alunos</span>
+                    </div>
+                    
+                    <Badge variant="outline" className="gap-1">
+                      <Calendar className="w-3 h-3" />
+                      {cls.year}
+                    </Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

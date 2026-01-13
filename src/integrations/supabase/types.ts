@@ -45,6 +45,7 @@ export type Database = {
           grade: string
           id: string
           name: string
+          password: string | null
           phone: string | null
           status: string
           updated_at: string
@@ -56,6 +57,7 @@ export type Database = {
           grade: string
           id?: string
           name: string
+          password?: string | null
           phone?: string | null
           status?: string
           updated_at?: string
@@ -67,6 +69,7 @@ export type Database = {
           grade?: string
           id?: string
           name?: string
+          password?: string | null
           phone?: string | null
           status?: string
           updated_at?: string

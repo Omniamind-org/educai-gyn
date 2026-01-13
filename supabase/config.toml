@@ -1,4 +1,13 @@
 project_id = "bwndnnfqetwslpppkrub"
 
+[functions.create-teacher]
+verify_jwt = false
+
+[functions.login-teacher]
+verify_jwt = false
+
+[functions.get-teacher-password]
+verify_jwt = false
+
 [functions.chat-ai]
 verify_jwt = false

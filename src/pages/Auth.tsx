@@ -113,14 +113,29 @@ export default function Auth() {
         body: { cpf, password: cpfPassword },
       });
 
+      // Handle errors from edge function (including 401)
       if (response.error) {
-        throw new Error(response.error.message || "Erro ao fazer login");
+        // Try to get message from response.data (edge function returns JSON body even on error)
+        const errorMessage = response.data?.error || "CPF ou senha incorretos";
+        toast({
+          title: "Erro ao fazer login",
+          description: errorMessage,
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
       }
 
       const data = response.data;
 
       if (!data.success) {
-        throw new Error(data.error || "CPF ou senha incorretos");
+        toast({
+          title: "Erro ao fazer login",
+          description: data.error || "CPF ou senha incorretos",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
       }
 
       // Set session manually
@@ -136,10 +151,9 @@ export default function Auth() {
 
       navigate("/app");
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Erro ao fazer login";
       toast({
-        title: "Erro",
-        description: message,
+        title: "Erro ao fazer login",
+        description: "CPF ou senha incorretos",
         variant: "destructive",
       });
     } finally {

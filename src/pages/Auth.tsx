@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { z } from "zod";
-import { BookOpen, User, GraduationCap } from "lucide-react";
+import { BookOpen, User, GraduationCap, Briefcase } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,15 +12,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 type AppRole = "aluno" | "professor" | "coordenacao" | "diretor" | "secretaria";
-
-type DemoCreds = { email: string; password: string };
-
-const DEMO_CREDENTIALS: Record<Exclude<AppRole, "aluno">, DemoCreds> = {
-  professor: { email: "professor@gmail.com", password: "123456789" },
-  coordenacao: { email: "coordenacao@gmail.com", password: "123456789" },
-  diretor: { email: "diretor@gmail.com", password: "123456789" },
-  secretaria: { email: "secretaria@gmail.com", password: "123456789" },
-};
 
 const loginSchema = z.object({
   email: z.string().email("Email inválido"),
@@ -49,7 +40,11 @@ export default function Auth() {
   }, [searchParams]);
 
   // Default tab based on role
-  const defaultTab = prefillRole === "aluno" ? "aluno" : "funcionario";
+  const getDefaultTab = () => {
+    if (prefillRole === "aluno") return "aluno";
+    if (prefillRole === "professor") return "professor";
+    return "secretaria";
+  };
 
   // Staff login form state
   const [loginEmail, setLoginEmail] = useState("");
@@ -60,6 +55,11 @@ export default function Auth() {
   const [cpf, setCpf] = useState("");
   const [cpfPassword, setCpfPassword] = useState("");
   const [cpfErrors, setCpfErrors] = useState<{ cpf?: string; password?: string }>({});
+
+  // Teacher (CPF) login form state
+  const [teacherCpf, setTeacherCpf] = useState("");
+  const [teacherPassword, setTeacherPassword] = useState("");
+  const [teacherErrors, setTeacherErrors] = useState<{ cpf?: string; password?: string }>({});
 
   useEffect(() => {
     if (!loading && user && role) {
@@ -113,9 +113,7 @@ export default function Auth() {
         body: { cpf, password: cpfPassword },
       });
 
-      // Handle errors from edge function (including 401)
       if (response.error) {
-        // Try to get message from response.data (edge function returns JSON body even on error)
         const errorMessage = response.data?.error || "CPF ou senha incorretos";
         toast({
           title: "Erro ao fazer login",
@@ -138,7 +136,73 @@ export default function Auth() {
         return;
       }
 
-      // Set session manually
+      await supabase.auth.setSession({
+        access_token: data.session.access_token,
+        refresh_token: data.session.refresh_token,
+      });
+
+      toast({
+        title: "Login realizado!",
+        description: "Bem-vindo ao Aprendu.",
+      });
+
+      navigate("/app");
+    } catch (error) {
+      toast({
+        title: "Erro ao fazer login",
+        description: "CPF ou senha incorretos",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleTeacherLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setTeacherErrors({});
+
+    const result = cpfLoginSchema.safeParse({ cpf: teacherCpf, password: teacherPassword });
+    if (!result.success) {
+      const fieldErrors: { cpf?: string; password?: string } = {};
+      result.error.errors.forEach((err) => {
+        if (err.path[0] === "cpf") fieldErrors.cpf = err.message;
+        if (err.path[0] === "password") fieldErrors.password = err.message;
+      });
+      setTeacherErrors(fieldErrors);
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const response = await supabase.functions.invoke("login-teacher", {
+        body: { cpf: teacherCpf, password: teacherPassword },
+      });
+
+      if (response.error) {
+        const errorMessage = response.data?.error || "CPF ou senha incorretos";
+        toast({
+          title: "Erro ao fazer login",
+          description: errorMessage,
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      const data = response.data;
+
+      if (!data.success) {
+        toast({
+          title: "Erro ao fazer login",
+          description: data.error || "CPF ou senha incorretos",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
       await supabase.auth.setSession({
         access_token: data.session.access_token,
         refresh_token: data.session.refresh_token,
@@ -162,10 +226,8 @@ export default function Auth() {
   };
 
   // Format CPF as user types
-  const handleCpfChange = (value: string) => {
-    // Remove non-digits
+  const handleCpfChange = (value: string, setter: (v: string) => void) => {
     const digits = value.replace(/\D/g, "").slice(0, 11);
-    // Format: 000.000.000-00
     let formatted = digits;
     if (digits.length > 3) {
       formatted = digits.slice(0, 3) + "." + digits.slice(3);
@@ -176,7 +238,7 @@ export default function Auth() {
     if (digits.length > 9) {
       formatted = formatted.slice(0, 11) + "-" + digits.slice(9);
     }
-    setCpf(formatted);
+    setter(formatted);
   };
 
   if (loading) {
@@ -201,15 +263,19 @@ export default function Auth() {
         </CardHeader>
 
         <CardContent>
-          <Tabs defaultValue={defaultTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="aluno" className="gap-2">
+          <Tabs defaultValue={getDefaultTab()} className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="aluno" className="gap-1 text-xs sm:text-sm">
                 <GraduationCap className="h-4 w-4" />
-                Aluno
+                <span className="hidden sm:inline">Aluno</span>
               </TabsTrigger>
-              <TabsTrigger value="funcionario" className="gap-2">
+              <TabsTrigger value="professor" className="gap-1 text-xs sm:text-sm">
+                <Briefcase className="h-4 w-4" />
+                <span className="hidden sm:inline">Professor</span>
+              </TabsTrigger>
+              <TabsTrigger value="secretaria" className="gap-1 text-xs sm:text-sm">
                 <User className="h-4 w-4" />
-                Funcionário
+                <span className="hidden sm:inline">Secretaria</span>
               </TabsTrigger>
             </TabsList>
 
@@ -223,7 +289,7 @@ export default function Auth() {
                     type="text"
                     placeholder="000.000.000-00"
                     value={cpf}
-                    onChange={(e) => handleCpfChange(e.target.value)}
+                    onChange={(e) => handleCpfChange(e.target.value, setCpf)}
                     disabled={isSubmitting}
                   />
                   {cpfErrors.cpf && <p className="text-sm text-destructive">{cpfErrors.cpf}</p>}
@@ -256,8 +322,51 @@ export default function Auth() {
               </form>
             </TabsContent>
 
-            {/* Staff Login with Email */}
-            <TabsContent value="funcionario">
+            {/* Teacher Login with CPF */}
+            <TabsContent value="professor">
+              <form onSubmit={handleTeacherLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="teacher-cpf">CPF</Label>
+                  <Input
+                    id="teacher-cpf"
+                    type="text"
+                    placeholder="000.000.000-00"
+                    value={teacherCpf}
+                    onChange={(e) => handleCpfChange(e.target.value, setTeacherCpf)}
+                    disabled={isSubmitting}
+                  />
+                  {teacherErrors.cpf && <p className="text-sm text-destructive">{teacherErrors.cpf}</p>}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="teacher-password">Senha</Label>
+                  <Input
+                    id="teacher-password"
+                    type="password"
+                    placeholder="Senha fornecida pela secretaria"
+                    value={teacherPassword}
+                    onChange={(e) => setTeacherPassword(e.target.value)}
+                    disabled={isSubmitting}
+                  />
+                  {teacherErrors.password && <p className="text-sm text-destructive">{teacherErrors.password}</p>}
+                </div>
+
+                <Button type="submit" className="w-full" disabled={isSubmitting}>
+                  {isSubmitting ? "Entrando..." : "Entrar como Professor"}
+                </Button>
+
+                <p className="text-xs text-center text-muted-foreground">
+                  Sua senha foi fornecida pela secretaria da escola
+                </p>
+
+                <Button type="button" variant="ghost" className="w-full" onClick={() => navigate("/")}>
+                  Voltar
+                </Button>
+              </form>
+            </TabsContent>
+
+            {/* Staff Login with Email (Secretaria, Coordenação, Diretor) */}
+            <TabsContent value="secretaria">
               <form onSubmit={handleStaffLogin} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="login-email">Email</Label>
@@ -290,9 +399,7 @@ export default function Auth() {
                 </Button>
 
                 <p className="text-xs text-center text-muted-foreground">
-                  Use as credenciais de teste:<br />
-                  professor@gmail.com / coordenacao@gmail.com / diretor@gmail.com / secretaria@gmail.com<br />
-                  Senha: 123456789
+                  Acesso para Secretaria, Coordenação e Direção
                 </p>
 
                 <Button type="button" variant="ghost" className="w-full" onClick={() => navigate("/")}>

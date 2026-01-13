@@ -77,6 +77,45 @@ export type Database = {
         }
         Relationships: []
       }
+      teachers: {
+        Row: {
+          cpf: string
+          created_at: string
+          id: string
+          name: string
+          password: string | null
+          phone: string | null
+          status: string
+          subject: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          cpf: string
+          created_at?: string
+          id?: string
+          name: string
+          password?: string | null
+          phone?: string | null
+          status?: string
+          subject?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          cpf?: string
+          created_at?: string
+          id?: string
+          name?: string
+          password?: string | null
+          phone?: string | null
+          status?: string
+          subject?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string

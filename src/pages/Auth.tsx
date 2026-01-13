@@ -1,41 +1,35 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { z } from "zod";
-import { BookOpen } from "lucide-react";
+import { BookOpen, User, GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 type AppRole = "aluno" | "professor" | "coordenacao" | "diretor" | "secretaria";
 
 type DemoCreds = { email: string; password: string };
 
-const DEMO_CREDENTIALS: Record<AppRole, DemoCreds> = {
-  aluno: { email: "aluno@gmail.com", password: "123456789" },
+const DEMO_CREDENTIALS: Record<Exclude<AppRole, "aluno">, DemoCreds> = {
   professor: { email: "professor@gmail.com", password: "123456789" },
   coordenacao: { email: "coordenacao@gmail.com", password: "123456789" },
   diretor: { email: "diretor@gmail.com", password: "123456789" },
   secretaria: { email: "secretaria@gmail.com", password: "123456789" },
 };
 
-const allowedEmails = Object.values(DEMO_CREDENTIALS).map((c) => c.email.toLowerCase());
-
 const loginSchema = z.object({
   email: z.string().email("Email inválido"),
   password: z.string().min(6, "Senha deve ter no mínimo 6 caracteres"),
 });
 
-const signupSchema = z.object({
-  email: z
-    .string()
-    .email("Email inválido")
-    .refine((v) => allowedEmails.includes(v.toLowerCase()), {
-      message: "Use um email de teste (aluno/professor/coordenacao/diretor/secretaria).",
-    }),
-  password: z.string().min(6, "Senha deve ter no mínimo 6 caracteres"),
+const cpfLoginSchema = z.object({
+  cpf: z.string().refine((v) => v.replace(/\D/g, "").length === 11, "CPF deve ter 11 dígitos"),
+  password: z.string().min(1, "Senha é obrigatória"),
 });
 
 function isAppRole(v: string | null): v is AppRole {
@@ -45,7 +39,8 @@ function isAppRole(v: string | null): v is AppRole {
 export default function Auth() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user, role, loading, signIn, signUp } = useAuth();
+  const { user, role, loading, signIn } = useAuth();
+  const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const prefillRole = useMemo(() => {
@@ -53,15 +48,18 @@ export default function Auth() {
     return isAppRole(r) ? r : null;
   }, [searchParams]);
 
-  // Login form state
+  // Default tab based on role
+  const defaultTab = prefillRole === "aluno" ? "aluno" : "funcionario";
+
+  // Staff login form state
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [loginErrors, setLoginErrors] = useState<{ email?: string; password?: string }>({});
 
-  // Signup form state
-  const [signupEmail, setSignupEmail] = useState("");
-  const [signupPassword, setSignupPassword] = useState("");
-  const [signupErrors, setSignupErrors] = useState<{ email?: string; password?: string }>({});
+  // Student (CPF) login form state
+  const [cpf, setCpf] = useState("");
+  const [cpfPassword, setCpfPassword] = useState("");
+  const [cpfErrors, setCpfErrors] = useState<{ cpf?: string; password?: string }>({});
 
   useEffect(() => {
     if (!loading && user && role) {
@@ -69,9 +67,7 @@ export default function Auth() {
     }
   }, [user, role, loading, navigate]);
 
-  // Role from URL is available but we don't pre-fill credentials anymore
-
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleStaffLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginErrors({});
 
@@ -95,28 +91,78 @@ export default function Auth() {
     }
   };
 
-  const handleSignup = async (e: React.FormEvent) => {
+  const handleStudentLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSignupErrors({});
+    setCpfErrors({});
 
-    const result = signupSchema.safeParse({ email: signupEmail, password: signupPassword });
+    const result = cpfLoginSchema.safeParse({ cpf, password: cpfPassword });
     if (!result.success) {
-      const fieldErrors: { email?: string; password?: string } = {};
+      const fieldErrors: { cpf?: string; password?: string } = {};
       result.error.errors.forEach((err) => {
-        if (err.path[0] === "email") fieldErrors.email = err.message;
+        if (err.path[0] === "cpf") fieldErrors.cpf = err.message;
         if (err.path[0] === "password") fieldErrors.password = err.message;
       });
-      setSignupErrors(fieldErrors);
+      setCpfErrors(fieldErrors);
       return;
     }
 
     setIsSubmitting(true);
-    const { error } = await signUp(signupEmail, signupPassword);
-    setIsSubmitting(false);
 
-    if (!error) {
+    try {
+      const response = await supabase.functions.invoke("login-student", {
+        body: { cpf, password: cpfPassword },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || "Erro ao fazer login");
+      }
+
+      const data = response.data;
+
+      if (!data.success) {
+        throw new Error(data.error || "CPF ou senha incorretos");
+      }
+
+      // Set session manually
+      await supabase.auth.setSession({
+        access_token: data.session.access_token,
+        refresh_token: data.session.refresh_token,
+      });
+
+      toast({
+        title: "Login realizado!",
+        description: "Bem-vindo ao Aprendu.",
+      });
+
       navigate("/app");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Erro ao fazer login";
+      toast({
+        title: "Erro",
+        description: message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
     }
+  };
+
+  // Format CPF as user types
+  const handleCpfChange = (value: string) => {
+    // Remove non-digits
+    const digits = value.replace(/\D/g, "").slice(0, 11);
+    // Format: 000.000.000-00
+    let formatted = digits;
+    if (digits.length > 3) {
+      formatted = digits.slice(0, 3) + "." + digits.slice(3);
+    }
+    if (digits.length > 6) {
+      formatted = formatted.slice(0, 7) + "." + digits.slice(6);
+    }
+    if (digits.length > 9) {
+      formatted = formatted.slice(0, 11) + "-" + digits.slice(9);
+    }
+    setCpf(formatted);
   };
 
   if (loading) {
@@ -141,14 +187,64 @@ export default function Auth() {
         </CardHeader>
 
         <CardContent>
-          <Tabs defaultValue="login" className="w-full">
+          <Tabs defaultValue={defaultTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login">Entrar</TabsTrigger>
-              <TabsTrigger value="signup">Cadastrar (teste)</TabsTrigger>
+              <TabsTrigger value="aluno" className="gap-2">
+                <GraduationCap className="h-4 w-4" />
+                Aluno
+              </TabsTrigger>
+              <TabsTrigger value="funcionario" className="gap-2">
+                <User className="h-4 w-4" />
+                Funcionário
+              </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="login">
-              <form onSubmit={handleLogin} className="space-y-4">
+            {/* Student Login with CPF */}
+            <TabsContent value="aluno">
+              <form onSubmit={handleStudentLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="cpf">CPF</Label>
+                  <Input
+                    id="cpf"
+                    type="text"
+                    placeholder="000.000.000-00"
+                    value={cpf}
+                    onChange={(e) => handleCpfChange(e.target.value)}
+                    disabled={isSubmitting}
+                  />
+                  {cpfErrors.cpf && <p className="text-sm text-destructive">{cpfErrors.cpf}</p>}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="cpf-password">Senha</Label>
+                  <Input
+                    id="cpf-password"
+                    type="password"
+                    placeholder="Senha fornecida pela secretaria"
+                    value={cpfPassword}
+                    onChange={(e) => setCpfPassword(e.target.value)}
+                    disabled={isSubmitting}
+                  />
+                  {cpfErrors.password && <p className="text-sm text-destructive">{cpfErrors.password}</p>}
+                </div>
+
+                <Button type="submit" className="w-full" disabled={isSubmitting}>
+                  {isSubmitting ? "Entrando..." : "Entrar como Aluno"}
+                </Button>
+
+                <p className="text-xs text-center text-muted-foreground">
+                  Sua senha foi fornecida pela secretaria da escola
+                </p>
+
+                <Button type="button" variant="ghost" className="w-full" onClick={() => navigate("/")}>
+                  Voltar
+                </Button>
+              </form>
+            </TabsContent>
+
+            {/* Staff Login with Email */}
+            <TabsContent value="funcionario">
+              <form onSubmit={handleStaffLogin} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="login-email">Email</Label>
                   <Input
@@ -157,6 +253,7 @@ export default function Auth() {
                     placeholder="seu@email.com"
                     value={loginEmail}
                     onChange={(e) => setLoginEmail(e.target.value)}
+                    disabled={isSubmitting}
                   />
                   {loginErrors.email && <p className="text-sm text-destructive">{loginErrors.email}</p>}
                 </div>
@@ -169,6 +266,7 @@ export default function Auth() {
                     placeholder="••••••••"
                     value={loginPassword}
                     onChange={(e) => setLoginPassword(e.target.value)}
+                    disabled={isSubmitting}
                   />
                   {loginErrors.password && <p className="text-sm text-destructive">{loginErrors.password}</p>}
                 </div>
@@ -177,43 +275,14 @@ export default function Auth() {
                   {isSubmitting ? "Entrando..." : "Entrar"}
                 </Button>
 
+                <p className="text-xs text-center text-muted-foreground">
+                  Use as credenciais de teste:<br />
+                  professor@gmail.com / coordenacao@gmail.com / diretor@gmail.com / secretaria@gmail.com<br />
+                  Senha: 123456789
+                </p>
+
                 <Button type="button" variant="ghost" className="w-full" onClick={() => navigate("/")}>
                   Voltar
-                </Button>
-              </form>
-            </TabsContent>
-
-            <TabsContent value="signup">
-              <form onSubmit={handleSignup} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email (somente contas de teste)</Label>
-                  <Input
-                    id="signup-email"
-                    type="email"
-                    placeholder="aluno@gmail.com"
-                    value={signupEmail}
-                    onChange={(e) => setSignupEmail(e.target.value)}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Use: aluno@gmail.com, professor@gmail.com, coordenacao@gmail.com, diretor@gmail.com ou secretaria@gmail.com
-                  </p>
-                  {signupErrors.email && <p className="text-sm text-destructive">{signupErrors.email}</p>}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="signup-password">Senha</Label>
-                  <Input
-                    id="signup-password"
-                    type="password"
-                    placeholder="123456789"
-                    value={signupPassword}
-                    onChange={(e) => setSignupPassword(e.target.value)}
-                  />
-                  {signupErrors.password && <p className="text-sm text-destructive">{signupErrors.password}</p>}
-                </div>
-
-                <Button type="submit" className="w-full" disabled={isSubmitting}>
-                  {isSubmitting ? "Cadastrando..." : "Cadastrar"}
                 </Button>
               </form>
             </TabsContent>

@@ -38,6 +38,42 @@ export type Database = {
         }
         Relationships: []
       }
+      students: {
+        Row: {
+          cpf: string
+          created_at: string
+          grade: string
+          id: string
+          name: string
+          phone: string | null
+          status: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          cpf: string
+          created_at?: string
+          grade: string
+          id?: string
+          name: string
+          phone?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          cpf?: string
+          created_at?: string
+          grade?: string
+          id?: string
+          name?: string
+          phone?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string

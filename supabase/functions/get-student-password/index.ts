@@ -5,16 +5,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Generate a new random password
-function generatePassword(length = 8): string {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
-  let password = "";
-  for (let i = 0; i < length; i++) {
-    password += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return password;
-}
-
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -55,7 +45,7 @@ Deno.serve(async (req) => {
 
     if (roleError || roleData?.role !== "secretaria") {
       return new Response(
-        JSON.stringify({ error: "Apenas a secretaria pode resetar senhas" }),
+        JSON.stringify({ error: "Apenas a secretaria pode ver senhas de alunos" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -70,13 +60,13 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Use service role
+    // Use service role to get student password
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get student
+    // Get student with password
     const { data: student, error: studentError } = await supabaseAdmin
       .from("students")
-      .select("user_id, cpf, name")
+      .select("cpf, name, password")
       .eq("id", studentId)
       .single();
 
@@ -87,19 +77,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Generate new password
-    const newPassword = generatePassword(8);
-
-    // Update password in auth
-    const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
-      student.user_id,
-      { password: newPassword }
-    );
-
-    if (updateError) {
+    if (!student.password) {
       return new Response(
-        JSON.stringify({ error: `Erro ao resetar senha: ${updateError.message}` }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "Senha não encontrada para este aluno" }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -108,7 +89,7 @@ Deno.serve(async (req) => {
         success: true,
         studentName: student.name,
         cpf: student.cpf,
-        password: newPassword,
+        password: student.password,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

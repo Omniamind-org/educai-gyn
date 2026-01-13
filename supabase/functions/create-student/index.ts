@@ -121,7 +121,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Create student record
+    // Create student record with password stored
     const { data: studentData, error: studentError } = await supabaseAdmin
       .from("students")
       .insert({
@@ -131,6 +131,7 @@ Deno.serve(async (req) => {
         phone: phone || null,
         grade,
         status: "ativo",
+        password, // Store the generated password
       })
       .select()
       .single();

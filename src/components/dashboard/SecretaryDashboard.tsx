@@ -8,7 +8,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { UserPlus, Printer, Users, FileText, Search, Plus, Copy, Key, CheckCircle, Loader2, GraduationCap } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { UserPlus, Printer, Users, FileText, Search, Plus, Copy, Key, CheckCircle, Loader2, GraduationCap, BookOpen, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -30,6 +31,16 @@ interface Teacher {
   subject: string | null;
   status: string;
   created_at: string;
+}
+
+interface Class {
+  id: string;
+  name: string;
+  grade: string;
+  year: number;
+  created_at: string;
+  student_count?: number;
+  teacher_count?: number;
 }
 
 interface Boleto {
@@ -59,12 +70,17 @@ export function SecretaryDashboard() {
   const { toast } = useToast();
   const [students, setStudents] = useState<Student[]>([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [classes, setClasses] = useState<Class[]>([]);
   const [boletos] = useState<Boleto[]>(MOCK_BOLETOS);
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddStudentOpen, setIsAddStudentOpen] = useState(false);
   const [isAddTeacherOpen, setIsAddTeacherOpen] = useState(false);
+  const [isAddClassOpen, setIsAddClassOpen] = useState(false);
+  const [isManageClassOpen, setIsManageClassOpen] = useState(false);
+  const [selectedClass, setSelectedClass] = useState<Class | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingTeachers, setIsLoadingTeachers] = useState(true);
+  const [isLoadingClasses, setIsLoadingClasses] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newStudent, setNewStudent] = useState({
     name: "",
@@ -78,6 +94,16 @@ export function SecretaryDashboard() {
     phone: "",
     subject: "",
   });
+  const [newClass, setNewClass] = useState({
+    name: "",
+    grade: "",
+  });
+
+  // For managing class members
+  const [classStudents, setClassStudents] = useState<string[]>([]);
+  const [classTeachers, setClassTeachers] = useState<string[]>([]);
+  const [isLoadingClassMembers, setIsLoadingClassMembers] = useState(false);
+  const [isSavingClassMembers, setIsSavingClassMembers] = useState(false);
 
   // Credentials dialog state
   const [showCredentials, setShowCredentials] = useState(false);
@@ -89,10 +115,11 @@ export function SecretaryDashboard() {
   const [resetPasswordTeacherId, setResetPasswordTeacherId] = useState<string | null>(null);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
 
-  // Fetch students and teachers from database
+  // Fetch students, teachers, and classes from database
   useEffect(() => {
     fetchStudents();
     fetchTeachers();
+    fetchClasses();
   }, []);
 
   const fetchStudents = async () => {
@@ -133,6 +160,51 @@ export function SecretaryDashboard() {
     setIsLoadingTeachers(false);
   };
 
+  const fetchClasses = async () => {
+    setIsLoadingClasses(true);
+    const { data, error } = await supabase
+      .from("classes")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar as turmas.",
+        variant: "destructive",
+      });
+    } else {
+      // Fetch student and teacher counts for each class
+      const classesWithCounts = await Promise.all(
+        (data || []).map(async (cls) => {
+          const [studentsRes, teachersRes] = await Promise.all([
+            supabase.from("class_students").select("id", { count: "exact" }).eq("class_id", cls.id),
+            supabase.from("class_teachers").select("id", { count: "exact" }).eq("class_id", cls.id),
+          ]);
+          return {
+            ...cls,
+            student_count: studentsRes.count || 0,
+            teacher_count: teachersRes.count || 0,
+          };
+        })
+      );
+      setClasses(classesWithCounts);
+    }
+    setIsLoadingClasses(false);
+  };
+
+  const fetchClassMembers = async (classId: string) => {
+    setIsLoadingClassMembers(true);
+    const [studentsRes, teachersRes] = await Promise.all([
+      supabase.from("class_students").select("student_id").eq("class_id", classId),
+      supabase.from("class_teachers").select("teacher_id").eq("class_id", classId),
+    ]);
+
+    setClassStudents((studentsRes.data || []).map((s) => s.student_id));
+    setClassTeachers((teachersRes.data || []).map((t) => t.teacher_id));
+    setIsLoadingClassMembers(false);
+  };
+
   const filteredStudents = students.filter(
     (student) =>
       student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -143,6 +215,12 @@ export function SecretaryDashboard() {
     (teacher) =>
       teacher.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       teacher.cpf.includes(searchTerm.replace(/\D/g, ""))
+  );
+
+  const filteredClasses = classes.filter(
+    (cls) =>
+      cls.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      cls.grade.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const filteredBoletos = boletos.filter((boleto) =>
@@ -299,6 +377,121 @@ export function SecretaryDashboard() {
     }
   };
 
+  const handleAddClass = async () => {
+    if (!newClass.name || !newClass.grade) {
+      toast({
+        title: "Erro",
+        description: "Preencha nome e série da turma.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const { error } = await supabase
+        .from("classes")
+        .insert({
+          name: newClass.name,
+          grade: newClass.grade,
+          year: new Date().getFullYear(),
+        });
+
+      if (error) throw error;
+
+      await fetchClasses();
+      setNewClass({ name: "", grade: "" });
+      setIsAddClassOpen(false);
+
+      toast({
+        title: "Turma criada!",
+        description: "Agora você pode adicionar alunos e professores.",
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Erro ao criar turma";
+      toast({
+        title: "Erro",
+        description: message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleManageClass = (cls: Class) => {
+    setSelectedClass(cls);
+    fetchClassMembers(cls.id);
+    setIsManageClassOpen(true);
+  };
+
+  const handleSaveClassMembers = async () => {
+    if (!selectedClass) return;
+
+    setIsSavingClassMembers(true);
+
+    try {
+      // Delete existing associations
+      await Promise.all([
+        supabase.from("class_students").delete().eq("class_id", selectedClass.id),
+        supabase.from("class_teachers").delete().eq("class_id", selectedClass.id),
+      ]);
+
+      // Insert new associations
+      const studentInserts = classStudents.map((studentId) => ({
+        class_id: selectedClass.id,
+        student_id: studentId,
+      }));
+
+      const teacherInserts = classTeachers.map((teacherId) => ({
+        class_id: selectedClass.id,
+        teacher_id: teacherId,
+      }));
+
+      if (studentInserts.length > 0) {
+        await supabase.from("class_students").insert(studentInserts);
+      }
+
+      if (teacherInserts.length > 0) {
+        await supabase.from("class_teachers").insert(teacherInserts);
+      }
+
+      await fetchClasses();
+      setIsManageClassOpen(false);
+
+      toast({
+        title: "Turma atualizada!",
+        description: "Alunos e professores foram atualizados.",
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Erro ao salvar";
+      toast({
+        title: "Erro",
+        description: message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingClassMembers(false);
+    }
+  };
+
+  const toggleStudent = (studentId: string) => {
+    setClassStudents((prev) =>
+      prev.includes(studentId)
+        ? prev.filter((id) => id !== studentId)
+        : [...prev, studentId]
+    );
+  };
+
+  const toggleTeacher = (teacherId: string) => {
+    setClassTeachers((prev) =>
+      prev.includes(teacherId)
+        ? prev.filter((id) => id !== teacherId)
+        : [...prev, teacherId]
+    );
+  };
+
   const handleResetStudentPassword = async (studentId: string) => {
     setIsResettingPassword(true);
     setResetPasswordStudentId(studentId);
@@ -450,11 +643,11 @@ export function SecretaryDashboard() {
       {/* Header */}
       <div>
         <h2 className="text-2xl font-bold text-foreground">Secretaria</h2>
-        <p className="text-muted-foreground">Gerencie alunos, professores e boletos</p>
+        <p className="text-muted-foreground">Gerencie alunos, professores, turmas e boletos</p>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Total Alunos</CardTitle>
@@ -477,6 +670,19 @@ export function SecretaryDashboard() {
             <div className="text-2xl font-bold">{teachers.length}</div>
             <p className="text-xs text-muted-foreground">
               {teachers.filter((t) => t.status === "ativo").length} ativos
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Total Turmas</CardTitle>
+            <BookOpen className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{classes.length}</div>
+            <p className="text-xs text-muted-foreground">
+              ano {new Date().getFullYear()}
             </p>
           </CardContent>
         </Card>
@@ -519,6 +725,10 @@ export function SecretaryDashboard() {
             <TabsTrigger value="teachers" className="gap-2">
               <GraduationCap className="h-4 w-4" />
               Professores
+            </TabsTrigger>
+            <TabsTrigger value="classes" className="gap-2">
+              <BookOpen className="h-4 w-4" />
+              Turmas
             </TabsTrigger>
             <TabsTrigger value="boletos" className="gap-2">
               <FileText className="h-4 w-4" />
@@ -587,7 +797,7 @@ export function SecretaryDashboard() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="grade">Série/Turma *</Label>
+                    <Label htmlFor="grade">Série *</Label>
                     <Select
                       value={newStudent.grade}
                       onValueChange={(value) => setNewStudent({ ...newStudent, grade: value })}
@@ -693,6 +903,70 @@ export function SecretaryDashboard() {
                       <>
                         <UserPlus className="h-4 w-4" />
                         Cadastrar Professor
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* Add Class Dialog */}
+            <Dialog open={isAddClassOpen} onOpenChange={setIsAddClassOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  Nova Turma
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Criar Nova Turma</DialogTitle>
+                  <DialogDescription>
+                    Crie uma turma e depois adicione alunos e professores.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="class-name">Nome da Turma *</Label>
+                    <Input
+                      id="class-name"
+                      value={newClass.name}
+                      onChange={(e) => setNewClass({ ...newClass, name: e.target.value })}
+                      placeholder="Ex: Turma A, Turma B..."
+                      disabled={isSubmitting}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="class-grade">Série *</Label>
+                    <Select
+                      value={newClass.grade}
+                      onValueChange={(value) => setNewClass({ ...newClass, grade: value })}
+                      disabled={isSubmitting}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione a série" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="6º Ano">6º Ano</SelectItem>
+                        <SelectItem value="7º Ano">7º Ano</SelectItem>
+                        <SelectItem value="8º Ano">8º Ano</SelectItem>
+                        <SelectItem value="9º Ano">9º Ano</SelectItem>
+                        <SelectItem value="1º EM">1º Ensino Médio</SelectItem>
+                        <SelectItem value="2º EM">2º Ensino Médio</SelectItem>
+                        <SelectItem value="3º EM">3º Ensino Médio</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button onClick={handleAddClass} className="w-full gap-2" disabled={isSubmitting}>
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Criando...
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="h-4 w-4" />
+                        Criar Turma
                       </>
                     )}
                   </Button>
@@ -830,6 +1104,69 @@ export function SecretaryDashboard() {
           </Card>
         </TabsContent>
 
+        {/* Classes Tab */}
+        <TabsContent value="classes">
+          <Card>
+            <CardHeader>
+              <CardTitle>Lista de Turmas</CardTitle>
+              <CardDescription>Gerencie as turmas e seus membros</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoadingClasses ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Série</TableHead>
+                      <TableHead>Ano</TableHead>
+                      <TableHead>Alunos</TableHead>
+                      <TableHead>Professores</TableHead>
+                      <TableHead>Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredClasses.map((cls) => (
+                      <TableRow key={cls.id}>
+                        <TableCell className="font-medium">{cls.name}</TableCell>
+                        <TableCell>{cls.grade}</TableCell>
+                        <TableCell>{cls.year}</TableCell>
+                        <TableCell>
+                          <Badge variant="secondary">{cls.student_count} alunos</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{cls.teacher_count} professores</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="gap-2"
+                            onClick={() => handleManageClass(cls)}
+                          >
+                            <Settings className="h-4 w-4" />
+                            Gerenciar
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {filteredClasses.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                          Nenhuma turma encontrada
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         {/* Boletos Tab */}
         <TabsContent value="boletos">
           <Card>
@@ -884,6 +1221,109 @@ export function SecretaryDashboard() {
         </TabsContent>
       </Tabs>
 
+      {/* Manage Class Dialog */}
+      <Dialog open={isManageClassOpen} onOpenChange={setIsManageClassOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Gerenciar Turma: {selectedClass?.name}</DialogTitle>
+            <DialogDescription>
+              Selecione os alunos e professores desta turma ({selectedClass?.grade})
+            </DialogDescription>
+          </DialogHeader>
+          
+          {isLoadingClassMembers ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <div className="space-y-6 py-4">
+              {/* Teachers Section */}
+              <div className="space-y-3">
+                <Label className="text-base font-semibold flex items-center gap-2">
+                  <GraduationCap className="h-4 w-4" />
+                  Professores
+                </Label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-40 overflow-y-auto border rounded-lg p-3">
+                  {teachers.map((teacher) => (
+                    <div key={teacher.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`teacher-${teacher.id}`}
+                        checked={classTeachers.includes(teacher.id)}
+                        onCheckedChange={() => toggleTeacher(teacher.id)}
+                      />
+                      <label
+                        htmlFor={`teacher-${teacher.id}`}
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                      >
+                        {teacher.name}
+                        {teacher.subject && (
+                          <span className="text-muted-foreground ml-1">({teacher.subject})</span>
+                        )}
+                      </label>
+                    </div>
+                  ))}
+                  {teachers.length === 0 && (
+                    <p className="text-sm text-muted-foreground col-span-2">
+                      Nenhum professor cadastrado
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Students Section */}
+              <div className="space-y-3">
+                <Label className="text-base font-semibold flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  Alunos
+                </Label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-60 overflow-y-auto border rounded-lg p-3">
+                  {students.map((student) => (
+                    <div key={student.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`student-${student.id}`}
+                        checked={classStudents.includes(student.id)}
+                        onCheckedChange={() => toggleStudent(student.id)}
+                      />
+                      <label
+                        htmlFor={`student-${student.id}`}
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                      >
+                        {student.name}
+                        <span className="text-muted-foreground ml-1">({student.grade})</span>
+                      </label>
+                    </div>
+                  ))}
+                  {students.length === 0 && (
+                    <p className="text-sm text-muted-foreground col-span-2">
+                      Nenhum aluno cadastrado
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-4 border-t">
+                <div className="text-sm text-muted-foreground">
+                  {classStudents.length} aluno(s) e {classTeachers.length} professor(es) selecionado(s)
+                </div>
+                <Button onClick={handleSaveClassMembers} disabled={isSavingClassMembers} className="gap-2">
+                  {isSavingClassMembers ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Salvando...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="h-4 w-4" />
+                      Salvar Alterações
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Credentials Dialog */}
       <Dialog open={showCredentials} onOpenChange={setShowCredentials}>
         <DialogContent>
@@ -904,29 +1344,38 @@ export function SecretaryDashboard() {
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={() => newCredentials && copyToClipboard(newCredentials.cpf.replace(/\D/g, ""), "cpf")}
+                  onClick={() => copyToClipboard(newCredentials?.cpf || "", "cpf")}
                 >
-                  {copied === "cpf" ? <CheckCircle className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                  {copied === "cpf" ? (
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
                 </Button>
               </div>
             </div>
             <div className="space-y-2">
               <Label>Senha</Label>
               <div className="flex gap-2">
-                <Input value={newCredentials?.password || ""} readOnly className="font-mono text-lg tracking-wider" />
+                <Input value={newCredentials?.password || ""} readOnly className="font-mono text-lg" />
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={() => newCredentials && copyToClipboard(newCredentials.password, "password")}
+                  onClick={() => copyToClipboard(newCredentials?.password || "", "password")}
                 >
-                  {copied === "password" ? <CheckCircle className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                  {copied === "password" ? (
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
                 </Button>
               </div>
             </div>
-            <div className="bg-muted/50 p-3 rounded-lg">
-              <p className="text-sm text-muted-foreground">
-                ⚠️ <strong>Importante:</strong> Anote a senha antes de fechar esta janela. 
-                O {newCredentials?.type === "professor" ? "professor" : "aluno"} usará o CPF e esta senha para entrar no sistema.
+            <div className="bg-muted/50 p-3 rounded-lg text-sm text-muted-foreground">
+              <p>
+                <strong>Importante:</strong> Anote ou copie a senha agora. O{" "}
+                {newCredentials?.type === "professor" ? "professor" : "aluno"} usará o CPF e esta
+                senha para acessar o sistema.
               </p>
             </div>
           </div>

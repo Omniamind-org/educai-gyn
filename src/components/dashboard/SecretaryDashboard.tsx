@@ -500,7 +500,7 @@ export function SecretaryDashboard() {
                             ) : (
                               <Key className="h-4 w-4" />
                             )}
-                            Nova Senha
+                            Verificar Senha
                           </Button>
                         </TableCell>
                       </TableRow>

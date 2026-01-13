@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { UserPlus, Printer, Users, FileText, Search, Plus, Copy, Key, CheckCircle, Loader2 } from "lucide-react";
+import { UserPlus, Printer, Users, FileText, Search, Plus, Copy, Key, CheckCircle, Loader2, GraduationCap } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -18,6 +18,16 @@ interface Student {
   cpf: string;
   phone: string | null;
   grade: string;
+  status: string;
+  created_at: string;
+}
+
+interface Teacher {
+  id: string;
+  name: string;
+  cpf: string;
+  phone: string | null;
+  subject: string | null;
   status: string;
   created_at: string;
 }
@@ -48,10 +58,13 @@ function formatCpf(cpf: string): string {
 export function SecretaryDashboard() {
   const { toast } = useToast();
   const [students, setStudents] = useState<Student[]>([]);
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [boletos] = useState<Boleto[]>(MOCK_BOLETOS);
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddStudentOpen, setIsAddStudentOpen] = useState(false);
+  const [isAddTeacherOpen, setIsAddTeacherOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingTeachers, setIsLoadingTeachers] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newStudent, setNewStudent] = useState({
     name: "",
@@ -59,19 +72,27 @@ export function SecretaryDashboard() {
     phone: "",
     grade: "",
   });
+  const [newTeacher, setNewTeacher] = useState({
+    name: "",
+    cpf: "",
+    phone: "",
+    subject: "",
+  });
 
   // Credentials dialog state
   const [showCredentials, setShowCredentials] = useState(false);
-  const [newCredentials, setNewCredentials] = useState<{ cpf: string; password: string; name: string } | null>(null);
+  const [newCredentials, setNewCredentials] = useState<{ cpf: string; password: string; name: string; type: "aluno" | "professor" } | null>(null);
   const [copied, setCopied] = useState<"cpf" | "password" | null>(null);
 
   // Reset password dialog
   const [resetPasswordStudentId, setResetPasswordStudentId] = useState<string | null>(null);
+  const [resetPasswordTeacherId, setResetPasswordTeacherId] = useState<string | null>(null);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
 
-  // Fetch students from database
+  // Fetch students and teachers from database
   useEffect(() => {
     fetchStudents();
+    fetchTeachers();
   }, []);
 
   const fetchStudents = async () => {
@@ -93,10 +114,35 @@ export function SecretaryDashboard() {
     setIsLoading(false);
   };
 
+  const fetchTeachers = async () => {
+    setIsLoadingTeachers(true);
+    const { data, error } = await supabase
+      .from("teachers")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar os professores.",
+        variant: "destructive",
+      });
+    } else {
+      setTeachers(data || []);
+    }
+    setIsLoadingTeachers(false);
+  };
+
   const filteredStudents = students.filter(
     (student) =>
       student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       student.cpf.includes(searchTerm.replace(/\D/g, ""))
+  );
+
+  const filteredTeachers = teachers.filter(
+    (teacher) =>
+      teacher.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      teacher.cpf.includes(searchTerm.replace(/\D/g, ""))
   );
 
   const filteredBoletos = boletos.filter((boleto) =>
@@ -127,8 +173,6 @@ export function SecretaryDashboard() {
     setIsSubmitting(true);
 
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      
       const response = await supabase.functions.invoke("create-student", {
         body: {
           name: newStudent.name,
@@ -153,6 +197,7 @@ export function SecretaryDashboard() {
         cpf: formatCpf(result.credentials.cpf),
         password: result.credentials.password,
         name: result.student.name,
+        type: "aluno",
       });
       setShowCredentials(true);
 
@@ -179,7 +224,82 @@ export function SecretaryDashboard() {
     }
   };
 
-  const handleResetPassword = async (studentId: string) => {
+  const handleAddTeacher = async () => {
+    if (!newTeacher.name || !newTeacher.cpf) {
+      toast({
+        title: "Erro",
+        description: "Preencha nome e CPF.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate CPF format (11 digits)
+    const cleanCpf = newTeacher.cpf.replace(/\D/g, "");
+    if (cleanCpf.length !== 11) {
+      toast({
+        title: "CPF inválido",
+        description: "O CPF deve conter 11 dígitos.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const response = await supabase.functions.invoke("create-teacher", {
+        body: {
+          name: newTeacher.name,
+          cpf: cleanCpf,
+          phone: newTeacher.phone || null,
+          subject: newTeacher.subject || null,
+        },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || "Erro ao criar professor");
+      }
+
+      const result = response.data;
+
+      if (!result.success) {
+        throw new Error(result.error || "Erro ao criar professor");
+      }
+
+      // Show credentials dialog
+      setNewCredentials({
+        cpf: formatCpf(result.credentials.cpf),
+        password: result.credentials.password,
+        name: result.teacher.name,
+        type: "professor",
+      });
+      setShowCredentials(true);
+
+      // Refresh list
+      await fetchTeachers();
+
+      // Reset form
+      setNewTeacher({ name: "", cpf: "", phone: "", subject: "" });
+      setIsAddTeacherOpen(false);
+
+      toast({
+        title: "Professor cadastrado!",
+        description: "Copie a senha gerada para entregar ao professor.",
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Erro ao cadastrar professor";
+      toast({
+        title: "Erro",
+        description: message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleResetStudentPassword = async (studentId: string) => {
     setIsResettingPassword(true);
     setResetPasswordStudentId(studentId);
 
@@ -189,13 +309,13 @@ export function SecretaryDashboard() {
       });
 
       if (response.error) {
-        throw new Error(response.error.message || "Erro ao resetar senha");
+        throw new Error(response.error.message || "Erro ao verificar senha");
       }
 
       const result = response.data;
 
       if (!result.success) {
-        throw new Error(result.error || "Erro ao resetar senha");
+        throw new Error(result.error || "Erro ao verificar senha");
       }
 
       // Show credentials dialog
@@ -203,15 +323,16 @@ export function SecretaryDashboard() {
         cpf: formatCpf(result.cpf),
         password: result.password,
         name: result.studentName,
+        type: "aluno",
       });
       setShowCredentials(true);
 
       toast({
-        title: "Nova senha gerada!",
+        title: "Senha encontrada!",
         description: "Copie a senha para entregar ao aluno.",
       });
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Erro ao resetar senha";
+      const message = error instanceof Error ? error.message : "Erro ao verificar senha";
       toast({
         title: "Erro",
         description: message,
@@ -220,6 +341,51 @@ export function SecretaryDashboard() {
     } finally {
       setIsResettingPassword(false);
       setResetPasswordStudentId(null);
+    }
+  };
+
+  const handleResetTeacherPassword = async (teacherId: string) => {
+    setIsResettingPassword(true);
+    setResetPasswordTeacherId(teacherId);
+
+    try {
+      const response = await supabase.functions.invoke("get-teacher-password", {
+        body: { teacherId },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || "Erro ao verificar senha");
+      }
+
+      const result = response.data;
+
+      if (!result.success) {
+        throw new Error(result.error || "Erro ao verificar senha");
+      }
+
+      // Show credentials dialog
+      setNewCredentials({
+        cpf: formatCpf(result.cpf),
+        password: result.password,
+        name: result.teacherName,
+        type: "professor",
+      });
+      setShowCredentials(true);
+
+      toast({
+        title: "Senha encontrada!",
+        description: "Copie a senha para entregar ao professor.",
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Erro ao verificar senha";
+      toast({
+        title: "Erro",
+        description: message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsResettingPassword(false);
+      setResetPasswordTeacherId(null);
     }
   };
 
@@ -284,7 +450,7 @@ export function SecretaryDashboard() {
       {/* Header */}
       <div>
         <h2 className="text-2xl font-bold text-foreground">Secretaria</h2>
-        <p className="text-muted-foreground">Gerencie alunos e boletos</p>
+        <p className="text-muted-foreground">Gerencie alunos, professores e boletos</p>
       </div>
 
       {/* Stats Cards */}
@@ -298,6 +464,19 @@ export function SecretaryDashboard() {
             <div className="text-2xl font-bold">{students.length}</div>
             <p className="text-xs text-muted-foreground">
               {students.filter((s) => s.status === "ativo").length} ativos
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Total Professores</CardTitle>
+            <GraduationCap className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{teachers.length}</div>
+            <p className="text-xs text-muted-foreground">
+              {teachers.filter((t) => t.status === "ativo").length} ativos
             </p>
           </CardContent>
         </Card>
@@ -327,19 +506,6 @@ export function SecretaryDashboard() {
             <p className="text-xs text-muted-foreground">necessitam atenção</p>
           </CardContent>
         </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Receita do Mês</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              R$ {boletos.filter((b) => b.status === "pago").reduce((acc, b) => acc + b.value, 0).toFixed(2)}
-            </div>
-            <p className="text-xs text-muted-foreground">boletos pagos</p>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Tabs */}
@@ -349,6 +515,10 @@ export function SecretaryDashboard() {
             <TabsTrigger value="students" className="gap-2">
               <Users className="h-4 w-4" />
               Alunos
+            </TabsTrigger>
+            <TabsTrigger value="teachers" className="gap-2">
+              <GraduationCap className="h-4 w-4" />
+              Professores
             </TabsTrigger>
             <TabsTrigger value="boletos" className="gap-2">
               <FileText className="h-4 w-4" />
@@ -367,6 +537,7 @@ export function SecretaryDashboard() {
               />
             </div>
 
+            {/* Add Student Dialog */}
             <Dialog open={isAddStudentOpen} onOpenChange={setIsAddStudentOpen}>
               <DialogTrigger asChild>
                 <Button className="gap-2">
@@ -452,6 +623,82 @@ export function SecretaryDashboard() {
                 </div>
               </DialogContent>
             </Dialog>
+
+            {/* Add Teacher Dialog */}
+            <Dialog open={isAddTeacherOpen} onOpenChange={setIsAddTeacherOpen}>
+              <DialogTrigger asChild>
+                <Button variant="secondary" className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  Novo Professor
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Cadastrar Novo Professor</DialogTitle>
+                  <DialogDescription>
+                    Preencha os dados do professor. Uma senha será gerada automaticamente.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="teacher-name">Nome Completo *</Label>
+                    <Input
+                      id="teacher-name"
+                      value={newTeacher.name}
+                      onChange={(e) => setNewTeacher({ ...newTeacher, name: e.target.value })}
+                      placeholder="Nome do professor"
+                      disabled={isSubmitting}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="teacher-cpf">CPF *</Label>
+                    <Input
+                      id="teacher-cpf"
+                      value={newTeacher.cpf}
+                      onChange={(e) => setNewTeacher({ ...newTeacher, cpf: e.target.value })}
+                      placeholder="000.000.000-00"
+                      disabled={isSubmitting}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      O professor usará o CPF para fazer login
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="teacher-phone">Telefone (opcional)</Label>
+                    <Input
+                      id="teacher-phone"
+                      value={newTeacher.phone}
+                      onChange={(e) => setNewTeacher({ ...newTeacher, phone: e.target.value })}
+                      placeholder="(00) 00000-0000"
+                      disabled={isSubmitting}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="teacher-subject">Disciplina (opcional)</Label>
+                    <Input
+                      id="teacher-subject"
+                      value={newTeacher.subject}
+                      onChange={(e) => setNewTeacher({ ...newTeacher, subject: e.target.value })}
+                      placeholder="Ex: Matemática, Português..."
+                      disabled={isSubmitting}
+                    />
+                  </div>
+                  <Button onClick={handleAddTeacher} className="w-full gap-2" disabled={isSubmitting}>
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Cadastrando...
+                      </>
+                    ) : (
+                      <>
+                        <UserPlus className="h-4 w-4" />
+                        Cadastrar Professor
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
 
@@ -492,7 +739,7 @@ export function SecretaryDashboard() {
                             variant="outline"
                             size="sm"
                             className="gap-2"
-                            onClick={() => handleResetPassword(student.id)}
+                            onClick={() => handleResetStudentPassword(student.id)}
                             disabled={isResettingPassword && resetPasswordStudentId === student.id}
                           >
                             {isResettingPassword && resetPasswordStudentId === student.id ? (
@@ -509,6 +756,70 @@ export function SecretaryDashboard() {
                       <TableRow>
                         <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                           Nenhum aluno encontrado
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Teachers Tab */}
+        <TabsContent value="teachers">
+          <Card>
+            <CardHeader>
+              <CardTitle>Lista de Professores</CardTitle>
+              <CardDescription>Gerencie os professores cadastrados no sistema</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isLoadingTeachers ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>CPF</TableHead>
+                      <TableHead>Disciplina</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Cadastro</TableHead>
+                      <TableHead>Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredTeachers.map((teacher) => (
+                      <TableRow key={teacher.id}>
+                        <TableCell className="font-medium">{teacher.name}</TableCell>
+                        <TableCell>{formatCpf(teacher.cpf)}</TableCell>
+                        <TableCell>{teacher.subject || "-"}</TableCell>
+                        <TableCell>{getStatusBadge(teacher.status)}</TableCell>
+                        <TableCell>{new Date(teacher.created_at).toLocaleDateString("pt-BR")}</TableCell>
+                        <TableCell>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="gap-2"
+                            onClick={() => handleResetTeacherPassword(teacher.id)}
+                            disabled={isResettingPassword && resetPasswordTeacherId === teacher.id}
+                          >
+                            {isResettingPassword && resetPasswordTeacherId === teacher.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Key className="h-4 w-4" />
+                            )}
+                            Verificar Senha
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {filteredTeachers.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                          Nenhum professor encontrado
                         </TableCell>
                       </TableRow>
                     )}
@@ -579,10 +890,10 @@ export function SecretaryDashboard() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <CheckCircle className="h-5 w-5 text-green-500" />
-              Credenciais do Aluno
+              Credenciais do {newCredentials?.type === "professor" ? "Professor" : "Aluno"}
             </DialogTitle>
             <DialogDescription>
-              Copie e entregue estas credenciais ao aluno: <strong>{newCredentials?.name}</strong>
+              Copie e entregue estas credenciais: <strong>{newCredentials?.name}</strong>
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -615,7 +926,7 @@ export function SecretaryDashboard() {
             <div className="bg-muted/50 p-3 rounded-lg">
               <p className="text-sm text-muted-foreground">
                 ⚠️ <strong>Importante:</strong> Anote a senha antes de fechar esta janela. 
-                O aluno usará o CPF e esta senha para entrar no sistema.
+                O {newCredentials?.type === "professor" ? "professor" : "aluno"} usará o CPF e esta senha para entrar no sistema.
               </p>
             </div>
           </div>

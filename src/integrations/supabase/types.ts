@@ -137,6 +137,57 @@ export type Database = {
         }
         Relationships: []
       }
+      student_grades: {
+        Row: {
+          created_at: string
+          feedback: string | null
+          graded_at: string | null
+          id: string
+          score: number | null
+          student_id: string
+          submitted_at: string | null
+          task_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          feedback?: string | null
+          graded_at?: string | null
+          id?: string
+          score?: number | null
+          student_id: string
+          submitted_at?: string | null
+          task_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          feedback?: string | null
+          graded_at?: string | null
+          id?: string
+          score?: number | null
+          student_id?: string
+          submitted_at?: string | null
+          task_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_grades_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_grades_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       students: {
         Row: {
           cpf: string
@@ -175,6 +226,60 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      tasks: {
+        Row: {
+          class_id: string
+          created_at: string
+          description: string | null
+          due_date: string | null
+          id: string
+          max_score: number
+          status: string
+          teacher_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          max_score?: number
+          status?: string
+          teacher_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          max_score?: number
+          status?: string
+          teacher_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "teachers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       teachers: {
         Row: {

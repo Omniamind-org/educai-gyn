@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { StudentProgressAnalysis } from './teacher/StudentProgressAnalysis';
+import { ClassDetailView } from './teacher/ClassDetailView';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -27,11 +28,13 @@ const BNCC_OBJECTIVES = [
   'EF09HI03 - Identificar impactos ambientais',
 ];
 
-type TeacherView = 'dashboard' | 'progress-analysis';
+type TeacherView = 'dashboard' | 'progress-analysis' | 'class-detail';
 
 export function TeacherDashboard() {
   const { toast } = useToast();
   const [currentView, setCurrentView] = useState<TeacherView>('dashboard');
+  const [selectedClass, setSelectedClass] = useState<ClassWithDetails | null>(null);
+  const [teacherId, setTeacherId] = useState<string | null>(null);
   const [lessonTopic, setLessonTopic] = useState('');
   const [selectedSeries, setSelectedSeries] = useState('');
   const [selectedBncc, setSelectedBncc] = useState('');
@@ -64,6 +67,8 @@ export function TeacherDashboard() {
         setIsLoading(false);
         return;
       }
+
+      setTeacherId(teacherData.id);
 
       // Get classes assigned to this teacher
       const { data: classTeacherData } = await supabase
@@ -131,6 +136,20 @@ export function TeacherDashboard() {
       }, 1000);
     }
   };
+
+  // Show Class Detail View
+  if (currentView === 'class-detail' && selectedClass && teacherId) {
+    return (
+      <ClassDetailView
+        classData={selectedClass}
+        teacherId={teacherId}
+        onBack={() => {
+          setCurrentView('dashboard');
+          setSelectedClass(null);
+        }}
+      />
+    );
+  }
 
   // Show Progress Analysis View
   if (currentView === 'progress-analysis') {
@@ -271,8 +290,12 @@ export function TeacherDashboard() {
             {classes.map((cls, index) => (
               <Card 
                 key={cls.id}
-                className="activity-card opacity-0 animate-fade-in"
+                className="activity-card opacity-0 animate-fade-in cursor-pointer hover:border-primary/50 transition-all"
                 style={{ animationDelay: `${index * 100}ms` }}
+                onClick={() => {
+                  setSelectedClass(cls);
+                  setCurrentView('class-detail');
+                }}
               >
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3 mb-3">

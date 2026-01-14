@@ -6,26 +6,35 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { supabase } from '@/integrations/supabase/client';
 
 interface LessonPlanEditorProps {
+  planId?: string;
   lessonPlan: string;
   topic: string;
   series?: string;
   bnccObjective?: string;
+  teacherId?: string | null;
   onBack: () => void;
+  onSaved?: (id: string) => void;
 }
 
 export function LessonPlanEditor({
+  planId,
   lessonPlan,
   topic,
   series,
   bnccObjective,
+  teacherId,
   onBack,
+  onSaved,
 }: LessonPlanEditorProps) {
   const { toast } = useToast();
   const [content, setContent] = useState(lessonPlan);
   const [isCopied, setIsCopied] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [savedPlanId, setSavedPlanId] = useState<string | undefined>(planId);
 
   useEffect(() => {
     setHasChanges(content !== lessonPlan);
@@ -72,6 +81,71 @@ export function LessonPlanEditor({
     }
   };
 
+  const handleSave = async () => {
+    if (!teacherId) {
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível identificar o professor.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      if (savedPlanId) {
+        // Update existing plan
+        const { error } = await supabase
+          .from('lesson_plans')
+          .update({
+            content,
+            topic,
+            series: series || null,
+            bncc_objective: bnccObjective || null,
+          })
+          .eq('id', savedPlanId);
+
+        if (error) throw error;
+        setHasChanges(false);
+        toast({
+          title: 'Plano atualizado!',
+          description: 'As alterações foram salvas com sucesso.',
+        });
+      } else {
+        // Create new plan
+        const { data, error } = await supabase
+          .from('lesson_plans')
+          .insert({
+            teacher_id: teacherId,
+            content,
+            topic,
+            series: series || null,
+            bncc_objective: bnccObjective || null,
+          })
+          .select('id')
+          .single();
+
+        if (error) throw error;
+        setSavedPlanId(data.id);
+        setHasChanges(false);
+        onSaved?.(data.id);
+        toast({
+          title: 'Plano salvo!',
+          description: 'O plano de aula foi salvo com sucesso.',
+        });
+      }
+    } catch (error) {
+      console.error('Error saving lesson plan:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível salvar o plano de aula.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <div className="space-y-4 h-full flex flex-col">
       {/* Header */}
@@ -100,6 +174,20 @@ export function LessonPlanEditor({
 
       {/* Toolbar */}
       <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg">
+        <Button 
+          variant="default" 
+          size="sm" 
+          onClick={handleSave} 
+          disabled={isSaving}
+          className="gap-2"
+        >
+          {isSaving ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Save className="h-4 w-4" />
+          )}
+          {savedPlanId ? 'Atualizar' : 'Salvar'}
+        </Button>
         <Button variant="ghost" size="sm" onClick={handleCopy} className="gap-2">
           {isCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
           {isCopied ? 'Copiado' : 'Copiar'}
@@ -109,6 +197,11 @@ export function LessonPlanEditor({
           Baixar
         </Button>
         <div className="flex-1" />
+        {savedPlanId && (
+          <Badge variant="secondary" className="text-xs">
+            Salvo
+          </Badge>
+        )}
         {hasChanges && (
           <Badge variant="outline" className="text-warning border-warning">
             Alterações não salvas

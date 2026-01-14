@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Users, Plus, Lightbulb, BookOpen, Target, Calendar, BarChart2, Loader2 } from 'lucide-react';
+import { Users, Plus, Lightbulb, BookOpen, Target, Calendar, BarChart2, Loader2, FolderOpen, Save } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { StudentProgressAnalysis } from './teacher/StudentProgressAnalysis';
 import { ClassDetailView } from './teacher/ClassDetailView';
 import { LessonPlanEditor } from './teacher/LessonPlanEditor';
+import { SavedLessonPlansView } from './teacher/SavedLessonPlansView';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -23,6 +24,7 @@ interface ClassWithDetails {
 }
 
 interface GeneratedLessonPlan {
+  id?: string;
   content: string;
   topic: string;
   series: string;
@@ -34,9 +36,10 @@ const BNCC_OBJECTIVES = [
   'EF09HI01 - Compreender o processo de industrialização',
   'EF09HI02 - Analisar transformações sociais',
   'EF09HI03 - Identificar impactos ambientais',
+  'EM13LGG103 - Analisar o funcionamento das linguagens, para interpretar e produzir criticamente discursos em textos de diversas semioses',
 ];
 
-type TeacherView = 'dashboard' | 'progress-analysis' | 'class-detail' | 'lesson-plan-editor';
+type TeacherView = 'dashboard' | 'progress-analysis' | 'class-detail' | 'lesson-plan-editor' | 'saved-plans';
 
 export function TeacherDashboard() {
   const { toast } = useToast();
@@ -215,17 +218,42 @@ export function TeacherDashboard() {
     }
   };
 
+  // Show Saved Lesson Plans View
+  if (currentView === 'saved-plans' && teacherId) {
+    return (
+      <SavedLessonPlansView
+        teacherId={teacherId}
+        onBack={() => setCurrentView('dashboard')}
+        onOpenPlan={(plan) => {
+          setGeneratedPlan({
+            id: plan.id,
+            content: plan.content,
+            topic: plan.topic,
+            series: plan.series || '',
+            bnccObjective: plan.bncc_objective || '',
+          });
+          setCurrentView('lesson-plan-editor');
+        }}
+      />
+    );
+  }
+
   // Show Lesson Plan Editor
   if (currentView === 'lesson-plan-editor' && generatedPlan) {
     return (
       <LessonPlanEditor
+        planId={generatedPlan.id}
         lessonPlan={generatedPlan.content}
         topic={generatedPlan.topic}
         series={generatedPlan.series}
         bnccObjective={generatedPlan.bnccObjective}
+        teacherId={teacherId}
         onBack={() => {
           setCurrentView('dashboard');
           setGeneratedPlan(null);
+        }}
+        onSaved={(id) => {
+          setGeneratedPlan(prev => prev ? { ...prev, id } : null);
         }}
       />
     );
@@ -368,6 +396,14 @@ export function TeacherDashboard() {
             <Button variant="outline" className="gap-2">
               <Target className="w-4 h-4" />
               Criar Quiz
+            </Button>
+            <Button 
+              variant="secondary" 
+              className="gap-2"
+              onClick={() => setCurrentView('saved-plans')}
+            >
+              <FolderOpen className="w-4 h-4" />
+              Ver Planos Salvos
             </Button>
           </div>
         </CardContent>

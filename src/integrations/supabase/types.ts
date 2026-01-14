@@ -113,6 +113,47 @@ export type Database = {
         }
         Relationships: []
       }
+      lesson_plans: {
+        Row: {
+          bncc_objective: string | null
+          content: string
+          created_at: string
+          id: string
+          series: string | null
+          teacher_id: string
+          topic: string
+          updated_at: string
+        }
+        Insert: {
+          bncc_objective?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          series?: string | null
+          teacher_id: string
+          topic: string
+          updated_at?: string
+        }
+        Update: {
+          bncc_objective?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          series?: string | null
+          teacher_id?: string
+          topic?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_plans_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "teachers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string

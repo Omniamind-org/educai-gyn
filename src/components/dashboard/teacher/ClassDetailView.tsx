@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Plus, Users, BookOpen, Loader2, GraduationCap, ClipboardList, Save } from 'lucide-react';
+import { ArrowLeft, Plus, Users, BookOpen, Loader2, GraduationCap, ClipboardList, Save, Pencil, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -16,6 +16,16 @@ import {
   DialogTrigger,
   DialogFooter,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import {
   Table,
   TableBody,
@@ -70,7 +80,18 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
   const [isSavingGrades, setIsSavingGrades] = useState(false);
   const [newTaskOpen, setNewTaskOpen] = useState(false);
   const [tasksListOpen, setTasksListOpen] = useState(false);
+  const [editTaskOpen, setEditTaskOpen] = useState(false);
+  const [deleteTaskOpen, setDeleteTaskOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [isUpdatingTask, setIsUpdatingTask] = useState(false);
+  const [isDeletingTask, setIsDeletingTask] = useState(false);
   const [newTask, setNewTask] = useState({
+    title: '',
+    description: '',
+    max_score: '10',
+    due_date: '',
+  });
+  const [editTask, setEditTask] = useState({
     title: '',
     description: '',
     max_score: '10',
@@ -242,6 +263,98 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
     return score !== null && score !== undefined ? score.toString() : '';
   };
 
+  const handleEditTask = (task: Task) => {
+    setSelectedTask(task);
+    setEditTask({
+      title: task.title,
+      description: task.description || '',
+      max_score: task.max_score.toString(),
+      due_date: task.due_date ? task.due_date.split('T')[0] : '',
+    });
+    setEditTaskOpen(true);
+  };
+
+  const handleUpdateTask = async () => {
+    if (!selectedTask || !editTask.title.trim()) {
+      toast({
+        title: 'Erro',
+        description: 'O título da tarefa é obrigatório.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsUpdatingTask(true);
+    try {
+      const { error } = await supabase
+        .from('tasks')
+        .update({
+          title: editTask.title.trim(),
+          description: editTask.description.trim() || null,
+          max_score: parseFloat(editTask.max_score) || 10,
+          due_date: editTask.due_date || null,
+        })
+        .eq('id', selectedTask.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Sucesso',
+        description: 'Tarefa atualizada com sucesso!',
+      });
+
+      setEditTaskOpen(false);
+      setSelectedTask(null);
+      fetchClassData();
+    } catch (error) {
+      console.error('Error updating task:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível atualizar a tarefa.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsUpdatingTask(false);
+    }
+  };
+
+  const handleDeleteTask = async () => {
+    if (!selectedTask) return;
+
+    setIsDeletingTask(true);
+    try {
+      const { error } = await supabase
+        .from('tasks')
+        .delete()
+        .eq('id', selectedTask.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Sucesso',
+        description: 'Tarefa excluída com sucesso!',
+      });
+
+      setDeleteTaskOpen(false);
+      setSelectedTask(null);
+      fetchClassData();
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível excluir a tarefa.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDeletingTask(false);
+    }
+  };
+
+  const openDeleteConfirm = (task: Task) => {
+    setSelectedTask(task);
+    setDeleteTaskOpen(true);
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -383,7 +496,7 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
                 <Card key={task.id}>
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between">
-                      <div className="space-y-1">
+                      <div className="space-y-1 flex-1">
                         <h4 className="font-semibold text-lg">{task.title}</h4>
                         {task.description && (
                           <p className="text-sm text-muted-foreground">{task.description}</p>
@@ -397,9 +510,23 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
                           )}
                         </div>
                       </div>
-                      <Badge className="bg-success/10 text-success border-success/20">
-                        {task.status}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleEditTask(task)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => openDeleteConfirm(task)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -408,6 +535,91 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Task Dialog */}
+      <Dialog open={editTaskOpen} onOpenChange={setEditTaskOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Tarefa</DialogTitle>
+            <DialogDescription>
+              Altere os dados da tarefa.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-task-title">Título *</Label>
+              <Input
+                id="edit-task-title"
+                placeholder="Ex: Prova de Matemática"
+                value={editTask.title}
+                onChange={(e) => setEditTask(prev => ({ ...prev, title: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-task-description">Descrição</Label>
+              <Textarea
+                id="edit-task-description"
+                placeholder="Descreva a tarefa..."
+                value={editTask.description}
+                onChange={(e) => setEditTask(prev => ({ ...prev, description: e.target.value }))}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-task-max-score">Nota Máxima</Label>
+                <Input
+                  id="edit-task-max-score"
+                  type="number"
+                  value={editTask.max_score}
+                  onChange={(e) => setEditTask(prev => ({ ...prev, max_score: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-task-due-date">Data de Entrega</Label>
+                <Input
+                  id="edit-task-due-date"
+                  type="date"
+                  value={editTask.due_date}
+                  onChange={(e) => setEditTask(prev => ({ ...prev, due_date: e.target.value }))}
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditTaskOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleUpdateTask} disabled={isUpdatingTask}>
+              {isUpdatingTask ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Salvar Alterações
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Task Confirmation */}
+      <AlertDialog open={deleteTaskOpen} onOpenChange={setDeleteTaskOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Tarefa</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir a tarefa "{selectedTask?.title}"? 
+              Esta ação não pode ser desfeita e todas as notas associadas serão perdidas.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteTask}
+              disabled={isDeletingTask}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeletingTask ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Grades Table */}
       <Card>

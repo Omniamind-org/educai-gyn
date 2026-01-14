@@ -69,6 +69,7 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
   const [isCreatingTask, setIsCreatingTask] = useState(false);
   const [isSavingGrades, setIsSavingGrades] = useState(false);
   const [newTaskOpen, setNewTaskOpen] = useState(false);
+  const [tasksListOpen, setTasksListOpen] = useState(false);
   const [newTask, setNewTask] = useState({
     title: '',
     description: '',
@@ -343,7 +344,10 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card 
+          className="cursor-pointer hover:bg-accent/50 transition-colors"
+          onClick={() => setTasksListOpen(true)}
+        >
           <CardContent className="p-4 flex items-center gap-3">
             <div className="p-2 rounded-lg bg-success/10">
               <ClipboardList className="h-5 w-5 text-success" />
@@ -355,6 +359,55 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
           </CardContent>
         </Card>
       </div>
+
+      {/* Tasks List Dialog */}
+      <Dialog open={tasksListOpen} onOpenChange={setTasksListOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ClipboardList className="h-5 w-5" />
+              Tarefas Ativas - {classData.name}
+            </DialogTitle>
+            <DialogDescription>
+              Lista de todas as tarefas ativas desta turma
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 max-h-[60vh] overflow-y-auto">
+            {tasks.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <ClipboardList className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>Nenhuma tarefa ativa.</p>
+              </div>
+            ) : (
+              tasks.map(task => (
+                <Card key={task.id}>
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-1">
+                        <h4 className="font-semibold text-lg">{task.title}</h4>
+                        {task.description && (
+                          <p className="text-sm text-muted-foreground">{task.description}</p>
+                        )}
+                        <div className="flex items-center gap-4 mt-2">
+                          <Badge variant="outline">Nota máx: {task.max_score}</Badge>
+                          {task.due_date && (
+                            <Badge variant="secondary">
+                              Entrega: {new Date(task.due_date).toLocaleDateString('pt-BR')}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      <Badge className="bg-success/10 text-success border-success/20">
+                        {task.status}
+                      </Badge>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Grades Table */}
       <Card>

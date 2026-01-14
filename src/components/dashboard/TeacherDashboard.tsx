@@ -31,7 +31,7 @@ interface GeneratedLessonPlan {
   bnccObjective: string;
 }
 
-const SERIES = ['1º Ano', '2º Ano', '3º Ano'];
+const SERIES = ['1º Ano do Ensino Médio', '2º Ano do Ensino Médio', '3º Ano do Ensino Médio'];
 const BNCC_OBJECTIVES = [
   'EF09HI01 - Compreender o processo de industrialização',
   'EF09HI02 - Analisar transformações sociais',

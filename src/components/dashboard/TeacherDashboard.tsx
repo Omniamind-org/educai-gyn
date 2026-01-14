@@ -41,6 +41,7 @@ export function TeacherDashboard() {
   const [lessonDescription, setLessonDescription] = useState('');
   const [classes, setClasses] = useState<ClassWithDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
 
   useEffect(() => {
     fetchTeacherClasses();
@@ -134,6 +135,72 @@ export function TeacherDashboard() {
           '💡 Dica: Posso criar um Quiz gamificado sobre máquinas a vapor para sua aula sobre Revolução Industrial. Quer gerar agora?'
         );
       }, 1000);
+    }
+  };
+
+  const handleGenerateLessonPlan = async () => {
+    if (!lessonTopic.trim()) {
+      toast({
+        title: 'Campo obrigatório',
+        description: 'Por favor, informe o tema da aula.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsGeneratingPlan(true);
+
+    try {
+      const response = await supabase.functions.invoke('generate-lesson-plan', {
+        body: {
+          topic: lessonTopic,
+          series: selectedSeries,
+          bnccObjective: selectedBncc,
+          description: lessonDescription,
+        },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || 'Erro ao gerar plano de aula');
+      }
+
+      const data = response.data;
+
+      if (data.error) {
+        toast({
+          title: 'Erro',
+          description: data.error,
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Send the lesson plan to the AI sidebar
+      if ((window as any).addAIMessage) {
+        (window as any).addAIMessage(
+          `📚 **Plano de Aula Gerado**\n\n${data.lessonPlan}`
+        );
+      }
+
+      toast({
+        title: 'Plano gerado!',
+        description: 'O plano de aula foi gerado e enviado para o chat.',
+      });
+
+      // Clear form
+      setLessonTopic('');
+      setSelectedSeries('');
+      setSelectedBncc('');
+      setLessonDescription('');
+    } catch (error) {
+      console.error('Error generating lesson plan:', error);
+      toast({
+        title: 'Erro',
+        description: error instanceof Error ? error.message : 'Não foi possível gerar o plano de aula.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsGeneratingPlan(false);
     }
   };
 
@@ -254,9 +321,22 @@ export function TeacherDashboard() {
           </div>
 
           <div className="flex gap-3">
-            <Button className="gap-2">
-              <Plus className="w-4 h-4" />
-              Gerar Plano de Aula
+            <Button 
+              className="gap-2" 
+              onClick={handleGenerateLessonPlan}
+              disabled={isGeneratingPlan}
+            >
+              {isGeneratingPlan ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Gerando...
+                </>
+              ) : (
+                <>
+                  <Plus className="w-4 h-4" />
+                  Gerar Plano de Aula
+                </>
+              )}
             </Button>
             <Button variant="outline" className="gap-2">
               <Target className="w-4 h-4" />

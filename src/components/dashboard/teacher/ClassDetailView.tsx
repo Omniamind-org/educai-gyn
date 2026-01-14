@@ -80,6 +80,7 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
   const [isSavingGrades, setIsSavingGrades] = useState(false);
   const [newTaskOpen, setNewTaskOpen] = useState(false);
   const [tasksListOpen, setTasksListOpen] = useState(false);
+  const [studentsListOpen, setStudentsListOpen] = useState(false);
   const [editTaskOpen, setEditTaskOpen] = useState(false);
   const [deleteTaskOpen, setDeleteTaskOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -446,7 +447,10 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card>
+        <Card 
+          className="cursor-pointer hover:bg-accent/50 transition-colors"
+          onClick={() => setStudentsListOpen(true)}
+        >
           <CardContent className="p-4 flex items-center gap-3">
             <div className="p-2 rounded-lg bg-primary/10">
               <Users className="h-5 w-5 text-primary" />
@@ -472,6 +476,49 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
           </CardContent>
         </Card>
       </div>
+
+      {/* Students List Dialog */}
+      <Dialog open={studentsListOpen} onOpenChange={setStudentsListOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Alunos - {classData.name}
+            </DialogTitle>
+            <DialogDescription>
+              Lista de todos os alunos desta turma
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+            {students.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>Nenhum aluno cadastrado nesta turma.</p>
+              </div>
+            ) : (
+              students.map(student => (
+                <Card key={student.id}>
+                  <CardContent className="p-4 flex items-center gap-4">
+                    <Avatar>
+                      <AvatarFallback className="bg-primary/10 text-primary">
+                        {student.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                      <h4 className="font-semibold">{student.name}</h4>
+                      <p className="text-sm text-muted-foreground">{student.grade}</p>
+                    </div>
+                    <Badge variant="outline">
+                      <GraduationCap className="h-3 w-3 mr-1" />
+                      Aluno
+                    </Badge>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Tasks List Dialog */}
       <Dialog open={tasksListOpen} onOpenChange={setTasksListOpen}>

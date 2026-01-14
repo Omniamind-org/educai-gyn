@@ -1,0 +1,443 @@
+import { useState, useEffect } from 'react';
+import { ArrowLeft, Plus, Users, BookOpen, Loader2, GraduationCap, ClipboardList, Save } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+
+interface Student {
+  id: string;
+  name: string;
+  grade: string;
+}
+
+interface Task {
+  id: string;
+  title: string;
+  description: string | null;
+  due_date: string | null;
+  max_score: number;
+  status: string;
+  created_at: string;
+}
+
+interface StudentGrade {
+  student_id: string;
+  task_id: string;
+  score: number | null;
+}
+
+interface ClassDetailViewProps {
+  classData: {
+    id: string;
+    name: string;
+    grade: string;
+    year: number;
+  };
+  teacherId: string;
+  onBack: () => void;
+}
+
+export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailViewProps) {
+  const { toast } = useToast();
+  const [students, setStudents] = useState<Student[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [grades, setGrades] = useState<Record<string, Record<string, number | null>>>({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [isCreatingTask, setIsCreatingTask] = useState(false);
+  const [isSavingGrades, setIsSavingGrades] = useState(false);
+  const [newTaskOpen, setNewTaskOpen] = useState(false);
+  const [newTask, setNewTask] = useState({
+    title: '',
+    description: '',
+    max_score: '10',
+    due_date: '',
+  });
+
+  useEffect(() => {
+    fetchClassData();
+  }, [classData.id]);
+
+  const fetchClassData = async () => {
+    setIsLoading(true);
+    try {
+      // Fetch students in this class
+      const { data: classStudents } = await supabase
+        .from('class_students')
+        .select('student_id')
+        .eq('class_id', classData.id);
+
+      if (classStudents && classStudents.length > 0) {
+        const studentIds = classStudents.map(cs => cs.student_id);
+        const { data: studentsData } = await supabase
+          .from('students')
+          .select('id, name, grade')
+          .in('id', studentIds);
+        
+        setStudents(studentsData || []);
+      } else {
+        setStudents([]);
+      }
+
+      // Fetch tasks for this class
+      const { data: tasksData } = await supabase
+        .from('tasks')
+        .select('*')
+        .eq('class_id', classData.id)
+        .eq('status', 'ativa')
+        .order('created_at', { ascending: false });
+
+      setTasks(tasksData || []);
+
+      // Fetch grades for all students and tasks
+      if (tasksData && tasksData.length > 0) {
+        const taskIds = tasksData.map(t => t.id);
+        const { data: gradesData } = await supabase
+          .from('student_grades')
+          .select('student_id, task_id, score')
+          .in('task_id', taskIds);
+
+        // Build grades lookup: grades[studentId][taskId] = score
+        const gradesMap: Record<string, Record<string, number | null>> = {};
+        gradesData?.forEach(g => {
+          if (!gradesMap[g.student_id]) {
+            gradesMap[g.student_id] = {};
+          }
+          gradesMap[g.student_id][g.task_id] = g.score;
+        });
+        setGrades(gradesMap);
+      }
+    } catch (error) {
+      console.error('Error fetching class data:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível carregar os dados da turma.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCreateTask = async () => {
+    if (!newTask.title.trim()) {
+      toast({
+        title: 'Erro',
+        description: 'O título da tarefa é obrigatório.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsCreatingTask(true);
+    try {
+      const { error } = await supabase.from('tasks').insert({
+        class_id: classData.id,
+        teacher_id: teacherId,
+        title: newTask.title.trim(),
+        description: newTask.description.trim() || null,
+        max_score: parseFloat(newTask.max_score) || 10,
+        due_date: newTask.due_date || null,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Sucesso',
+        description: 'Tarefa criada com sucesso!',
+      });
+
+      setNewTask({ title: '', description: '', max_score: '10', due_date: '' });
+      setNewTaskOpen(false);
+      fetchClassData();
+    } catch (error) {
+      console.error('Error creating task:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível criar a tarefa.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsCreatingTask(false);
+    }
+  };
+
+  const handleGradeChange = (studentId: string, taskId: string, value: string) => {
+    const numValue = value === '' ? null : parseFloat(value);
+    setGrades(prev => ({
+      ...prev,
+      [studentId]: {
+        ...prev[studentId],
+        [taskId]: numValue,
+      },
+    }));
+  };
+
+  const handleSaveGrades = async () => {
+    setIsSavingGrades(true);
+    try {
+      // Prepare upsert data
+      const upsertData: { task_id: string; student_id: string; score: number | null; graded_at: string }[] = [];
+
+      Object.entries(grades).forEach(([studentId, studentGrades]) => {
+        Object.entries(studentGrades).forEach(([taskId, score]) => {
+          upsertData.push({
+            task_id: taskId,
+            student_id: studentId,
+            score: score,
+            graded_at: new Date().toISOString(),
+          });
+        });
+      });
+
+      if (upsertData.length > 0) {
+        const { error } = await supabase
+          .from('student_grades')
+          .upsert(upsertData, { onConflict: 'task_id,student_id' });
+
+        if (error) throw error;
+      }
+
+      toast({
+        title: 'Sucesso',
+        description: 'Notas salvas com sucesso!',
+      });
+    } catch (error) {
+      console.error('Error saving grades:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível salvar as notas.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSavingGrades(false);
+    }
+  };
+
+  const getGradeValue = (studentId: string, taskId: string): string => {
+    const score = grades[studentId]?.[taskId];
+    return score !== null && score !== undefined ? score.toString() : '';
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center gap-4">
+        <Button variant="ghost" size="icon" onClick={onBack}>
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <div className="flex-1">
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <BookOpen className="h-6 w-6 text-primary" />
+            {classData.name}
+          </h1>
+          <p className="text-muted-foreground">{classData.grade} • {classData.year}</p>
+        </div>
+        <Dialog open={newTaskOpen} onOpenChange={setNewTaskOpen}>
+          <DialogTrigger asChild>
+            <Button className="gap-2">
+              <Plus className="h-4 w-4" />
+              Nova Tarefa
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Criar Nova Tarefa</DialogTitle>
+              <DialogDescription>
+                Adicione uma nova tarefa para esta turma.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="task-title">Título *</Label>
+                <Input
+                  id="task-title"
+                  placeholder="Ex: Prova de Matemática"
+                  value={newTask.title}
+                  onChange={(e) => setNewTask(prev => ({ ...prev, title: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="task-description">Descrição</Label>
+                <Textarea
+                  id="task-description"
+                  placeholder="Descreva a tarefa..."
+                  value={newTask.description}
+                  onChange={(e) => setNewTask(prev => ({ ...prev, description: e.target.value }))}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="task-max-score">Nota Máxima</Label>
+                  <Input
+                    id="task-max-score"
+                    type="number"
+                    value={newTask.max_score}
+                    onChange={(e) => setNewTask(prev => ({ ...prev, max_score: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="task-due-date">Data de Entrega</Label>
+                  <Input
+                    id="task-due-date"
+                    type="date"
+                    value={newTask.due_date}
+                    onChange={(e) => setNewTask(prev => ({ ...prev, due_date: e.target.value }))}
+                  />
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setNewTaskOpen(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleCreateTask} disabled={isCreatingTask}>
+                {isCreatingTask ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                Criar Tarefa
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-primary/10">
+              <Users className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold">{students.length}</p>
+              <p className="text-sm text-muted-foreground">Alunos</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-success/10">
+              <ClipboardList className="h-5 w-5 text-success" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold">{tasks.length}</p>
+              <p className="text-sm text-muted-foreground">Tarefas Ativas</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Grades Table */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <GraduationCap className="h-5 w-5" />
+              Notas dos Alunos
+            </CardTitle>
+            <CardDescription>
+              Visualize e edite as notas de cada aluno por tarefa
+            </CardDescription>
+          </div>
+          {tasks.length > 0 && students.length > 0 && (
+            <Button onClick={handleSaveGrades} disabled={isSavingGrades} className="gap-2">
+              {isSavingGrades ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              Salvar Notas
+            </Button>
+          )}
+        </CardHeader>
+        <CardContent>
+          {students.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>Nenhum aluno cadastrado nesta turma.</p>
+            </div>
+          ) : tasks.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <ClipboardList className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>Nenhuma tarefa ativa. Crie uma nova tarefa para lançar notas.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="min-w-[200px]">Aluno</TableHead>
+                    {tasks.map(task => (
+                      <TableHead key={task.id} className="min-w-[120px] text-center">
+                        <div className="flex flex-col items-center">
+                          <span className="font-medium">{task.title}</span>
+                          <Badge variant="outline" className="text-xs mt-1">
+                            Max: {task.max_score}
+                          </Badge>
+                        </div>
+                      </TableHead>
+                    ))}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {students.map(student => (
+                    <TableRow key={student.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${student.id}`} />
+                            <AvatarFallback>{student.name.charAt(0)}</AvatarFallback>
+                          </Avatar>
+                          <span className="font-medium">{student.name}</span>
+                        </div>
+                      </TableCell>
+                      {tasks.map(task => (
+                        <TableCell key={task.id} className="text-center">
+                          <Input
+                            type="number"
+                            min="0"
+                            max={task.max_score}
+                            step="0.1"
+                            className="w-20 mx-auto text-center"
+                            placeholder="-"
+                            value={getGradeValue(student.id, task.id)}
+                            onChange={(e) => handleGradeChange(student.id, task.id, e.target.value)}
+                          />
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

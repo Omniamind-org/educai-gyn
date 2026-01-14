@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { StudentProgressAnalysis } from './teacher/StudentProgressAnalysis';
 import { ClassDetailView } from './teacher/ClassDetailView';
+import { LessonPlanEditor } from './teacher/LessonPlanEditor';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -21,6 +22,13 @@ interface ClassWithDetails {
   student_count: number;
 }
 
+interface GeneratedLessonPlan {
+  content: string;
+  topic: string;
+  series: string;
+  bnccObjective: string;
+}
+
 const SERIES = ['1º Ano', '2º Ano', '3º Ano'];
 const BNCC_OBJECTIVES = [
   'EF09HI01 - Compreender o processo de industrialização',
@@ -28,7 +36,7 @@ const BNCC_OBJECTIVES = [
   'EF09HI03 - Identificar impactos ambientais',
 ];
 
-type TeacherView = 'dashboard' | 'progress-analysis' | 'class-detail';
+type TeacherView = 'dashboard' | 'progress-analysis' | 'class-detail' | 'lesson-plan-editor';
 
 export function TeacherDashboard() {
   const { toast } = useToast();
@@ -42,6 +50,7 @@ export function TeacherDashboard() {
   const [classes, setClasses] = useState<ClassWithDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
+  const [generatedPlan, setGeneratedPlan] = useState<GeneratedLessonPlan | null>(null);
 
   useEffect(() => {
     fetchTeacherClasses();
@@ -175,16 +184,18 @@ export function TeacherDashboard() {
         return;
       }
 
-      // Send the lesson plan to the AI sidebar
-      if ((window as any).addAIMessage) {
-        (window as any).addAIMessage(
-          `📚 **Plano de Aula Gerado**\n\n${data.lessonPlan}`
-        );
-      }
+      // Store the generated plan and open editor
+      setGeneratedPlan({
+        content: data.lessonPlan,
+        topic: lessonTopic,
+        series: selectedSeries,
+        bnccObjective: selectedBncc,
+      });
+      setCurrentView('lesson-plan-editor');
 
       toast({
         title: 'Plano gerado!',
-        description: 'O plano de aula foi gerado e enviado para o chat.',
+        description: 'O plano de aula foi gerado com sucesso.',
       });
 
       // Clear form
@@ -203,6 +214,22 @@ export function TeacherDashboard() {
       setIsGeneratingPlan(false);
     }
   };
+
+  // Show Lesson Plan Editor
+  if (currentView === 'lesson-plan-editor' && generatedPlan) {
+    return (
+      <LessonPlanEditor
+        lessonPlan={generatedPlan.content}
+        topic={generatedPlan.topic}
+        series={generatedPlan.series}
+        bnccObjective={generatedPlan.bnccObjective}
+        onBack={() => {
+          setCurrentView('dashboard');
+          setGeneratedPlan(null);
+        }}
+      />
+    );
+  }
 
   // Show Class Detail View
   if (currentView === 'class-detail' && selectedClass && teacherId) {

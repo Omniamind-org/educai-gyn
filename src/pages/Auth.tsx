@@ -249,6 +249,155 @@ export default function Auth() {
     );
   }
 
+  const getRoleLabel = () => {
+    switch (prefillRole) {
+      case "aluno": return "Aluno";
+      case "professor": return "Professor";
+      case "coordenacao": return "Coordenação";
+      case "diretor": return "Diretor";
+      case "secretaria": return "Secretaria";
+      default: return "";
+    }
+  };
+
+  const getRoleIcon = () => {
+    switch (prefillRole) {
+      case "aluno": return <GraduationCap className="h-5 w-5" />;
+      case "professor": return <Briefcase className="h-5 w-5" />;
+      default: return <User className="h-5 w-5" />;
+    }
+  };
+
+  // Determine which form to show based on prefillRole
+  const renderForm = () => {
+    if (prefillRole === "aluno") {
+      return (
+        <form onSubmit={handleStudentLogin} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="cpf">CPF</Label>
+            <Input
+              id="cpf"
+              type="text"
+              placeholder="000.000.000-00"
+              value={cpf}
+              onChange={(e) => handleCpfChange(e.target.value, setCpf)}
+              disabled={isSubmitting}
+            />
+            {cpfErrors.cpf && <p className="text-sm text-destructive">{cpfErrors.cpf}</p>}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="cpf-password">Senha</Label>
+            <Input
+              id="cpf-password"
+              type="password"
+              placeholder="Senha fornecida pela secretaria"
+              value={cpfPassword}
+              onChange={(e) => setCpfPassword(e.target.value)}
+              disabled={isSubmitting}
+            />
+            {cpfErrors.password && <p className="text-sm text-destructive">{cpfErrors.password}</p>}
+          </div>
+
+          <Button type="submit" className="w-full" disabled={isSubmitting}>
+            {isSubmitting ? "Entrando..." : "Entrar"}
+          </Button>
+
+          <p className="text-xs text-center text-muted-foreground">
+            Sua senha foi fornecida pela secretaria da escola
+          </p>
+
+          <Button type="button" variant="ghost" className="w-full" onClick={() => navigate("/")}>
+            Voltar
+          </Button>
+        </form>
+      );
+    }
+
+    if (prefillRole === "professor") {
+      return (
+        <form onSubmit={handleTeacherLogin} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="teacher-cpf">CPF</Label>
+            <Input
+              id="teacher-cpf"
+              type="text"
+              placeholder="000.000.000-00"
+              value={teacherCpf}
+              onChange={(e) => handleCpfChange(e.target.value, setTeacherCpf)}
+              disabled={isSubmitting}
+            />
+            {teacherErrors.cpf && <p className="text-sm text-destructive">{teacherErrors.cpf}</p>}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="teacher-password">Senha</Label>
+            <Input
+              id="teacher-password"
+              type="password"
+              placeholder="Senha fornecida pela secretaria"
+              value={teacherPassword}
+              onChange={(e) => setTeacherPassword(e.target.value)}
+              disabled={isSubmitting}
+            />
+            {teacherErrors.password && <p className="text-sm text-destructive">{teacherErrors.password}</p>}
+          </div>
+
+          <Button type="submit" className="w-full" disabled={isSubmitting}>
+            {isSubmitting ? "Entrando..." : "Entrar"}
+          </Button>
+
+          <p className="text-xs text-center text-muted-foreground">
+            Sua senha foi fornecida pela secretaria da escola
+          </p>
+
+          <Button type="button" variant="ghost" className="w-full" onClick={() => navigate("/")}>
+            Voltar
+          </Button>
+        </form>
+      );
+    }
+
+    // Staff login (secretaria, coordenacao, diretor)
+    return (
+      <form onSubmit={handleStaffLogin} className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="login-email">Email</Label>
+          <Input
+            id="login-email"
+            type="email"
+            placeholder="seu@email.com"
+            value={loginEmail}
+            onChange={(e) => setLoginEmail(e.target.value)}
+            disabled={isSubmitting}
+          />
+          {loginErrors.email && <p className="text-sm text-destructive">{loginErrors.email}</p>}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="login-password">Senha</Label>
+          <Input
+            id="login-password"
+            type="password"
+            placeholder="••••••••"
+            value={loginPassword}
+            onChange={(e) => setLoginPassword(e.target.value)}
+            disabled={isSubmitting}
+          />
+          {loginErrors.password && <p className="text-sm text-destructive">{loginErrors.password}</p>}
+        </div>
+
+        <Button type="submit" className="w-full" disabled={isSubmitting}>
+          {isSubmitting ? "Entrando..." : "Entrar"}
+        </Button>
+
+        <Button type="button" variant="ghost" className="w-full" onClick={() => navigate("/")}>
+          Voltar
+        </Button>
+      </form>
+    );
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
@@ -259,155 +408,14 @@ export default function Auth() {
             </div>
           </div>
           <CardTitle className="text-2xl">Aprendu</CardTitle>
-          <CardDescription>Entre para acessar sua área</CardDescription>
+          <CardDescription className="flex items-center justify-center gap-2">
+            {getRoleIcon()}
+            <span>Entrar como {getRoleLabel()}</span>
+          </CardDescription>
         </CardHeader>
 
         <CardContent>
-          <Tabs defaultValue={getDefaultTab()} className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="aluno" className="gap-1 text-xs sm:text-sm">
-                <GraduationCap className="h-4 w-4" />
-                <span className="hidden sm:inline">Aluno</span>
-              </TabsTrigger>
-              <TabsTrigger value="professor" className="gap-1 text-xs sm:text-sm">
-                <Briefcase className="h-4 w-4" />
-                <span className="hidden sm:inline">Professor</span>
-              </TabsTrigger>
-              <TabsTrigger value="secretaria" className="gap-1 text-xs sm:text-sm">
-                <User className="h-4 w-4" />
-                <span className="hidden sm:inline">Secretaria</span>
-              </TabsTrigger>
-            </TabsList>
-
-            {/* Student Login with CPF */}
-            <TabsContent value="aluno">
-              <form onSubmit={handleStudentLogin} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="cpf">CPF</Label>
-                  <Input
-                    id="cpf"
-                    type="text"
-                    placeholder="000.000.000-00"
-                    value={cpf}
-                    onChange={(e) => handleCpfChange(e.target.value, setCpf)}
-                    disabled={isSubmitting}
-                  />
-                  {cpfErrors.cpf && <p className="text-sm text-destructive">{cpfErrors.cpf}</p>}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="cpf-password">Senha</Label>
-                  <Input
-                    id="cpf-password"
-                    type="password"
-                    placeholder="Senha fornecida pela secretaria"
-                    value={cpfPassword}
-                    onChange={(e) => setCpfPassword(e.target.value)}
-                    disabled={isSubmitting}
-                  />
-                  {cpfErrors.password && <p className="text-sm text-destructive">{cpfErrors.password}</p>}
-                </div>
-
-                <Button type="submit" className="w-full" disabled={isSubmitting}>
-                  {isSubmitting ? "Entrando..." : "Entrar como Aluno"}
-                </Button>
-
-                <p className="text-xs text-center text-muted-foreground">
-                  Sua senha foi fornecida pela secretaria da escola
-                </p>
-
-                <Button type="button" variant="ghost" className="w-full" onClick={() => navigate("/")}>
-                  Voltar
-                </Button>
-              </form>
-            </TabsContent>
-
-            {/* Teacher Login with CPF */}
-            <TabsContent value="professor">
-              <form onSubmit={handleTeacherLogin} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="teacher-cpf">CPF</Label>
-                  <Input
-                    id="teacher-cpf"
-                    type="text"
-                    placeholder="000.000.000-00"
-                    value={teacherCpf}
-                    onChange={(e) => handleCpfChange(e.target.value, setTeacherCpf)}
-                    disabled={isSubmitting}
-                  />
-                  {teacherErrors.cpf && <p className="text-sm text-destructive">{teacherErrors.cpf}</p>}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="teacher-password">Senha</Label>
-                  <Input
-                    id="teacher-password"
-                    type="password"
-                    placeholder="Senha fornecida pela secretaria"
-                    value={teacherPassword}
-                    onChange={(e) => setTeacherPassword(e.target.value)}
-                    disabled={isSubmitting}
-                  />
-                  {teacherErrors.password && <p className="text-sm text-destructive">{teacherErrors.password}</p>}
-                </div>
-
-                <Button type="submit" className="w-full" disabled={isSubmitting}>
-                  {isSubmitting ? "Entrando..." : "Entrar como Professor"}
-                </Button>
-
-                <p className="text-xs text-center text-muted-foreground">
-                  Sua senha foi fornecida pela secretaria da escola
-                </p>
-
-                <Button type="button" variant="ghost" className="w-full" onClick={() => navigate("/")}>
-                  Voltar
-                </Button>
-              </form>
-            </TabsContent>
-
-            {/* Staff Login with Email (Secretaria, Coordenação, Diretor) */}
-            <TabsContent value="secretaria">
-              <form onSubmit={handleStaffLogin} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="login-email">Email</Label>
-                  <Input
-                    id="login-email"
-                    type="email"
-                    placeholder="seu@email.com"
-                    value={loginEmail}
-                    onChange={(e) => setLoginEmail(e.target.value)}
-                    disabled={isSubmitting}
-                  />
-                  {loginErrors.email && <p className="text-sm text-destructive">{loginErrors.email}</p>}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="login-password">Senha</Label>
-                  <Input
-                    id="login-password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={loginPassword}
-                    onChange={(e) => setLoginPassword(e.target.value)}
-                    disabled={isSubmitting}
-                  />
-                  {loginErrors.password && <p className="text-sm text-destructive">{loginErrors.password}</p>}
-                </div>
-
-                <Button type="submit" className="w-full" disabled={isSubmitting}>
-                  {isSubmitting ? "Entrando..." : "Entrar"}
-                </Button>
-
-                <p className="text-xs text-center text-muted-foreground">
-                  Acesso para Secretaria, Coordenação e Direção
-                </p>
-
-                <Button type="button" variant="ghost" className="w-full" onClick={() => navigate("/")}>
-                  Voltar
-                </Button>
-              </form>
-            </TabsContent>
-          </Tabs>
+          {renderForm()}
         </CardContent>
       </Card>
     </div>

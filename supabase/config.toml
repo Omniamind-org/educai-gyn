@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.chat-ai]
 verify_jwt = false
+
+[functions.generate-lesson-plan]
+verify_jwt = false

@@ -119,11 +119,6 @@ export function ExerciseListEditor({
     }
   };
 
-  const handleAskAI = (question: string) => {
-    if ((window as any).addAIMessage) {
-      (window as any).addAIMessage(question);
-    }
-  };
 
   const handleSave = async () => {
     if (!teacherId) {
@@ -293,44 +288,6 @@ export function ExerciseListEditor({
         </CardContent>
       </Card>
 
-      {/* Quick Actions */}
-      <Card>
-        <CardHeader className="py-3 px-4">
-          <CardTitle className="text-sm font-medium">Ações Rápidas com IA</CardTitle>
-        </CardHeader>
-        <CardContent className="py-2 px-4">
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleAskAI(`Adicione mais 5 exercícios sobre "${topic}" com nível de dificuldade crescente`)}
-            >
-              + Exercícios
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleAskAI(`Crie uma versão simplificada dos exercícios sobre "${topic}" para alunos com dificuldades`)}
-            >
-              Versão Simplificada
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleAskAI(`Sugira exercícios de revisão rápida sobre "${topic}" para fazer em 5 minutos`)}
-            >
-              Revisão Rápida
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleAskAI(`Crie exercícios desafiadores (nível avançado) sobre "${topic}" para alunos de destaque`)}
-            >
-              Desafios
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }

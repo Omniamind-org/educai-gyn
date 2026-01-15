@@ -462,23 +462,25 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
               </div>
               <div className="space-y-2">
                 <Label htmlFor="task-discipline">Disciplina *</Label>
-                <Select
-                  value={newTask.discipline_id}
-                  onValueChange={(value) => setNewTask(prev => ({ ...prev, discipline_id: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione a disciplina" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {disciplines.length === 0 ? (
-                      <SelectItem value="" disabled>Nenhuma disciplina disponível</SelectItem>
-                    ) : (
-                      disciplines.map((disc) => (
+                {disciplines.length === 0 ? (
+                  <p className="text-sm text-muted-foreground py-2">
+                    Nenhuma disciplina disponível. Peça à secretaria para associar disciplinas a você.
+                  </p>
+                ) : (
+                  <Select
+                    value={newTask.discipline_id}
+                    onValueChange={(value) => setNewTask(prev => ({ ...prev, discipline_id: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione a disciplina" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {disciplines.map((disc) => (
                         <SelectItem key={disc.id} value={disc.id}>{disc.name}</SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">

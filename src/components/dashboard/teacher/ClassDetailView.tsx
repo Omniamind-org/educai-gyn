@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Dialog,
   DialogContent,
@@ -43,6 +44,11 @@ interface Student {
   grade: string;
 }
 
+interface Discipline {
+  id: string;
+  name: string;
+}
+
 interface Task {
   id: string;
   title: string;
@@ -51,6 +57,7 @@ interface Task {
   max_score: number;
   status: string;
   created_at: string;
+  discipline_id: string | null;
 }
 
 interface StudentGrade {
@@ -73,6 +80,7 @@ interface ClassDetailViewProps {
 export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailViewProps) {
   const { toast } = useToast();
   const [students, setStudents] = useState<Student[]>([]);
+  const [disciplines, setDisciplines] = useState<Discipline[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [grades, setGrades] = useState<Record<string, Record<string, number | null>>>({});
   const [isLoading, setIsLoading] = useState(true);
@@ -91,17 +99,46 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
     description: '',
     max_score: '10',
     due_date: '',
+    discipline_id: '',
   });
   const [editTask, setEditTask] = useState({
     title: '',
     description: '',
     max_score: '10',
     due_date: '',
+    discipline_id: '',
   });
 
   useEffect(() => {
     fetchClassData();
-  }, [classData.id]);
+    fetchTeacherDisciplines();
+  }, [classData.id, teacherId]);
+
+  const fetchTeacherDisciplines = async () => {
+    try {
+      // Fetch disciplines that this teacher is assigned to
+      const { data: teacherDiscs } = await supabase
+        .from('teacher_disciplines')
+        .select('discipline_id')
+        .eq('teacher_id', teacherId);
+
+      if (teacherDiscs && teacherDiscs.length > 0) {
+        const discIds = teacherDiscs.map(td => td.discipline_id);
+        const { data: discsData } = await supabase
+          .from('disciplines')
+          .select('id, name')
+          .in('id', discIds)
+          .order('name', { ascending: true });
+        
+        setDisciplines(discsData || []);
+      } else {
+        setDisciplines([]);
+      }
+    } catch (error) {
+      console.error('Error fetching disciplines:', error);
+    }
+  };
+
 
   const fetchClassData = async () => {
     setIsLoading(true);
@@ -174,6 +211,15 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
       return;
     }
 
+    if (!newTask.discipline_id) {
+      toast({
+        title: 'Erro',
+        description: 'Selecione a disciplina da tarefa.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsCreatingTask(true);
     try {
       const { error } = await supabase.from('tasks').insert({
@@ -183,6 +229,7 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
         description: newTask.description.trim() || null,
         max_score: parseFloat(newTask.max_score) || 10,
         due_date: newTask.due_date || null,
+        discipline_id: newTask.discipline_id,
       });
 
       if (error) throw error;
@@ -192,7 +239,7 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
         description: 'Tarefa criada com sucesso!',
       });
 
-      setNewTask({ title: '', description: '', max_score: '10', due_date: '' });
+      setNewTask({ title: '', description: '', max_score: '10', due_date: '', discipline_id: '' });
       setNewTaskOpen(false);
       fetchClassData();
     } catch (error) {
@@ -205,7 +252,8 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
     } finally {
       setIsCreatingTask(false);
     }
-  };
+
+
 
   const handleGradeChange = (studentId: string, taskId: string, value: string) => {
     const numValue = value === '' ? null : parseFloat(value);
@@ -271,6 +319,7 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
       description: task.description || '',
       max_score: task.max_score.toString(),
       due_date: task.due_date ? task.due_date.split('T')[0] : '',
+      discipline_id: task.discipline_id || '',
     });
     setEditTaskOpen(true);
   };
@@ -294,6 +343,7 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
           description: editTask.description.trim() || null,
           max_score: parseFloat(editTask.max_score) || 10,
           due_date: editTask.due_date || null,
+          discipline_id: editTask.discipline_id || null,
         })
         .eq('id', selectedTask.id);
 
@@ -410,6 +460,26 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
                   value={newTask.description}
                   onChange={(e) => setNewTask(prev => ({ ...prev, description: e.target.value }))}
                 />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="task-discipline">Disciplina *</Label>
+                <Select
+                  value={newTask.discipline_id}
+                  onValueChange={(value) => setNewTask(prev => ({ ...prev, discipline_id: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a disciplina" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {disciplines.length === 0 ? (
+                      <SelectItem value="" disabled>Nenhuma disciplina disponível</SelectItem>
+                    ) : (
+                      disciplines.map((disc) => (
+                        <SelectItem key={disc.id} value={disc.id}>{disc.name}</SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">

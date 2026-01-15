@@ -99,48 +99,58 @@ export function useStudentSubjects() {
 
         const teacherIds = [...new Set(classTeachers.map(ct => ct.teacher_id))];
 
-        // Get teacher details with their subjects
+        // Get teachers with their assigned disciplines
         const { data: teachersData, error: teachersError } = await supabase
           .from('teachers')
-          .select('id, name, subject')
-          .in('id', teacherIds)
-          .not('subject', 'is', null);
+          .select('id, name')
+          .in('id', teacherIds);
 
         if (teachersError) {
           throw teachersError;
         }
 
-        if (!teachersData || teachersData.length === 0) {
+        // Get teacher disciplines
+        const { data: teacherDisciplines } = await supabase
+          .from('teacher_disciplines')
+          .select('teacher_id, discipline_id')
+          .in('teacher_id', teacherIds);
+
+        // Get discipline details
+        const disciplineIds = [...new Set((teacherDisciplines || []).map(td => td.discipline_id))];
+        const { data: disciplinesData } = await supabase
+          .from('disciplines')
+          .select('id, name')
+          .in('id', disciplineIds);
+
+        if (!disciplinesData || disciplinesData.length === 0) {
           setSubjects([]);
           setLoading(false);
           return;
         }
 
-        // Process subjects - teachers can have multiple subjects (comma-separated)
+        // Build subjects from disciplines and their teachers
         const subjectsMap = new Map<string, StudentSubject>();
         let colorIndex = 0;
 
-        teachersData.forEach(teacher => {
-          if (!teacher.subject) return;
+        (teacherDisciplines || []).forEach(td => {
+          const discipline = disciplinesData.find(d => d.id === td.discipline_id);
+          const teacher = (teachersData || []).find(t => t.id === td.teacher_id);
           
-          // Split by comma in case teacher has multiple subjects
-          const teacherSubjects = teacher.subject.split(',').map(s => s.trim()).filter(Boolean);
+          if (!discipline || !teacher) return;
+
+          const subjectKey = `${discipline.id}_${teacher.id}`;
           
-          teacherSubjects.forEach(subjectName => {
-            const subjectId = subjectName.toLowerCase().replace(/\s+/g, '_').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-            
-            if (!subjectsMap.has(subjectId)) {
-              subjectsMap.set(subjectId, {
-                id: subjectId,
-                name: subjectName,
-                color: SUBJECT_COLORS[colorIndex % SUBJECT_COLORS.length],
-                icon: getSubjectIcon(subjectName),
-                teacherName: teacher.name,
-                teacherId: teacher.id,
-              });
-              colorIndex++;
-            }
-          });
+          if (!subjectsMap.has(subjectKey)) {
+            subjectsMap.set(subjectKey, {
+              id: subjectKey,
+              name: discipline.name,
+              color: SUBJECT_COLORS[colorIndex % SUBJECT_COLORS.length],
+              icon: getSubjectIcon(discipline.name),
+              teacherName: teacher.name,
+              teacherId: teacher.id,
+            });
+            colorIndex++;
+          }
         });
 
         setSubjects(Array.from(subjectsMap.values()));

@@ -178,7 +178,34 @@ const BNCC_SKILLS: Record<string, { code: string; description: string }[]> = {
     { code: 'EM13CHS604', description: 'Analisar o papel dos organismos internacionais.' },
     { code: 'EM13CHS605', description: 'Analisar a Declaração dos Direitos Humanos para propor ações contra desigualdades e violações.' },
   ],
-  ciencias_natureza: [],
+  ciencias_natureza: [
+    // Competência Específica 1
+    { code: 'EM13CNT101', description: 'Analisar e representar transformações e conservações de matéria, energia e movimento para prever situações do cotidiano e processos produtivos sustentáveis.' },
+    { code: 'EM13CNT102', description: 'Realizar previsões e construir protótipos de sistemas térmicos sustentáveis.' },
+    { code: 'EM13CNT103', description: 'Avaliar potencialidades e riscos das radiações em aplicações cotidianas, médicas, industriais e energéticas.' },
+    { code: 'EM13CNT104', description: 'Avaliar impactos de materiais e produtos à saúde e ao ambiente e propor soluções de uso adequado.' },
+    { code: 'EM13CNT105', description: 'Analisar os ciclos dos elementos químicos e os efeitos da ação humana.' },
+    { code: 'EM13CNT106', description: 'Avaliar tecnologias e soluções para geração, transporte e consumo de energia elétrica.' },
+    // Competência Específica 2
+    { code: 'EM13CNT201', description: 'Analisar modelos científicos sobre a origem e evolução da Vida, da Terra e do Universo.' },
+    { code: 'EM13CNT202', description: 'Interpretar manifestações da vida em seus níveis de organização e condições ambientais.' },
+    { code: 'EM13CNT203', description: 'Avaliar efeitos de intervenções nos ecossistemas e nos seres vivos.' },
+    { code: 'EM13CNT204', description: 'Elaborar explicações sobre movimentos de objetos com base na gravitação.' },
+    { code: 'EM13CNT205', description: 'Utilizar probabilidade e incerteza na interpretação de fenômenos naturais e tecnológicos.' },
+    { code: 'EM13CNT206', description: 'Justificar a preservação da biodiversidade e avaliar impactos humanos e políticas ambientais.' },
+    { code: 'EM13CNT207', description: 'Analisar vulnerabilidades das juventudes e propor ações de promoção da saúde e do bem-estar.' },
+    // Competência Específica 3
+    { code: 'EM13CNT301', description: 'Elaborar hipóteses, realizar medições e interpretar dados para resolver situações-problema.' },
+    { code: 'EM13CNT302', description: 'Comunicar resultados científicos em diferentes mídias e contextos.' },
+    { code: 'EM13CNT303', description: 'Avaliar textos de divulgação científica e selecionar fontes confiáveis.' },
+    { code: 'EM13CNT304', description: 'Analisar situações controversas sobre aplicações da ciência com base em ética e evidências.' },
+    { code: 'EM13CNT305', description: 'Investigar o uso indevido da ciência em processos de discriminação e violação de direitos.' },
+    { code: 'EM13CNT306', description: 'Avaliar riscos em atividades cotidianas e justificar práticas de segurança.' },
+    { code: 'EM13CNT307', description: 'Avaliar propriedades dos materiais para usos seguros e sustentáveis.' },
+    { code: 'EM13CNT308', description: 'Analisar o funcionamento de equipamentos e sistemas tecnológicos.' },
+    { code: 'EM13CNT309', description: 'Analisar a dependência dos recursos fósseis e alternativas energéticas.' },
+    { code: 'EM13CNT310', description: 'Avaliar serviços básicos e propor ações de melhoria da qualidade de vida.' },
+  ],
 };
 
 type TeacherView = 'dashboard' | 'progress-analysis' | 'class-detail' | 'lesson-plan-editor' | 'saved-plans' | 'exercise-list-editor' | 'saved-exercise-lists';

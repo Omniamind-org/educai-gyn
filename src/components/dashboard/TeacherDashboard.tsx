@@ -139,7 +139,45 @@ const BNCC_SKILLS: Record<string, { code: string; description: string }[]> = {
     { code: 'EM13LGG703', description: 'Utilizar linguagens, mídias e ferramentas digitais em produções coletivas e autorais.' },
     { code: 'EM13LGG704', description: 'Apropriar-se criticamente de processos de pesquisa e busca de informação na cultura digital.' },
   ],
-  ciencias_humanas: [],
+  ciencias_humanas: [
+    // Competência Específica 1
+    { code: 'EM13CHS101', description: 'Analisar e comparar fontes e narrativas em diversas linguagens para compreender e criticar processos históricos, geográficos, políticos, econômicos, sociais, ambientais e culturais.' },
+    { code: 'EM13CHS102', description: 'Analisar as circunstâncias da emergência de matrizes conceituais hegemônicas, comparando-as a outras narrativas.' },
+    { code: 'EM13CHS103', description: 'Elaborar hipóteses, selecionar evidências e construir argumentos com base em dados qualitativos e quantitativos.' },
+    { code: 'EM13CHS104', description: 'Analisar objetos da cultura material e imaterial como portadores de valores, crenças e práticas sociais.' },
+    { code: 'EM13CHS105', description: 'Criticar tipologias evolutivas e oposições dicotômicas, evidenciando ambiguidades e complexidades.' },
+    { code: 'EM13CHS106', description: 'Utilizar linguagens cartográfica, gráfica, iconográfica, textuais e digitais de forma crítica e ética.' },
+    // Competência Específica 2
+    { code: 'EM13CHS201', description: 'Analisar as dinâmicas das populações, mercadorias e capital nos continentes.' },
+    { code: 'EM13CHS202', description: 'Avaliar os impactos das tecnologias nas dinâmicas sociais, políticas, econômicas e culturais.' },
+    { code: 'EM13CHS203', description: 'Contrapor significados de território, fronteiras e vazio em diferentes sociedades.' },
+    { code: 'EM13CHS204', description: 'Comparar processos de ocupação do espaço e formação de territórios e fronteiras.' },
+    { code: 'EM13CHS205', description: 'Analisar a produção de territorialidades no Brasil e no mundo contemporâneo.' },
+    { code: 'EM13CHS206', description: 'Aplicar princípios do raciocínio geográfico na análise da ocupação do espaço.' },
+    // Competência Específica 3
+    { code: 'EM13CHS301', description: 'Problematizar práticas de produção e descarte de resíduos e propor ações sustentáveis.' },
+    { code: 'EM13CHS302', description: 'Avaliar impactos socioambientais de cadeias produtivas e atividades agropecuárias.' },
+    { code: 'EM13CHS303', description: 'Analisar o papel da indústria cultural e das culturas de massa no consumismo.' },
+    { code: 'EM13CHS304', description: 'Analisar impactos socioambientais de práticas institucionais e individuais.' },
+    { code: 'EM13CHS305', description: 'Analisar o papel de organismos reguladores e acordos ambientais internacionais.' },
+    { code: 'EM13CHS306', description: 'Avaliar impactos de diferentes modelos econômicos sobre a sustentabilidade.' },
+    // Competência Específica 4
+    { code: 'EM13CHS401', description: 'Analisar transformações técnicas, tecnológicas e informacionais e seus efeitos sobre o trabalho.' },
+    { code: 'EM13CHS402', description: 'Comparar indicadores de emprego, trabalho e renda e suas relações com desigualdades.' },
+    { code: 'EM13CHS403', description: 'Analisar transformações contemporâneas para propor ações de superação de opressões.' },
+    { code: 'EM13CHS404', description: 'Analisar os múltiplos aspectos do trabalho em diferentes contextos históricos e geográficos.' },
+    // Competência Específica 5
+    { code: 'EM13CHS501', description: 'Analisar fundamentos da ética em diferentes culturas.' },
+    { code: 'EM13CHS502', description: 'Problematizar desigualdades e preconceitos na vida cotidiana e propor ações de promoção dos Direitos Humanos.' },
+    { code: 'EM13CHS503', description: 'Identificar e analisar diferentes formas de violência e propor mecanismos de enfrentamento.' },
+    { code: 'EM13CHS504', description: 'Avaliar impasses éticos e políticos das transformações científicas e tecnológicas.' },
+    // Competência Específica 6
+    { code: 'EM13CHS601', description: 'Relacionar demandas de indígenas e afrodescendentes aos processos históricos e sociais.' },
+    { code: 'EM13CHS602', description: 'Analisar autoritarismo, populismo e paternalismo na política e na sociedade.' },
+    { code: 'EM13CHS603', description: 'Aplicar conceitos políticos na análise de países, povos e nações.' },
+    { code: 'EM13CHS604', description: 'Analisar o papel dos organismos internacionais.' },
+    { code: 'EM13CHS605', description: 'Analisar a Declaração dos Direitos Humanos para propor ações contra desigualdades e violações.' },
+  ],
   ciencias_natureza: [],
 };
 

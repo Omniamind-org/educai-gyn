@@ -888,7 +888,7 @@ export function SecretaryDashboard() {
             {/* Add Teacher Dialog */}
             <Dialog open={isAddTeacherOpen} onOpenChange={setIsAddTeacherOpen}>
               <DialogTrigger asChild>
-                <Button variant="secondary" className="gap-2">
+                <Button className="gap-2">
                   <Plus className="h-4 w-4" />
                   Novo Professor
                 </Button>
@@ -981,7 +981,7 @@ export function SecretaryDashboard() {
             {/* Add Class Dialog */}
             <Dialog open={isAddClassOpen} onOpenChange={setIsAddClassOpen}>
               <DialogTrigger asChild>
-                <Button variant="outline" className="gap-2">
+                <Button className="gap-2">
                   <Plus className="h-4 w-4" />
                   Nova Turma
                 </Button>

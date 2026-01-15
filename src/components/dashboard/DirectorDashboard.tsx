@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Building, TrendingUp, Target, Hammer, FileText, DollarSign, Users, Calendar, GraduationCap, Loader2 } from 'lucide-react';
+import { Building, TrendingUp, Target, Hammer, FileText, DollarSign, Users, Calendar, GraduationCap, Loader2, Network } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -406,36 +406,48 @@ export function DirectorDashboard() {
         </Card>
       </div>
 
-      {/* Projects */}
-      <Card className="opacity-0 animate-fade-in" style={{ animationDelay: '900ms' }}>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Hammer className="w-5 h-5 text-warning" />
-            Obras e Recursos
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {PROJECTS.map((project) => (
-              <div key={project.id} className="p-3 rounded-lg border border-border">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-medium text-sm">{project.title}</h4>
-                  <Badge className={STATUS_LABELS[project.status].className}>
-                    {STATUS_LABELS[project.status].label}
-                  </Badge>
-                </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">{project.budget}</span>
-                  <div className="flex items-center gap-2">
-                    <Progress value={project.progress} className="w-20 h-2" />
-                    <span className="text-xs font-medium">{project.progress}%</span>
+      {/* Regional Vision Card + Projects Row */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Sou Regional Card */}
+        <Card className="opacity-0 animate-fade-in flex flex-col items-center justify-center py-8" style={{ animationDelay: '850ms' }}>
+          <div className="p-4 rounded-full bg-primary/10 mb-4">
+            <Network className="w-8 h-8 text-primary" />
+          </div>
+          <CardTitle className="text-base font-semibold text-center">Sou Regional</CardTitle>
+          <p className="text-sm text-muted-foreground text-center mt-1">Visão da Rede e Expansão</p>
+        </Card>
+
+        {/* Projects Card - spans 2 columns */}
+        <Card className="opacity-0 animate-fade-in md:col-span-2" style={{ animationDelay: '900ms' }}>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Hammer className="w-5 h-5 text-warning" />
+              Obras e Recursos
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {PROJECTS.map((project) => (
+                <div key={project.id} className="p-3 rounded-lg border border-border">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-medium text-sm">{project.title}</h4>
+                    <Badge className={STATUS_LABELS[project.status].className}>
+                      {STATUS_LABELS[project.status].label}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">{project.budget}</span>
+                    <div className="flex items-center gap-2">
+                      <Progress value={project.progress} className="w-20 h-2" />
+                      <span className="text-xs font-medium">{project.progress}%</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

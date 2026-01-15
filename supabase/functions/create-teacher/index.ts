@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
     }
 
     // Parse request body
-    const { name, cpf, phone, subject } = await req.json();
+    const { name, cpf, phone, discipline_ids } = await req.json();
 
     if (!name || !cpf) {
       return new Response(
@@ -131,7 +131,6 @@ Deno.serve(async (req) => {
         name,
         cpf: cleanCpf,
         phone: phone || null,
-        subject: subject || null,
         password,
         status: "ativo",
       })
@@ -159,6 +158,23 @@ Deno.serve(async (req) => {
     if (roleError) {
       console.error("Role insert error:", roleError);
       // Continue anyway - teacher was created
+    }
+
+    // Insert teacher_disciplines if any
+    if (discipline_ids && Array.isArray(discipline_ids) && discipline_ids.length > 0) {
+      const disciplineInserts = discipline_ids.map((disciplineId: string) => ({
+        teacher_id: teacherData.id,
+        discipline_id: disciplineId,
+      }));
+
+      const { error: discError } = await supabaseAdmin
+        .from("teacher_disciplines")
+        .insert(disciplineInserts);
+
+      if (discError) {
+        console.error("Discipline insert error:", discError);
+        // Continue anyway - teacher was created
+      }
     }
 
     console.log(`Teacher created: ${name} (${cleanCpf})`);

@@ -58,21 +58,63 @@ export function LessonPlanEditor({
     }
   };
 
-  const handleDownload = () => {
-    const blob = new Blob([content], { type: 'text/markdown' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `plano-de-aula-${topic.toLowerCase().replace(/\s+/g, '-')}.md`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    
-    toast({
-      title: 'Download iniciado!',
-      description: 'O arquivo foi baixado como Markdown.',
-    });
+  const handleDownload = async () => {
+    try {
+      const { jsPDF } = await import('jspdf');
+      const doc = new jsPDF();
+      
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const margin = 20;
+      const maxWidth = pageWidth - margin * 2;
+      
+      // Title
+      doc.setFontSize(18);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Plano de Aula: ${topic}`, margin, 20);
+      
+      // Metadata
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      let yPos = 30;
+      
+      if (series) {
+        doc.text(`Série: ${series}`, margin, yPos);
+        yPos += 6;
+      }
+      if (bnccObjective) {
+        doc.text(`Objetivo BNCC: ${bnccObjective}`, margin, yPos);
+        yPos += 6;
+      }
+      
+      yPos += 8;
+      
+      // Content
+      doc.setFontSize(11);
+      const lines = doc.splitTextToSize(content, maxWidth);
+      
+      for (const line of lines) {
+        if (yPos > doc.internal.pageSize.getHeight() - 20) {
+          doc.addPage();
+          yPos = 20;
+        }
+        doc.text(line, margin, yPos);
+        yPos += 6;
+      }
+      
+      doc.save(`plano-de-aula-${topic.toLowerCase().replace(/\s+/g, '-')}.pdf`);
+      
+      toast({
+        title: 'Download iniciado!',
+        description: 'O arquivo foi baixado como PDF.',
+      });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível gerar o PDF.',
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleAskAI = (question: string) => {

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Flame, Star, Trophy, FileText, Calculator, BookOpen, Clock, ArrowLeft, MessageCircle, Video, Users, LucideIcon, TrendingUp } from 'lucide-react';
+import { Flame, Star, Trophy, FileText, Calculator, BookOpen, Clock, ArrowLeft, MessageCircle, Video, Users, LucideIcon, TrendingUp, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
@@ -8,10 +8,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { STUDENT_ACTIVITIES, SUBJECTS, SUBJECT_DATA, STUDENT_CONTEXT, Activity } from '@/data/studentData';
+import { SUBJECTS, SUBJECT_DATA, STUDENT_CONTEXT } from '@/data/studentData';
 import { LearningProgressView } from './student/LearningProgressView';
 import { ObjectiveSelectionView, StudyObjective } from './student/ObjectiveSelectionView';
 import { StudyChatView } from './student/StudyChatView';
+import { useStudentTasks, StudentTask } from '@/hooks/useStudentTasks';
 
 const iconMap: Record<string, LucideIcon> = {
   FileText,
@@ -22,20 +23,21 @@ const iconMap: Record<string, LucideIcon> = {
 type StudentView = 'dashboard' | 'progress' | 'objectives' | 'study-chat';
 
 export function StudentDashboard() {
+  const { tasks, loading: tasksLoading } = useStudentTasks();
   const [currentView, setCurrentView] = useState<StudentView>('dashboard');
   const [selectedObjective, setSelectedObjective] = useState<StudyObjective | null>(null);
-  const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
+  const [selectedTask, setSelectedTask] = useState<StudentTask | null>(null);
   const [selectedSubject, setSelectedSubject] = useState<typeof SUBJECTS[0] | null>(null);
-  const [essayContent, setEssayContent] = useState('');
+  const [responseContent, setResponseContent] = useState('');
 
-  const handleActivityClick = (activity: Activity) => {
-    setSelectedActivity(activity);
+  const handleTaskClick = (task: StudentTask) => {
+    setSelectedTask(task);
     
-    // Trigger AI message when essay is opened
-    if (activity.type === 'essay' && (window as any).addAIMessage) {
+    // Trigger AI message when task is opened
+    if ((window as any).addAIMessage) {
       setTimeout(() => {
         (window as any).addAIMessage(
-          `Olá! Vi que você vai trabalhar na atividade "${activity.title}". Quer que eu te ajude com dicas ou analise seu progresso? 📝`
+          `Olá! Vi que você vai trabalhar na atividade "${task.title}". Quer que eu te ajude com dicas ou analise seu progresso? 📝`
         );
       }, 500);
     }
@@ -44,14 +46,14 @@ export function StudentDashboard() {
   const handleGrammarCheck = () => {
     if ((window as any).addAIMessage) {
       (window as any).addAIMessage(
-        '🔍 Analisando seu texto... Encontrei algumas sugestões:\n\n• Parágrafo 2: considere usar conectivos para melhor fluidez\n• Revise a concordância verbal na linha 3\n• Boa estrutura argumentativa! Continue assim!'
+        '🔍 Analisando seu texto... Encontrei algumas sugestões:\n\n• Considere revisar a estrutura do texto\n• Verifique a coesão entre os parágrafos\n• Boa organização! Continue assim!'
       );
     }
   };
 
   const handleSubjectClick = (subject: typeof SUBJECTS[0]) => {
     setSelectedSubject(subject);
-    setSelectedActivity(null);
+    setSelectedTask(null);
   };
 
   const handleObjectiveSelect = (objective: StudyObjective) => {
@@ -217,14 +219,14 @@ export function StudentDashboard() {
     );
   }
 
-  // View: Selected Activity (essay)
-  if (selectedActivity) {
+  // View: Selected Task
+  if (selectedTask) {
     return (
       <div className="space-y-6">
         <Button 
           variant="ghost" 
           className="gap-2 mb-4"
-          onClick={() => setSelectedActivity(null)}
+          onClick={() => setSelectedTask(null)}
         >
           <ArrowLeft className="w-4 h-4" />
           Voltar às Atividades
@@ -235,26 +237,29 @@ export function StudentDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <Badge className="mb-2 bg-primary/10 text-primary hover:bg-primary/20">
-                  {selectedActivity.subject}
+                  {selectedTask.className}
                 </Badge>
-                <CardTitle className="text-xl">{selectedActivity.title}</CardTitle>
+                <CardTitle className="text-xl">{selectedTask.title}</CardTitle>
+                {selectedTask.description && (
+                  <p className="text-sm text-muted-foreground mt-2">{selectedTask.description}</p>
+                )}
               </div>
               <Badge variant="outline" className="gap-1">
                 <Star className="w-3 h-3" />
-                +{selectedActivity.xp} XP
+                Nota máx: {selectedTask.maxScore}
               </Badge>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <Textarea
-              placeholder="Comece a escrever sua redação aqui..."
+              placeholder="Escreva sua resposta aqui..."
               className="min-h-[300px] resize-none"
-              value={essayContent}
-              onChange={(e) => setEssayContent(e.target.value)}
+              value={responseContent}
+              onChange={(e) => setResponseContent(e.target.value)}
             />
             <div className="flex gap-3">
               <Button onClick={handleGrammarCheck} variant="outline" className="gap-2">
-                🔍 Corrigir Gramática (Sem dar a resposta)
+                🔍 Revisar Texto
               </Button>
               <Button className="gap-2">
                 Enviar Atividade
@@ -320,45 +325,56 @@ export function StudentDashboard() {
       <div>
         <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <Clock className="w-5 h-5 text-primary" />
-          Atividades Pendentes ({STUDENT_ACTIVITIES.length})
+          Atividades Pendentes ({tasks.length})
         </h2>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {STUDENT_ACTIVITIES.map((activity, index) => (
-            <Card 
-              key={activity.id}
-              className="activity-card opacity-0 animate-fade-in cursor-pointer"
-              style={{ animationDelay: `${index * 100}ms` }}
-              onClick={() => handleActivityClick(activity)}
-            >
-              <CardContent className="p-4">
-                <div className="flex items-start gap-4">
-                  <div className={`p-3 rounded-xl ${
-                    activity.type === 'essay' ? 'bg-primary/10 text-primary' :
-                    activity.type === 'exercise' ? 'bg-success/10 text-success' :
-                    'bg-warning/10 text-warning'
-                  }`}>
-                    {activity.type === 'essay' ? <FileText className="w-5 h-5" /> :
-                     activity.type === 'exercise' ? <Calculator className="w-5 h-5" /> :
-                     <BookOpen className="w-5 h-5" />}
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-medium text-foreground mb-1">{activity.title}</h3>
-                    <div className="flex items-center gap-3 text-sm">
-                      <span className="text-muted-foreground">{activity.subject}</span>
-                      <Badge variant="outline" className="text-xs">
-                        Entrega: {activity.dueDate}
-                      </Badge>
+        {tasksLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+            <span className="ml-2 text-muted-foreground">Carregando tarefas...</span>
+          </div>
+        ) : tasks.length === 0 ? (
+          <Card>
+            <CardContent className="p-8 text-center">
+              <FileText className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+              <h3 className="font-medium text-lg mb-2">Nenhuma tarefa pendente</h3>
+              <p className="text-muted-foreground">
+                Você está em dia! Novas tarefas aparecerão aqui quando seus professores as criarem.
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {tasks.map((task, index) => (
+              <Card 
+                key={task.id}
+                className="activity-card opacity-0 animate-fade-in cursor-pointer hover:border-primary/50 transition-colors"
+                style={{ animationDelay: `${index * 100}ms` }}
+                onClick={() => handleTaskClick(task)}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-4">
+                    <div className="p-3 rounded-xl bg-primary/10 text-primary">
+                      <FileText className="w-5 h-5" />
                     </div>
+                    <div className="flex-1">
+                      <h3 className="font-medium text-foreground mb-1">{task.title}</h3>
+                      <div className="flex items-center gap-3 text-sm">
+                        <span className="text-muted-foreground">{task.className}</span>
+                        <Badge variant="outline" className="text-xs">
+                          Entrega: {task.dueDate}
+                        </Badge>
+                      </div>
+                    </div>
+                    <Badge className="bg-primary/10 text-primary hover:bg-primary/20">
+                      Nota: {task.maxScore}
+                    </Badge>
                   </div>
-                  <Badge className="bg-primary/10 text-primary hover:bg-primary/20">
-                    +{activity.xp} XP
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Subjects Section */}

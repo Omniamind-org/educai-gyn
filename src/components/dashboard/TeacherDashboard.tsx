@@ -25,6 +25,11 @@ interface ClassWithDetails {
   student_count: number;
 }
 
+interface Discipline {
+  id: string;
+  name: string;
+}
+
 interface GeneratedLessonPlan {
   id?: string;
   content: string;
@@ -221,6 +226,7 @@ export function TeacherDashboard() {
   const [selectedBncc, setSelectedBncc] = useState('');
   const [lessonDescription, setLessonDescription] = useState('');
   const [classes, setClasses] = useState<ClassWithDetails[]>([]);
+  const [teacherDisciplines, setTeacherDisciplines] = useState<Discipline[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
   const [isGeneratingExercises, setIsGeneratingExercises] = useState(false);
@@ -254,6 +260,24 @@ export function TeacherDashboard() {
       }
 
       setTeacherId(teacherData.id);
+
+      // Fetch teacher's disciplines
+      const { data: teacherDiscData } = await supabase
+        .from('teacher_disciplines')
+        .select('discipline_id')
+        .eq('teacher_id', teacherData.id);
+
+      if (teacherDiscData && teacherDiscData.length > 0) {
+        const discIds = teacherDiscData.map(td => td.discipline_id);
+        const { data: disciplinesData } = await supabase
+          .from('disciplines')
+          .select('id, name')
+          .in('id', discIds);
+        
+        if (disciplinesData) {
+          setTeacherDisciplines(disciplinesData);
+        }
+      }
 
       // Get classes assigned to this teacher
       const { data: classTeacherData } = await supabase
@@ -576,6 +600,27 @@ export function TeacherDashboard() {
 
   return (
     <div className="space-y-6">
+      {/* Teacher Disciplines Card */}
+      {teacherDisciplines.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <BookOpen className="w-5 h-5 text-primary" />
+              Minhas Disciplinas
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              {teacherDisciplines.map((disc) => (
+                <Badge key={disc.id} variant="secondary" className="text-sm px-3 py-1">
+                  {disc.name}
+                </Badge>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Progress Analysis Card */}
       <Card 
         className="cursor-pointer hover:border-primary/50 transition-all group"

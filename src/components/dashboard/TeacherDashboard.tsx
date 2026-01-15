@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Users, Plus, Lightbulb, BookOpen, Target, Calendar, BarChart2, Loader2, FolderOpen, Save } from 'lucide-react';
+import { Users, Plus, Lightbulb, BookOpen, ListChecks, Calendar, BarChart2, Loader2, FolderOpen, Save } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,6 +12,8 @@ import { StudentProgressAnalysis } from './teacher/StudentProgressAnalysis';
 import { ClassDetailView } from './teacher/ClassDetailView';
 import { LessonPlanEditor } from './teacher/LessonPlanEditor';
 import { SavedLessonPlansView } from './teacher/SavedLessonPlansView';
+import { ExerciseListEditor } from './teacher/ExerciseListEditor';
+import { SavedExerciseListsView } from './teacher/SavedExerciseListsView';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -31,6 +33,14 @@ interface GeneratedLessonPlan {
   bnccObjective: string;
 }
 
+interface GeneratedExerciseList {
+  id?: string;
+  content: string;
+  topic: string;
+  series: string;
+  bnccObjective: string;
+}
+
 const SERIES = ['1º Ano do Ensino Médio', '2º Ano do Ensino Médio', '3º Ano do Ensino Médio'];
 const BNCC_OBJECTIVES = [
   'EF09HI01 - Compreender o processo de industrialização',
@@ -39,7 +49,7 @@ const BNCC_OBJECTIVES = [
   'EM13LGG103 - Analisar o funcionamento das linguagens, para interpretar e produzir criticamente discursos em textos de diversas semioses',
 ];
 
-type TeacherView = 'dashboard' | 'progress-analysis' | 'class-detail' | 'lesson-plan-editor' | 'saved-plans';
+type TeacherView = 'dashboard' | 'progress-analysis' | 'class-detail' | 'lesson-plan-editor' | 'saved-plans' | 'exercise-list-editor' | 'saved-exercise-lists';
 
 export function TeacherDashboard() {
   const { toast } = useToast();
@@ -53,7 +63,9 @@ export function TeacherDashboard() {
   const [classes, setClasses] = useState<ClassWithDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isGeneratingPlan, setIsGeneratingPlan] = useState(false);
+  const [isGeneratingExercises, setIsGeneratingExercises] = useState(false);
   const [generatedPlan, setGeneratedPlan] = useState<GeneratedLessonPlan | null>(null);
+  const [generatedExerciseList, setGeneratedExerciseList] = useState<GeneratedExerciseList | null>(null);
 
   useEffect(() => {
     fetchTeacherClasses();
@@ -217,6 +229,116 @@ export function TeacherDashboard() {
       setIsGeneratingPlan(false);
     }
   };
+
+  const handleGenerateExerciseList = async () => {
+    if (!lessonTopic.trim()) {
+      toast({
+        title: 'Campo obrigatório',
+        description: 'Por favor, informe o tema.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsGeneratingExercises(true);
+
+    try {
+      const response = await supabase.functions.invoke('generate-exercise-list', {
+        body: {
+          topic: lessonTopic,
+          series: selectedSeries,
+          bnccObjective: selectedBncc,
+          description: lessonDescription,
+          exerciseCount: 10,
+        },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || 'Erro ao gerar lista de exercícios');
+      }
+
+      const data = response.data;
+
+      if (data.error) {
+        toast({
+          title: 'Erro',
+          description: data.error,
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Store the generated list and open editor
+      setGeneratedExerciseList({
+        content: data.exerciseList,
+        topic: lessonTopic,
+        series: selectedSeries,
+        bnccObjective: selectedBncc,
+      });
+      setCurrentView('exercise-list-editor');
+
+      toast({
+        title: 'Lista gerada!',
+        description: 'A lista de exercícios foi gerada com sucesso.',
+      });
+
+      // Clear form
+      setLessonTopic('');
+      setSelectedSeries('');
+      setSelectedBncc('');
+      setLessonDescription('');
+    } catch (error) {
+      console.error('Error generating exercise list:', error);
+      toast({
+        title: 'Erro',
+        description: error instanceof Error ? error.message : 'Não foi possível gerar a lista de exercícios.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsGeneratingExercises(false);
+    }
+  };
+
+  // Show Saved Exercise Lists View
+  if (currentView === 'saved-exercise-lists' && teacherId) {
+    return (
+      <SavedExerciseListsView
+        teacherId={teacherId}
+        onBack={() => setCurrentView('dashboard')}
+        onOpenList={(list) => {
+          setGeneratedExerciseList({
+            id: list.id,
+            content: list.content,
+            topic: list.topic,
+            series: list.series || '',
+            bnccObjective: list.bncc_objective || '',
+          });
+          setCurrentView('exercise-list-editor');
+        }}
+      />
+    );
+  }
+
+  // Show Exercise List Editor
+  if (currentView === 'exercise-list-editor' && generatedExerciseList) {
+    return (
+      <ExerciseListEditor
+        listId={generatedExerciseList.id}
+        exerciseList={generatedExerciseList.content}
+        topic={generatedExerciseList.topic}
+        series={generatedExerciseList.series}
+        bnccObjective={generatedExerciseList.bnccObjective}
+        teacherId={teacherId}
+        onBack={() => {
+          setCurrentView('saved-exercise-lists');
+          setGeneratedExerciseList(null);
+        }}
+        onSaved={(id) => {
+          setGeneratedExerciseList(prev => prev ? { ...prev, id } : null);
+        }}
+      />
+    );
+  }
 
   // Show Saved Lesson Plans View
   if (currentView === 'saved-plans' && teacherId) {
@@ -393,9 +515,23 @@ export function TeacherDashboard() {
                 </>
               )}
             </Button>
-            <Button variant="outline" className="gap-2">
-              <Target className="w-4 h-4" />
-              Criar Quiz
+            <Button 
+              variant="outline" 
+              className="gap-2"
+              onClick={handleGenerateExerciseList}
+              disabled={isGeneratingExercises}
+            >
+              {isGeneratingExercises ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Gerando...
+                </>
+              ) : (
+                <>
+                  <ListChecks className="w-4 h-4" />
+                  Criar Lista de Exercícios
+                </>
+              )}
             </Button>
             <Button 
               variant="secondary" 
@@ -403,7 +539,15 @@ export function TeacherDashboard() {
               onClick={() => setCurrentView('saved-plans')}
             >
               <FolderOpen className="w-4 h-4" />
-              Ver Planos Salvos
+              Planos Salvos
+            </Button>
+            <Button 
+              variant="secondary" 
+              className="gap-2"
+              onClick={() => setCurrentView('saved-exercise-lists')}
+            >
+              <FolderOpen className="w-4 h-4" />
+              Listas Salvas
             </Button>
           </div>
         </CardContent>

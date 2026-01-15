@@ -516,7 +516,6 @@ export function TeacherDashboard() {
               )}
             </Button>
             <Button 
-              variant="outline" 
               className="gap-2"
               onClick={handleGenerateExerciseList}
               disabled={isGeneratingExercises}

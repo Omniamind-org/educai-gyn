@@ -93,8 +93,16 @@ export function SecretaryDashboard() {
     name: "",
     cpf: "",
     phone: "",
-    subject: "",
+    discipline_ids: [] as string[],
   });
+
+  // Disciplines for teacher creation
+  interface Discipline {
+    id: string;
+    name: string;
+  }
+  const [disciplines, setDisciplines] = useState<Discipline[]>([]);
+  const [teacherDisciplinesMap, setTeacherDisciplinesMap] = useState<Record<string, string[]>>({});
   const [newClass, setNewClass] = useState({
     name: "",
     grade: "",
@@ -116,12 +124,41 @@ export function SecretaryDashboard() {
   const [resetPasswordTeacherId, setResetPasswordTeacherId] = useState<string | null>(null);
   const [isResettingPassword, setIsResettingPassword] = useState(false);
 
-  // Fetch students, teachers, and classes from database
+  // Fetch students, teachers, classes, and disciplines from database
   useEffect(() => {
     fetchStudents();
     fetchTeachers();
     fetchClasses();
+    fetchDisciplines();
   }, []);
+
+  const fetchDisciplines = async () => {
+    const { data } = await supabase
+      .from("disciplines")
+      .select("id, name")
+      .order("name");
+    setDisciplines(data || []);
+  };
+
+  const fetchTeacherDisciplines = async (teacherIds: string[]) => {
+    if (teacherIds.length === 0) return;
+    
+    const { data } = await supabase
+      .from("teacher_disciplines")
+      .select("teacher_id, discipline_id, disciplines(name)")
+      .in("teacher_id", teacherIds);
+    
+    const map: Record<string, string[]> = {};
+    (data || []).forEach((td: any) => {
+      if (!map[td.teacher_id]) {
+        map[td.teacher_id] = [];
+      }
+      if (td.disciplines?.name) {
+        map[td.teacher_id].push(td.disciplines.name);
+      }
+    });
+    setTeacherDisciplinesMap(map);
+  };
 
   const fetchStudents = async () => {
     setIsLoading(true);
@@ -157,6 +194,10 @@ export function SecretaryDashboard() {
       });
     } else {
       setTeachers(data || []);
+      // Fetch disciplines for all teachers
+      if (data && data.length > 0) {
+        fetchTeacherDisciplines(data.map(t => t.id));
+      }
     }
     setIsLoadingTeachers(false);
   };
@@ -332,7 +373,7 @@ export function SecretaryDashboard() {
           name: newTeacher.name,
           cpf: cleanCpf,
           phone: newTeacher.phone || null,
-          subject: newTeacher.subject || null,
+          discipline_ids: newTeacher.discipline_ids,
         },
       });
 
@@ -359,7 +400,7 @@ export function SecretaryDashboard() {
       await fetchTeachers();
 
       // Reset form
-      setNewTeacher({ name: "", cpf: "", phone: "", subject: "" });
+      setNewTeacher({ name: "", cpf: "", phone: "", discipline_ids: [] });
       setIsAddTeacherOpen(false);
 
       toast({
@@ -376,6 +417,15 @@ export function SecretaryDashboard() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const toggleDisciplineSelection = (disciplineId: string) => {
+    setNewTeacher(prev => ({
+      ...prev,
+      discipline_ids: prev.discipline_ids.includes(disciplineId)
+        ? prev.discipline_ids.filter(id => id !== disciplineId)
+        : [...prev.discipline_ids, disciplineId]
+    }));
   };
 
   const handleAddClass = async () => {
@@ -885,14 +935,31 @@ export function SecretaryDashboard() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="teacher-subject">Disciplina (opcional)</Label>
-                    <Input
-                      id="teacher-subject"
-                      value={newTeacher.subject}
-                      onChange={(e) => setNewTeacher({ ...newTeacher, subject: e.target.value })}
-                      placeholder="Ex: Matemática, Português..."
-                      disabled={isSubmitting}
-                    />
+                    <Label>Disciplinas que leciona</Label>
+                    {disciplines.length === 0 ? (
+                      <p className="text-sm text-muted-foreground py-2">
+                        Nenhuma disciplina cadastrada. Cadastre disciplinas na aba Disciplinas.
+                      </p>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto border rounded-lg p-3">
+                        {disciplines.map((disc) => (
+                          <div key={disc.id} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`disc-${disc.id}`}
+                              checked={newTeacher.discipline_ids.includes(disc.id)}
+                              onCheckedChange={() => toggleDisciplineSelection(disc.id)}
+                              disabled={isSubmitting}
+                            />
+                            <label
+                              htmlFor={`disc-${disc.id}`}
+                              className="text-sm cursor-pointer"
+                            >
+                              {disc.name}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <Button onClick={handleAddTeacher} className="w-full gap-2" disabled={isSubmitting}>
                     {isSubmitting ? (
@@ -1066,7 +1133,11 @@ export function SecretaryDashboard() {
                       <TableRow key={teacher.id}>
                         <TableCell className="font-medium">{teacher.name}</TableCell>
                         <TableCell>{formatCpf(teacher.cpf)}</TableCell>
-                        <TableCell>{teacher.subject || "-"}</TableCell>
+                        <TableCell>
+                          {teacherDisciplinesMap[teacher.id]?.length > 0 
+                            ? teacherDisciplinesMap[teacher.id].join(", ")
+                            : "-"}
+                        </TableCell>
                         <TableCell>{getStatusBadge(teacher.status)}</TableCell>
                         <TableCell>{new Date(teacher.created_at).toLocaleDateString("pt-BR")}</TableCell>
                         <TableCell>

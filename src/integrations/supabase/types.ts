@@ -113,6 +113,27 @@ export type Database = {
         }
         Relationships: []
       }
+      disciplines: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       exercise_lists: {
         Row: {
           bncc_objective: string | null
@@ -314,6 +335,7 @@ export type Database = {
           class_id: string
           created_at: string
           description: string | null
+          discipline_id: string | null
           due_date: string | null
           id: string
           max_score: number
@@ -326,6 +348,7 @@ export type Database = {
           class_id: string
           created_at?: string
           description?: string | null
+          discipline_id?: string | null
           due_date?: string | null
           id?: string
           max_score?: number
@@ -338,6 +361,7 @@ export type Database = {
           class_id?: string
           created_at?: string
           description?: string | null
+          discipline_id?: string | null
           due_date?: string | null
           id?: string
           max_score?: number
@@ -355,7 +379,50 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "tasks_discipline_id_fkey"
+            columns: ["discipline_id"]
+            isOneToOne: false
+            referencedRelation: "disciplines"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "tasks_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "teachers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      teacher_disciplines: {
+        Row: {
+          created_at: string
+          discipline_id: string
+          id: string
+          teacher_id: string
+        }
+        Insert: {
+          created_at?: string
+          discipline_id: string
+          id?: string
+          teacher_id: string
+        }
+        Update: {
+          created_at?: string
+          discipline_id?: string
+          id?: string
+          teacher_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "teacher_disciplines_discipline_id_fkey"
+            columns: ["discipline_id"]
+            isOneToOne: false
+            referencedRelation: "disciplines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "teacher_disciplines_teacher_id_fkey"
             columns: ["teacher_id"]
             isOneToOne: false
             referencedRelation: "teachers"

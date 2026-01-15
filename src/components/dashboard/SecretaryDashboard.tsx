@@ -46,20 +46,14 @@ interface Class {
 
 interface Boleto {
   id: string;
-  studentName: string;
+  student_id: string;
+  studentName?: string;
   value: number;
-  dueDate: string;
+  due_date: string;
   status: "pendente" | "pago" | "vencido";
   reference: string;
+  paid_at?: string | null;
 }
-
-// Mock boletos (could be moved to database later)
-const MOCK_BOLETOS: Boleto[] = [
-  { id: "1", studentName: "João Silva", value: 450.00, dueDate: "2024-02-10", status: "pago", reference: "2024/02" },
-  { id: "2", studentName: "Maria Santos", value: 450.00, dueDate: "2024-02-10", status: "pendente", reference: "2024/02" },
-  { id: "3", studentName: "João Silva", value: 450.00, dueDate: "2024-03-10", status: "pendente", reference: "2024/03" },
-  { id: "4", studentName: "Pedro Oliveira", value: 450.00, dueDate: "2024-01-10", status: "vencido", reference: "2024/01" },
-];
 
 // Format CPF for display
 function formatCpf(cpf: string): string {
@@ -72,7 +66,15 @@ export function SecretaryDashboard() {
   const [students, setStudents] = useState<Student[]>([]);
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
-  const [boletos] = useState<Boleto[]>(MOCK_BOLETOS);
+  const [boletos, setBoletos] = useState<Boleto[]>([]);
+  const [isLoadingBoletos, setIsLoadingBoletos] = useState(true);
+  const [isAddBoletoOpen, setIsAddBoletoOpen] = useState(false);
+  const [newBoleto, setNewBoleto] = useState({
+    student_id: "",
+    value: "",
+    due_date: "",
+    reference: "",
+  });
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddStudentOpen, setIsAddStudentOpen] = useState(false);
   const [isAddTeacherOpen, setIsAddTeacherOpen] = useState(false);
@@ -130,6 +132,7 @@ export function SecretaryDashboard() {
     fetchTeachers();
     fetchClasses();
     fetchDisciplines();
+    fetchBoletos();
   }, []);
 
   const fetchDisciplines = async () => {
@@ -235,6 +238,104 @@ export function SecretaryDashboard() {
     setIsLoadingClasses(false);
   };
 
+  const fetchBoletos = async () => {
+    setIsLoadingBoletos(true);
+    const { data, error } = await supabase
+      .from("boletos")
+      .select("*, students(name)")
+      .order("due_date", { ascending: false });
+
+    if (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar os boletos.",
+        variant: "destructive",
+      });
+    } else {
+      // Map and determine status based on due date
+      const today = new Date();
+      const mappedBoletos = (data || []).map((b: any) => {
+        let status = b.status;
+        if (status === "pendente" && new Date(b.due_date) < today) {
+          status = "vencido";
+        }
+        return {
+          ...b,
+          studentName: b.students?.name || "Aluno não encontrado",
+          status,
+        };
+      });
+      setBoletos(mappedBoletos);
+    }
+    setIsLoadingBoletos(false);
+  };
+
+  const handleAddBoleto = async () => {
+    if (!newBoleto.student_id || !newBoleto.value || !newBoleto.due_date || !newBoleto.reference) {
+      toast({
+        title: "Erro",
+        description: "Preencha todos os campos obrigatórios.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const { error } = await supabase.from("boletos").insert({
+        student_id: newBoleto.student_id,
+        value: parseFloat(newBoleto.value),
+        due_date: newBoleto.due_date,
+        reference: newBoleto.reference,
+        status: "pendente",
+      });
+
+      if (error) throw error;
+
+      await fetchBoletos();
+      setNewBoleto({ student_id: "", value: "", due_date: "", reference: "" });
+      setIsAddBoletoOpen(false);
+
+      toast({
+        title: "Boleto criado!",
+        description: "O boleto foi registrado com sucesso.",
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Erro ao criar boleto";
+      toast({
+        title: "Erro",
+        description: message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleMarkAsPaid = async (boletoId: string) => {
+    try {
+      const { error } = await supabase
+        .from("boletos")
+        .update({ status: "pago", paid_at: new Date().toISOString() })
+        .eq("id", boletoId);
+
+      if (error) throw error;
+
+      await fetchBoletos();
+      toast({
+        title: "Boleto pago!",
+        description: "O status foi atualizado.",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar o boleto.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const fetchClassMembers = async (classId: string) => {
     setIsLoadingClassMembers(true);
     const [studentsRes, teachersRes] = await Promise.all([
@@ -266,7 +367,8 @@ export function SecretaryDashboard() {
   );
 
   const filteredBoletos = boletos.filter((boleto) =>
-    boleto.studentName.toLowerCase().includes(searchTerm.toLowerCase())
+    (boleto.studentName || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+    boleto.reference.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleAddStudent = async () => {
@@ -644,10 +746,10 @@ export function SecretaryDashboard() {
       ===============================
       BOLETO DE MENSALIDADE
       ===============================
-      Aluno: ${boleto.studentName}
+      Aluno: ${boleto.studentName || "N/A"}
       Referência: ${boleto.reference}
       Valor: R$ ${boleto.value.toFixed(2)}
-      Vencimento: ${new Date(boleto.dueDate).toLocaleDateString("pt-BR")}
+      Vencimento: ${new Date(boleto.due_date).toLocaleDateString("pt-BR")}
       Status: ${boleto.status.toUpperCase()}
       ===============================
     `;
@@ -657,7 +759,7 @@ export function SecretaryDashboard() {
       printWindow.document.write(`
         <html>
           <head>
-            <title>Boleto - ${boleto.studentName}</title>
+            <title>Boleto - ${boleto.studentName || "Aluno"}</title>
             <style>
               body { font-family: monospace; padding: 20px; }
               pre { white-space: pre-wrap; }
@@ -674,7 +776,7 @@ export function SecretaryDashboard() {
 
     toast({
       title: "Imprimindo",
-      description: `Boleto de ${boleto.studentName} enviado para impressão.`,
+      description: `Boleto de ${boleto.studentName || "aluno"} enviado para impressão.`,
     });
   };
 
@@ -781,13 +883,13 @@ export function SecretaryDashboard() {
               <BookOpen className="h-4 w-4" />
               Turmas
             </TabsTrigger>
-            <TabsTrigger value="boletos" className="gap-2">
-              <FileText className="h-4 w-4" />
-              Boletos
-            </TabsTrigger>
             <TabsTrigger value="disciplines" className="gap-2">
               <Bookmark className="h-4 w-4" />
               Disciplinas
+            </TabsTrigger>
+            <TabsTrigger value="boletos" className="gap-2">
+              <FileText className="h-4 w-4" />
+              Boletos
             </TabsTrigger>
           </TabsList>
 
@@ -1235,62 +1337,163 @@ export function SecretaryDashboard() {
           </Card>
         </TabsContent>
 
-        {/* Boletos Tab */}
-        <TabsContent value="boletos">
-          <Card>
-            <CardHeader>
-              <CardTitle>Boletos</CardTitle>
-              <CardDescription>Visualize e imprima boletos de mensalidade</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Aluno</TableHead>
-                    <TableHead>Referência</TableHead>
-                    <TableHead>Valor</TableHead>
-                    <TableHead>Vencimento</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredBoletos.map((boleto) => (
-                    <TableRow key={boleto.id}>
-                      <TableCell className="font-medium">{boleto.studentName}</TableCell>
-                      <TableCell>{boleto.reference}</TableCell>
-                      <TableCell>R$ {boleto.value.toFixed(2)}</TableCell>
-                      <TableCell>{new Date(boleto.dueDate).toLocaleDateString("pt-BR")}</TableCell>
-                      <TableCell>{getStatusBadge(boleto.status)}</TableCell>
-                      <TableCell>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="gap-2"
-                          onClick={() => handlePrintBoleto(boleto)}
-                        >
-                          <Printer className="h-4 w-4" />
-                          Imprimir
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {filteredBoletos.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                        Nenhum boleto encontrado
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
         {/* Disciplines Tab */}
         <TabsContent value="disciplines">
           <DisciplinesTab />
+        </TabsContent>
+
+        {/* Boletos Tab */}
+        <TabsContent value="boletos">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Boletos</CardTitle>
+                <CardDescription>Gerencie boletos de mensalidade</CardDescription>
+              </div>
+              <Dialog open={isAddBoletoOpen} onOpenChange={setIsAddBoletoOpen}>
+                <DialogTrigger asChild>
+                  <Button className="gap-2">
+                    <Plus className="h-4 w-4" />
+                    Novo Boleto
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Criar Novo Boleto</DialogTitle>
+                    <DialogDescription>
+                      Preencha os dados do boleto para um aluno.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="boleto-student">Aluno *</Label>
+                      <Select
+                        value={newBoleto.student_id}
+                        onValueChange={(value) => setNewBoleto({ ...newBoleto, student_id: value })}
+                        disabled={isSubmitting}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o aluno" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {students.map((student) => (
+                            <SelectItem key={student.id} value={student.id}>
+                              {student.name} - {student.grade}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="boleto-value">Valor (R$) *</Label>
+                      <Input
+                        id="boleto-value"
+                        type="number"
+                        step="0.01"
+                        value={newBoleto.value}
+                        onChange={(e) => setNewBoleto({ ...newBoleto, value: e.target.value })}
+                        placeholder="450.00"
+                        disabled={isSubmitting}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="boleto-due-date">Vencimento *</Label>
+                      <Input
+                        id="boleto-due-date"
+                        type="date"
+                        value={newBoleto.due_date}
+                        onChange={(e) => setNewBoleto({ ...newBoleto, due_date: e.target.value })}
+                        disabled={isSubmitting}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="boleto-reference">Referência *</Label>
+                      <Input
+                        id="boleto-reference"
+                        value={newBoleto.reference}
+                        onChange={(e) => setNewBoleto({ ...newBoleto, reference: e.target.value })}
+                        placeholder="2024/01"
+                        disabled={isSubmitting}
+                      />
+                    </div>
+                    <Button onClick={handleAddBoleto} className="w-full gap-2" disabled={isSubmitting}>
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Criando...
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="h-4 w-4" />
+                          Criar Boleto
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </CardHeader>
+            <CardContent>
+              {isLoadingBoletos ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Aluno</TableHead>
+                      <TableHead>Referência</TableHead>
+                      <TableHead>Valor</TableHead>
+                      <TableHead>Vencimento</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredBoletos.map((boleto) => (
+                      <TableRow key={boleto.id}>
+                        <TableCell className="font-medium">{boleto.studentName || "-"}</TableCell>
+                        <TableCell>{boleto.reference}</TableCell>
+                        <TableCell>R$ {boleto.value.toFixed(2)}</TableCell>
+                        <TableCell>{new Date(boleto.due_date).toLocaleDateString("pt-BR")}</TableCell>
+                        <TableCell>{getStatusBadge(boleto.status)}</TableCell>
+                        <TableCell className="space-x-2">
+                          {boleto.status !== "pago" && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="gap-1"
+                              onClick={() => handleMarkAsPaid(boleto.id)}
+                            >
+                              <CheckCircle className="h-4 w-4" />
+                              Pago
+                            </Button>
+                          )}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="gap-1"
+                            onClick={() => handlePrintBoleto(boleto)}
+                          >
+                            <Printer className="h-4 w-4" />
+                            Imprimir
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {filteredBoletos.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                          Nenhum boleto encontrado
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
 

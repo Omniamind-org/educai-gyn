@@ -9,7 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { UserPlus, Printer, Users, FileText, Search, Plus, Copy, Key, CheckCircle, Loader2, GraduationCap, BookOpen, Settings } from "lucide-react";
+import { UserPlus, Printer, Users, FileText, Search, Plus, Copy, Key, CheckCircle, Loader2, GraduationCap, BookOpen, Settings, Bookmark } from "lucide-react";
+import { DisciplinesTab } from "./secretary/DisciplinesTab";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -734,6 +735,10 @@ export function SecretaryDashboard() {
               <FileText className="h-4 w-4" />
               Boletos
             </TabsTrigger>
+            <TabsTrigger value="disciplines" className="gap-2">
+              <Bookmark className="h-4 w-4" />
+              Disciplinas
+            </TabsTrigger>
           </TabsList>
 
           <div className="flex items-center gap-2 flex-wrap">
@@ -1210,6 +1215,11 @@ export function SecretaryDashboard() {
               </Table>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Disciplines Tab */}
+        <TabsContent value="disciplines">
+          <DisciplinesTab />
         </TabsContent>
       </Tabs>
 

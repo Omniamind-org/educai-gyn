@@ -119,11 +119,6 @@ export function LessonPlanEditor({
     }
   };
 
-  const handleAskAI = (question: string) => {
-    if ((window as any).addAIMessage) {
-      (window as any).addAIMessage(question);
-    }
-  };
 
   const handleSave = async () => {
     if (!teacherId) {
@@ -293,44 +288,6 @@ export function LessonPlanEditor({
         </CardContent>
       </Card>
 
-      {/* Quick Actions */}
-      <Card>
-        <CardHeader className="py-3 px-4">
-          <CardTitle className="text-sm font-medium">Ações Rápidas com IA</CardTitle>
-        </CardHeader>
-        <CardContent className="py-2 px-4">
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleAskAI(`Sugira 3 atividades práticas adicionais para complementar este plano de aula sobre "${topic}"`)}
-            >
-              + Atividades
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleAskAI(`Crie 5 perguntas de avaliação para verificar o aprendizado sobre "${topic}"`)}
-            >
-              + Perguntas
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleAskAI(`Sugira recursos multimídia (vídeos, imagens, sites) para enriquecer a aula sobre "${topic}"`)}
-            >
-              + Recursos
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleAskAI(`Como adaptar este plano de aula sobre "${topic}" para alunos com dificuldades de aprendizagem?`)}
-            >
-              Adaptações
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }

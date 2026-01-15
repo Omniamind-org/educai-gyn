@@ -807,13 +807,9 @@ export function SecretaryDashboard() {
                         <SelectValue placeholder="Selecione a série" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="6º Ano">6º Ano</SelectItem>
-                        <SelectItem value="7º Ano">7º Ano</SelectItem>
-                        <SelectItem value="8º Ano">8º Ano</SelectItem>
-                        <SelectItem value="9º Ano">9º Ano</SelectItem>
-                        <SelectItem value="1º EM">1º Ensino Médio</SelectItem>
-                        <SelectItem value="2º EM">2º Ensino Médio</SelectItem>
-                        <SelectItem value="3º EM">3º Ensino Médio</SelectItem>
+                        <SelectItem value="1º Ano do Ensino Médio">1º Ano do Ensino Médio</SelectItem>
+                        <SelectItem value="2º Ano do Ensino Médio">2º Ano do Ensino Médio</SelectItem>
+                        <SelectItem value="3º Ano do Ensino Médio">3º Ano do Ensino Médio</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -947,13 +943,9 @@ export function SecretaryDashboard() {
                         <SelectValue placeholder="Selecione a série" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="6º Ano">6º Ano</SelectItem>
-                        <SelectItem value="7º Ano">7º Ano</SelectItem>
-                        <SelectItem value="8º Ano">8º Ano</SelectItem>
-                        <SelectItem value="9º Ano">9º Ano</SelectItem>
-                        <SelectItem value="1º EM">1º Ensino Médio</SelectItem>
-                        <SelectItem value="2º EM">2º Ensino Médio</SelectItem>
-                        <SelectItem value="3º EM">3º Ensino Médio</SelectItem>
+                        <SelectItem value="1º Ano do Ensino Médio">1º Ano do Ensino Médio</SelectItem>
+                        <SelectItem value="2º Ano do Ensino Médio">2º Ano do Ensino Médio</SelectItem>
+                        <SelectItem value="3º Ano do Ensino Médio">3º Ano do Ensino Médio</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

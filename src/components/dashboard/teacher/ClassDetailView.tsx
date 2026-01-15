@@ -252,8 +252,7 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
     } finally {
       setIsCreatingTask(false);
     }
-
-
+  };
 
   const handleGradeChange = (studentId: string, taskId: string, value: string) => {
     const numValue = value === '' ? null : parseFloat(value);

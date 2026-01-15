@@ -42,12 +42,71 @@ interface GeneratedExerciseList {
 }
 
 const SERIES = ['1º Ano do Ensino Médio', '2º Ano do Ensino Médio', '3º Ano do Ensino Médio'];
-const BNCC_OBJECTIVES = [
-  'EF09HI01 - Compreender o processo de industrialização',
-  'EF09HI02 - Analisar transformações sociais',
-  'EF09HI03 - Identificar impactos ambientais',
-  'EM13LGG103 - Analisar o funcionamento das linguagens, para interpretar e produzir criticamente discursos em textos de diversas semioses',
+
+const BNCC_AREAS = [
+  { id: 'matematica', name: 'Matemática e suas tecnologias' },
+  { id: 'linguagens', name: 'Linguagens e suas tecnologias' },
+  { id: 'ciencias_humanas', name: 'Ciências humanas e suas tecnologias' },
+  { id: 'ciencias_natureza', name: 'Ciências da natureza e suas tecnologias' },
 ];
+
+const BNCC_SKILLS: Record<string, { code: string; description: string }[]> = {
+  matematica: [
+    // Competência Específica 1
+    { code: 'EM13MAT101', description: 'Interpretar situações econômicas, sociais e das Ciências da Natureza que envolvem a variação de duas grandezas, pela análise dos gráficos das funções representadas e das taxas de variação, com ou sem apoio de tecnologias digitais.' },
+    { code: 'EM13MAT102', description: 'Analisar gráficos e métodos de amostragem de pesquisas estatísticas divulgadas por diferentes meios de comunicação, identificando inadequações que possam induzir a erros de interpretação, como escalas e amostras não apropriadas.' },
+    { code: 'EM13MAT103', description: 'Interpretar o emprego de unidades de medida de diferentes grandezas, inclusive novas unidades como as de armazenamento de dados e distâncias astronômicas e microscópicas.' },
+    { code: 'EM13MAT104', description: 'Interpretar taxas e índices de natureza socioeconômica, como índice de desenvolvimento humano e taxas de inflação, investigando seus processos de cálculo.' },
+    { code: 'EM13MAT105', description: 'Utilizar transformações isométricas e homotéticas para analisar produções humanas como construções civis e obras de arte.' },
+    // Competência Específica 2
+    { code: 'EM13MAT201', description: 'Propor ações comunitárias envolvendo cálculos de área, volume, capacidade ou massa adequados às demandas da região.' },
+    { code: 'EM13MAT202', description: 'Planejar e executar pesquisa amostral sobre questões relevantes, comunicando resultados por meio de gráficos e medidas estatísticas.' },
+    { code: 'EM13MAT203', description: 'Planejar e executar ações envolvendo aplicativos, jogos, planilhas e simuladores para aplicar conceitos matemáticos e tomar decisões.' },
+    // Competência Específica 3
+    { code: 'EM13MAT301', description: 'Resolver e elaborar problemas com equações lineares simultâneas.' },
+    { code: 'EM13MAT302', description: 'Resolver e elaborar problemas com funções polinomiais de 1º e 2º graus.' },
+    { code: 'EM13MAT303', description: 'Resolver e elaborar problemas envolvendo porcentagens e juros compostos.' },
+    { code: 'EM13MAT304', description: 'Resolver e elaborar problemas com funções exponenciais.' },
+    { code: 'EM13MAT305', description: 'Resolver e elaborar problemas com funções logarítmicas.' },
+    { code: 'EM13MAT306', description: 'Resolver e elaborar problemas envolvendo fenômenos periódicos e funções seno e cosseno.' },
+    { code: 'EM13MAT307', description: 'Empregar métodos para obtenção da área de superfícies e deduzir expressões de cálculo.' },
+    { code: 'EM13MAT308', description: 'Resolver e elaborar problemas com triângulos envolvendo congruência e semelhança.' },
+    { code: 'EM13MAT309', description: 'Resolver e elaborar problemas envolvendo áreas e volumes de sólidos geométricos.' },
+    { code: 'EM13MAT310', description: 'Resolver e elaborar problemas de contagem usando princípios aditivo e multiplicativo.' },
+    { code: 'EM13MAT311', description: 'Resolver e elaborar problemas de probabilidade de eventos aleatórios.' },
+    { code: 'EM13MAT312', description: 'Resolver e elaborar problemas de probabilidade em experimentos sucessivos.' },
+    { code: 'EM13MAT313', description: 'Resolver e elaborar problemas envolvendo algarismos significativos e notação científica.' },
+    { code: 'EM13MAT314', description: 'Resolver e elaborar problemas envolvendo grandezas compostas como velocidade e densidade.' },
+    { code: 'EM13MAT315', description: 'Reconhecer e expressar problemas algorítmicos por meio de algoritmos e fluxogramas.' },
+    { code: 'EM13MAT316', description: 'Resolver e elaborar problemas envolvendo média, moda, mediana, variância e desvio padrão.' },
+    // Competência Específica 4
+    { code: 'EM13MAT401', description: 'Converter funções polinomiais de 1º grau da forma algébrica para a gráfica.' },
+    { code: 'EM13MAT402', description: 'Converter funções polinomiais de 2º grau da forma algébrica para a gráfica.' },
+    { code: 'EM13MAT403', description: 'Comparar funções exponenciais e logarítmicas em gráficos.' },
+    { code: 'EM13MAT404', description: 'Identificar características das funções seno e cosseno.' },
+    { code: 'EM13MAT405', description: 'Reconhecer funções definidas por tabelas e sentenças como contas de consumo.' },
+    { code: 'EM13MAT406', description: 'Utilizar conceitos básicos de programação para implementar algoritmos.' },
+    { code: 'EM13MAT407', description: 'Interpretar vistas ortogonais de figuras espaciais.' },
+    { code: 'EM13MAT408', description: 'Construir e interpretar tabelas e gráficos estatísticos.' },
+    { code: 'EM13MAT409', description: 'Interpretar e comparar dados por meio de histogramas, box-plot e outros gráficos.' },
+    // Competência Específica 5
+    { code: 'EM13MAT501', description: 'Investigar relações em tabelas e representá-las no plano cartesiano como função de 1º grau.' },
+    { code: 'EM13MAT502', description: 'Investigar relações em tabelas como função de 2º grau.' },
+    { code: 'EM13MAT503', description: 'Investigar pontos de máximo e mínimo de funções quadráticas.' },
+    { code: 'EM13MAT504', description: 'Investigar o cálculo de volumes de sólidos geométricos.' },
+    { code: 'EM13MAT505', description: 'Resolver problemas de ladrilhamentos do plano.' },
+    { code: 'EM13MAT506', description: 'Representar a variação da área e do perímetro de polígonos regulares.' },
+    { code: 'EM13MAT507', description: 'Associar progressões aritméticas a funções afins.' },
+    { code: 'EM13MAT508', description: 'Associar progressões geométricas a funções exponenciais.' },
+    { code: 'EM13MAT509', description: 'Investigar projeções cartográficas.' },
+    { code: 'EM13MAT510', description: 'Investigar a relação entre duas variáveis usando tecnologias.' },
+    { code: 'EM13MAT511', description: 'Investigar diferentes espaços amostrais e suas implicações na probabilidade.' },
+    { code: 'EM13MAT512', description: 'Investigar propriedades de figuras geométricas por meio de conjecturas e contraexemplos.' },
+  ],
+  linguagens: [],
+  ciencias_humanas: [],
+  ciencias_natureza: [],
+};
 
 type TeacherView = 'dashboard' | 'progress-analysis' | 'class-detail' | 'lesson-plan-editor' | 'saved-plans' | 'exercise-list-editor' | 'saved-exercise-lists';
 
@@ -58,6 +117,7 @@ export function TeacherDashboard() {
   const [teacherId, setTeacherId] = useState<string | null>(null);
   const [lessonTopic, setLessonTopic] = useState('');
   const [selectedSeries, setSelectedSeries] = useState('');
+  const [selectedArea, setSelectedArea] = useState('');
   const [selectedBncc, setSelectedBncc] = useState('');
   const [lessonDescription, setLessonDescription] = useState('');
   const [classes, setClasses] = useState<ClassWithDetails[]>([]);
@@ -216,6 +276,7 @@ export function TeacherDashboard() {
       // Clear form
       setLessonTopic('');
       setSelectedSeries('');
+      setSelectedArea('');
       setSelectedBncc('');
       setLessonDescription('');
     } catch (error) {
@@ -285,6 +346,7 @@ export function TeacherDashboard() {
       // Clear form
       setLessonTopic('');
       setSelectedSeries('');
+      setSelectedArea('');
       setSelectedBncc('');
       setLessonDescription('');
     } catch (error) {
@@ -473,18 +535,56 @@ export function TeacherDashboard() {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="bncc">Habilidades BNCC</Label>
-            <Select value={selectedBncc} onValueChange={setSelectedBncc}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione o objetivo" />
-              </SelectTrigger>
-              <SelectContent>
-                {BNCC_OBJECTIVES.map((obj) => (
-                  <SelectItem key={obj} value={obj}>{obj}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="area">Área do Conhecimento</Label>
+              <Select value={selectedArea} onValueChange={(value) => {
+                setSelectedArea(value);
+                setSelectedBncc('');
+              }}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a área" />
+                </SelectTrigger>
+                <SelectContent>
+                  {BNCC_AREAS.map((area) => (
+                    <SelectItem key={area.id} value={area.id}>{area.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="bncc">Habilidade BNCC</Label>
+              <Select 
+                value={selectedBncc} 
+                onValueChange={setSelectedBncc}
+                disabled={!selectedArea || BNCC_SKILLS[selectedArea]?.length === 0}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={
+                    !selectedArea 
+                      ? "Selecione uma área primeiro" 
+                      : BNCC_SKILLS[selectedArea]?.length === 0 
+                        ? "Em breve" 
+                        : "Selecione a habilidade"
+                  } />
+                </SelectTrigger>
+                <SelectContent className="max-h-[300px]">
+                  {selectedArea && BNCC_SKILLS[selectedArea]?.map((skill) => (
+                    <SelectItem 
+                      key={skill.code} 
+                      value={`${skill.code} - ${skill.description}`}
+                      className="max-w-[500px]"
+                    >
+                      <span className="font-medium">{skill.code}</span>
+                      <span className="text-muted-foreground ml-1 text-xs truncate">
+                        - {skill.description.length > 60 ? skill.description.substring(0, 60) + '...' : skill.description}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="space-y-2">

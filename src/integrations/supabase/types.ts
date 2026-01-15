@@ -14,6 +14,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      boletos: {
+        Row: {
+          created_at: string
+          due_date: string
+          id: string
+          paid_at: string | null
+          reference: string
+          status: string
+          student_id: string
+          updated_at: string
+          value: number
+        }
+        Insert: {
+          created_at?: string
+          due_date: string
+          id?: string
+          paid_at?: string | null
+          reference: string
+          status?: string
+          student_id: string
+          updated_at?: string
+          value: number
+        }
+        Update: {
+          created_at?: string
+          due_date?: string
+          id?: string
+          paid_at?: string | null
+          reference?: string
+          status?: string
+          student_id?: string
+          updated_at?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "boletos_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       class_students: {
         Row: {
           class_id: string

@@ -103,7 +103,42 @@ const BNCC_SKILLS: Record<string, { code: string; description: string }[]> = {
     { code: 'EM13MAT511', description: 'Investigar diferentes espaços amostrais e suas implicações na probabilidade.' },
     { code: 'EM13MAT512', description: 'Investigar propriedades de figuras geométricas por meio de conjecturas e contraexemplos.' },
   ],
-  linguagens: [],
+  linguagens: [
+    // Competência Específica 1
+    { code: 'EM13LGG101', description: 'Compreender e analisar processos de produção e circulação de discursos nas diferentes linguagens para fazer escolhas fundamentadas em função de interesses pessoais e coletivos.' },
+    { code: 'EM13LGG102', description: 'Analisar visões de mundo, conflitos de interesse, preconceitos e ideologias presentes nos discursos veiculados nas diferentes mídias.' },
+    { code: 'EM13LGG103', description: 'Analisar o funcionamento das linguagens para interpretar e produzir criticamente discursos em textos de diversas semioses.' },
+    { code: 'EM13LGG104', description: 'Utilizar diferentes linguagens para a compreensão e produção de textos e discursos em diversos campos de atuação social.' },
+    { code: 'EM13LGG105', description: 'Analisar e experimentar processos de remidiação de produções multissemióticas, multimídia e transmídia.' },
+    // Competência Específica 2
+    { code: 'EM13LGG201', description: 'Utilizar adequadamente linguagens artísticas, corporais e verbais em diferentes contextos.' },
+    { code: 'EM13LGG202', description: 'Analisar interesses, relações de poder e perspectivas de mundo nos discursos das práticas de linguagem.' },
+    { code: 'EM13LGG203', description: 'Analisar diálogos, conflitos e disputas de legitimidade nas práticas de linguagem.' },
+    { code: 'EM13LGG204', description: 'Negociar sentidos e produzir entendimento mútuo pautado em valores democráticos e Direitos Humanos.' },
+    // Competência Específica 3
+    { code: 'EM13LGG301', description: 'Participar de processos de produção individual e colaborativa em diferentes linguagens.' },
+    { code: 'EM13LGG302', description: 'Posicionar-se criticamente diante de visões de mundo presentes nos discursos.' },
+    { code: 'EM13LGG303', description: 'Debater questões polêmicas de relevância social, analisando argumentos e tomando decisões democraticamente sustentadas.' },
+    { code: 'EM13LGG304', description: 'Mapear e criar possibilidades de atuação social, política, artística e cultural.' },
+    // Competência Específica 4
+    { code: 'EM13LGG401', description: 'Analisar textos para caracterizar as línguas como fenômeno geopolítico, histórico e social.' },
+    { code: 'EM13LGG402', description: 'Empregar variedade e estilo de língua adequados às situações comunicativas, combatendo o preconceito linguístico.' },
+    { code: 'EM13LGG403', description: 'Utilizar o inglês como língua global considerando seus usos e funções no mundo contemporâneo.' },
+    // Competência Específica 5
+    { code: 'EM13LGG501', description: 'Selecionar e utilizar movimentos corporais para interação social ética e respeitosa.' },
+    { code: 'EM13LGG502', description: 'Analisar criticamente preconceitos, estereótipos e relações de poder nas práticas corporais.' },
+    { code: 'EM13LGG503', description: 'Valorizar a cultura corporal de movimento como autoconhecimento, autocuidado e construção de vínculos sociais.' },
+    // Competência Específica 6
+    { code: 'EM13LGG601', description: 'Apropriar-se do patrimônio artístico e da cultura corporal de diferentes tempos e lugares.' },
+    { code: 'EM13LGG602', description: 'Fruir e apreciar manifestações artísticas e culturais locais e globais.' },
+    { code: 'EM13LGG603', description: 'Expressar-se em processos criativos que integrem diferentes linguagens artísticas.' },
+    { code: 'EM13LGG604', description: 'Relacionar práticas artísticas e corporais às dimensões sociais, políticas, históricas e econômicas.' },
+    // Competência Específica 7
+    { code: 'EM13LGG701', description: 'Explorar e utilizar TDIC de modo ético, responsável e adequado.' },
+    { code: 'EM13LGG702', description: 'Avaliar impactos das tecnologias digitais na formação do sujeito e nas práticas sociais.' },
+    { code: 'EM13LGG703', description: 'Utilizar linguagens, mídias e ferramentas digitais em produções coletivas e autorais.' },
+    { code: 'EM13LGG704', description: 'Apropriar-se criticamente de processos de pesquisa e busca de informação na cultura digital.' },
+  ],
   ciencias_humanas: [],
   ciencias_natureza: [],
 };

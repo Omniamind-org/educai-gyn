@@ -249,7 +249,7 @@ export function TeacherDashboard() {
         bnccObjective={generatedPlan.bnccObjective}
         teacherId={teacherId}
         onBack={() => {
-          setCurrentView('dashboard');
+          setCurrentView('saved-plans');
           setGeneratedPlan(null);
         }}
         onSaved={(id) => {

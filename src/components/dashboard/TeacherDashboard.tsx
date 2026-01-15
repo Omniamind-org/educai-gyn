@@ -352,7 +352,7 @@ export function TeacherDashboard() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="bncc">Objetivo BNCC</Label>
+            <Label htmlFor="bncc">Habilidades BNCC</Label>
             <Select value={selectedBncc} onValueChange={setSelectedBncc}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione o objetivo" />

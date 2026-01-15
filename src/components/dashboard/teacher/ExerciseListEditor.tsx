@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Save, Download, Copy, Check, ListChecks, Loader2 } from 'lucide-react';
+import { ArrowLeft, Save, Download, Copy, Check, ListChecks, Loader2, Eye, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
+import ReactMarkdown from 'react-markdown';
 
 interface ExerciseListEditorProps {
   listId?: string;
@@ -35,6 +36,7 @@ export function ExerciseListEditor({
   const [hasChanges, setHasChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [savedListId, setSavedListId] = useState<string | undefined>(listId);
+  const [isPreviewMode, setIsPreviewMode] = useState(true);
 
   useEffect(() => {
     setHasChanges(content !== exerciseList);
@@ -239,6 +241,26 @@ export function ExerciseListEditor({
           Baixar
         </Button>
         <div className="flex-1" />
+        <div className="flex items-center gap-1 bg-background rounded-md p-1">
+          <Button
+            variant={isPreviewMode ? "secondary" : "ghost"}
+            size="sm"
+            onClick={() => setIsPreviewMode(true)}
+            className="gap-1"
+          >
+            <Eye className="h-4 w-4" />
+            Visualizar
+          </Button>
+          <Button
+            variant={!isPreviewMode ? "secondary" : "ghost"}
+            size="sm"
+            onClick={() => setIsPreviewMode(false)}
+            className="gap-1"
+          >
+            <Edit className="h-4 w-4" />
+            Editar
+          </Button>
+        </div>
         {savedListId && (
           <Badge variant="secondary" className="text-xs">
             Salvo
@@ -251,16 +273,22 @@ export function ExerciseListEditor({
         )}
       </div>
 
-      {/* Editor */}
+      {/* Editor/Preview */}
       <Card className="flex-1 flex flex-col overflow-hidden">
         <CardContent className="p-0 flex-1 flex flex-col">
           <ScrollArea className="flex-1">
-            <Textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              className="min-h-[500px] h-full resize-none border-0 rounded-none focus-visible:ring-0 font-mono text-sm leading-relaxed p-4"
-              placeholder="Sua lista de exercícios aparecerá aqui..."
-            />
+            {isPreviewMode ? (
+              <div className="prose prose-sm max-w-none p-4 dark:prose-invert">
+                <ReactMarkdown>{content}</ReactMarkdown>
+              </div>
+            ) : (
+              <Textarea
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                className="min-h-[500px] h-full resize-none border-0 rounded-none focus-visible:ring-0 font-mono text-sm leading-relaxed p-4"
+                placeholder="Sua lista de exercícios aparecerá aqui..."
+              />
+            )}
           </ScrollArea>
         </CardContent>
       </Card>

@@ -32,6 +32,8 @@ serve(async (req) => {
     const systemPrompt = `Você é um especialista em pedagogia e criação de listas de exercícios para o ensino brasileiro.
 Você deve criar listas de exercícios variados, criativos e alinhados à Base Nacional Comum Curricular (BNCC).
 
+IMPORTANTE: Comece DIRETAMENTE com o título da lista. NÃO inclua saudações, introduções, apresentações pessoais ou qualquer texto antes do conteúdo.
+
 Suas listas devem incluir:
 1. **Título da Lista**: Nome da lista de exercícios
 2. **Objetivo de Aprendizagem**: O que os alunos devem praticar

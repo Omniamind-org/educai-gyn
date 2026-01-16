@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 
 interface Class {
   id: string;
@@ -28,7 +29,7 @@ export function ClassesView() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddClassOpen, setIsAddClassOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   const [newClass, setNewClass] = useState({
     name: "",
     grade: "",
@@ -41,10 +42,10 @@ export function ClassesView() {
   const [classTeachers, setClassTeachers] = useState<string[]>([]);
   const [isLoadingMembers, setIsLoadingMembers] = useState(false);
   const [isSavingMembers, setIsSavingMembers] = useState(false);
-  
+
   // Lists for selection
-  const [allStudents, setAllStudents] = useState<{id: string, name: string}[]>([]);
-  const [allTeachers, setAllTeachers] = useState<{id: string, name: string}[]>([]);
+  const [allStudents, setAllStudents] = useState<{ id: string, name: string }[]>([]);
+  const [allTeachers, setAllTeachers] = useState<{ id: string, name: string }[]>([]);
 
   useEffect(() => {
     fetchClasses();
@@ -273,9 +274,9 @@ export function ClassesView() {
                   disabled={isSubmitting}
                 />
               </div>
-              <Button 
-                className="w-full" 
-                onClick={handleAddClass} 
+              <Button
+                className="w-full"
+                onClick={handleAddClass}
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (
@@ -298,7 +299,7 @@ export function ClassesView() {
               <DialogTitle>Gerenciar Turma: {selectedClass?.name}</DialogTitle>
               <DialogDescription>Add or remove students and teachers.</DialogDescription>
             </DialogHeader>
-            
+
             {isLoadingMembers ? (
               <div className="flex justify-center py-8">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -309,47 +310,47 @@ export function ClassesView() {
                   <TabsTrigger value="students">Alunos ({classStudents.length})</TabsTrigger>
                   <TabsTrigger value="teachers">Professores ({classTeachers.length})</TabsTrigger>
                 </TabsList>
-                
+
                 <TabsContent value="students" className="space-y-4 pt-4">
-                   <ScrollArea className="h-[300px] border rounded-md p-4">
-                     {allStudents.length === 0 ? (
-                       <p className="text-center text-muted-foreground">Nenhum aluno ativo disponível.</p>
-                     ) : (
-                       allStudents.map(student => (
-                         <div key={student.id} className="flex items-center space-x-2 py-2">
-                           <Checkbox 
-                             id={`st-${student.id}`} 
-                             checked={classStudents.includes(student.id)}
-                             onCheckedChange={() => toggleStudent(student.id)}
-                           />
-                           <Label htmlFor={`st-${student.id}`} className="cursor-pointer flex-1">
-                             {student.name}
-                           </Label>
-                         </div>
-                       ))
-                     )}
-                   </ScrollArea>
+                  <ScrollArea className="h-[300px] border rounded-md p-4">
+                    {allStudents.length === 0 ? (
+                      <p className="text-center text-muted-foreground">Nenhum aluno ativo disponível.</p>
+                    ) : (
+                      allStudents.map(student => (
+                        <div key={student.id} className="flex items-center space-x-2 py-2">
+                          <Checkbox
+                            id={`st-${student.id}`}
+                            checked={classStudents.includes(student.id)}
+                            onCheckedChange={() => toggleStudent(student.id)}
+                          />
+                          <Label htmlFor={`st-${student.id}`} className="cursor-pointer flex-1">
+                            {student.name}
+                          </Label>
+                        </div>
+                      ))
+                    )}
+                  </ScrollArea>
                 </TabsContent>
-                
+
                 <TabsContent value="teachers" className="space-y-4 pt-4">
                   <ScrollArea className="h-[300px] border rounded-md p-4">
-                     {allTeachers.length === 0 ? (
-                       <p className="text-center text-muted-foreground">Nenhum professor ativo disponível.</p>
-                     ) : (
-                       allTeachers.map(teacher => (
-                         <div key={teacher.id} className="flex items-center space-x-2 py-2">
-                           <Checkbox 
-                             id={`tc-${teacher.id}`} 
-                             checked={classTeachers.includes(teacher.id)}
-                             onCheckedChange={() => toggleTeacher(teacher.id)}
-                           />
-                           <Label htmlFor={`tc-${teacher.id}`} className="cursor-pointer flex-1">
-                             {teacher.name}
-                           </Label>
-                         </div>
-                       ))
-                     )}
-                   </ScrollArea>
+                    {allTeachers.length === 0 ? (
+                      <p className="text-center text-muted-foreground">Nenhum professor ativo disponível.</p>
+                    ) : (
+                      allTeachers.map(teacher => (
+                        <div key={teacher.id} className="flex items-center space-x-2 py-2">
+                          <Checkbox
+                            id={`tc-${teacher.id}`}
+                            checked={classTeachers.includes(teacher.id)}
+                            onCheckedChange={() => toggleTeacher(teacher.id)}
+                          />
+                          <Label htmlFor={`tc-${teacher.id}`} className="cursor-pointer flex-1">
+                            {teacher.name}
+                          </Label>
+                        </div>
+                      ))
+                    )}
+                  </ScrollArea>
                 </TabsContent>
 
                 <div className="pt-4 flex justify-end">

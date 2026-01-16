@@ -41,9 +41,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               <Menu className="w-5 h-5" />
             </Button>
             <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-primary">
-                <BookOpen className="w-4 h-4 text-primary-foreground" />
-              </div>
+              <img src="/logo.png" alt="Aprendu" className="w-8 h-8 rounded-lg" />
               <span className="font-semibold text-foreground">Aprendu</span>
             </div>
             <Button variant="ghost" size="icon" className="h-9 w-9" onClick={handleLogout}>
@@ -71,9 +69,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         {/* Top Header */}
         <header className="flex items-center justify-between mb-6 pb-4 border-b border-border">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-primary">
-              <BookOpen className="w-6 h-6 text-primary-foreground" />
-            </div>
+            <img src="/logo.png" alt="Aprendu" className="w-10 h-10 rounded-xl" />
             <div>
               <h1 className="text-xl font-bold text-foreground">Aprendu</h1>
               <p className="text-sm text-muted-foreground">{role && ROLE_LABELS[role]}</p>

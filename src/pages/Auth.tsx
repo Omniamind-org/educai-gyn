@@ -403,9 +403,7 @@ export default function Auth() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <div className="p-3 rounded-xl bg-primary">
-              <BookOpen className="w-8 h-8 text-primary-foreground" />
-            </div>
+            <img src="/logo-square.png" alt="Aprendu" className="w-20 h-20" />
           </div>
           <CardTitle className="text-2xl">Aprendu</CardTitle>
           <CardDescription className="flex items-center justify-center gap-2">

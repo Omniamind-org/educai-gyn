@@ -14,6 +14,7 @@ import { ObjectiveSelectionView, StudyObjective } from './student/ObjectiveSelec
 import { StudyChatView } from './student/StudyChatView';
 import { useStudentTasks, StudentTask } from '@/hooks/useStudentTasks';
 import { useStudentSubjects, StudentSubject } from '@/hooks/useStudentSubjects';
+import { useStudentProfile } from '@/hooks/useStudentProfile';
 
 const iconMap: Record<string, LucideIcon> = {
   FileText,
@@ -26,6 +27,7 @@ type StudentView = 'dashboard' | 'progress' | 'objectives' | 'study-chat';
 export function StudentDashboard() {
   const { tasks, loading: tasksLoading } = useStudentTasks();
   const { subjects, loading: subjectsLoading } = useStudentSubjects();
+  const { profile: studentProfile } = useStudentProfile();
   const [currentView, setCurrentView] = useState<StudentView>('dashboard');
   const [selectedObjective, setSelectedObjective] = useState<StudyObjective | null>(null);
   const [selectedTask, setSelectedTask] = useState<StudentTask | null>(null);
@@ -271,9 +273,12 @@ export function StudentDashboard() {
       <div className="p-3 bg-card rounded-xl border border-border">
         <div className="flex items-center gap-2">
           <Avatar className="w-10 h-10 border-2 border-primary shrink-0">
-            <AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg?seed=student" />
-            <AvatarFallback>AL</AvatarFallback>
+            <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${studentProfile?.name || 'student'}`} />
+            <AvatarFallback>{studentProfile?.name?.substring(0, 2).toUpperCase() || 'AL'}</AvatarFallback>
           </Avatar>
+          <span className="font-medium text-sm truncate max-w-[120px]">
+            {studentProfile?.name?.split(' ')[0] || 'Aluno'}
+          </span>
 
           <div className="flex items-center gap-1 shrink-0">
             <Trophy className="w-4 h-4 text-warning" />

@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { mockSchools, calculateKPIs, SchoolUnit } from '@/data/regionalData';
+import { useState, useEffect } from 'react'; // Added useEffect
+import { calculateKPIs, SchoolUnit } from '@/data/regionalData'; // Removed schools
+import { supabase } from '@/integrations/supabase/client'; // Added supabase import
 import { KPICard } from './regional/KPICard';
 import { SchoolsTableView } from './regional/SchoolsTableView';
 import { SchoolsCardsView } from './regional/SchoolsCardsView';
@@ -11,9 +12,10 @@ import { DynamicDashboardArea } from './regional/DynamicDashboardArea';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { List, LayoutGrid, TrendingUp, Grid3X3, Sparkles } from 'lucide-react';
+import { List, LayoutGrid, TrendingUp, Grid3X3, Sparkles, Loader2 } from 'lucide-react'; // Added Loader2
 import { DashboardConfig } from '@/types/dashboard';
 import { useDashboardRegistry } from '@/hooks/useDashboardRegistry';
+import { useToast } from '@/hooks/use-toast'; // Assuming hook exists
 
 type ViewMode = 'table' | 'cards' | 'scatter' | 'heatmap';
 
@@ -21,6 +23,9 @@ export function RegionalDashboard() {
   const [selectedSchool, setSelectedSchool] = useState<SchoolUnit | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('table');
   const [copilotOpen, setCopilotOpen] = useState(false);
+  const [schools, setSchools] = useState<SchoolUnit[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
   
   const { 
     activeDashboard, 
@@ -30,7 +35,67 @@ export function RegionalDashboard() {
     updateWidget 
   } = useDashboardRegistry();
 
-  const kpis = calculateKPIs(mockSchools);
+  useEffect(() => {
+    const fetchSchools = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('schools')
+          .select(`
+            *,
+            regions (name),
+            school_metrics (subject, grade)
+          `);
+
+        if (error) throw error;
+
+        if (data) {
+          const mappedSchools: SchoolUnit[] = data.map((s: any) => ({
+            id: s.id,
+            name: s.name,
+            region: s.regions?.name || 'Desconhecida',
+            totalStudents: s.total_students,
+            permanence: s.permanence,
+            averageGrade: s.average_grade,
+            attendance: s.attendance,
+            riskLevel: s.risk_level as any,
+            teachers: s.teacher_count,
+            teacherSatisfaction: s.teacher_satisfaction,
+            continuedEducation: s.continued_education,
+            infrastructure: s.infrastructure as any,
+            academicPerformance: {
+              math: s.school_metrics.find((m: any) => m.subject === 'math')?.grade || 0,
+              languages: s.school_metrics.find((m: any) => m.subject === 'languages')?.grade || 0,
+              sciences: s.school_metrics.find((m: any) => m.subject === 'sciences')?.grade || 0,
+              humanities: s.school_metrics.find((m: any) => m.subject === 'humanities')?.grade || 0,
+            },
+            alerts: s.alerts || []
+          }));
+          setSchools(mappedSchools);
+        }
+      } catch (error) {
+        console.error('Error fetching schools:', error);
+        toast({
+          title: "Erro ao carregar dados",
+          description: "Não foi possível buscar as escolas do banco de dados.",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSchools();
+  }, []);
+
+  const kpis = calculateKPIs(schools);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   const handleDashboardGenerated = (dashboard: DashboardConfig) => {
     createDashboard(dashboard);
@@ -119,10 +184,10 @@ export function RegionalDashboard() {
           </div>
         </CardHeader>
         <CardContent>
-          {viewMode === 'table' && <SchoolsTableView schools={mockSchools} onSelectSchool={setSelectedSchool} />}
-          {viewMode === 'cards' && <SchoolsCardsView schools={mockSchools} onSelectSchool={setSelectedSchool} />}
-          {viewMode === 'scatter' && <SchoolsScatterView schools={mockSchools} onSelectSchool={setSelectedSchool} />}
-          {viewMode === 'heatmap' && <SchoolsHeatmapView schools={mockSchools} onSelectSchool={setSelectedSchool} />}
+          {viewMode === 'table' && <SchoolsTableView schools={schools} onSelectSchool={setSelectedSchool} />}
+          {viewMode === 'cards' && <SchoolsCardsView schools={schools} onSelectSchool={setSelectedSchool} />}
+          {viewMode === 'scatter' && <SchoolsScatterView schools={schools} onSelectSchool={setSelectedSchool} />}
+          {viewMode === 'heatmap' && <SchoolsHeatmapView schools={schools} onSelectSchool={setSelectedSchool} />}
         </CardContent>
       </Card>
 

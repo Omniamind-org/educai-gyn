@@ -244,27 +244,6 @@ export function StudentDashboard() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            {selectedTask.attachmentUrl && (
-              <div className="p-4 border rounded-lg bg-primary/5">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-primary/10">
-                    <FileDown className="w-5 h-5 text-primary" />
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-medium">Material de Apoio</h4>
-                    <p className="text-sm text-muted-foreground">PDF disponibilizado pelo professor</p>
-                  </div>
-                  <Button
-                    variant="outline"
-                    className="gap-2"
-                    onClick={() => window.open(selectedTask.attachmentUrl!, '_blank')}
-                  >
-                    <FileDown className="w-4 h-4" />
-                    Abrir PDF
-                  </Button>
-                </div>
-              </div>
-            )}
             <Textarea
               placeholder="Escreva sua resposta aqui..."
               className="min-h-[300px] resize-none"
@@ -374,9 +353,6 @@ export function StudentDashboard() {
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <h3 className="font-medium text-foreground">{task.title}</h3>
-                        {task.attachmentUrl && (
-                          <Paperclip className="w-4 h-4 text-muted-foreground" />
-                        )}
                       </div>
                       <div className="flex items-center gap-3 text-sm">
                         <span className="text-muted-foreground">{task.className}</span>

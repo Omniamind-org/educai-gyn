@@ -25,9 +25,9 @@ export function LandingScreen() {
         <div className="text-center mb-10 animate-fade-in">
           <div className="inline-flex items-center gap-3 mb-4">
             <img
-              src="/logo.png"
+              src="/logo-square.png"
               alt="Aprendu"
-              className="w-16 h-16 md:w-20 md:h-20 rounded-2xl shadow-xl shadow-blue-500/20"
+              className="w-20 h-20 md:w-24 md:h-24"
             />
             <h1 className="text-4xl md:text-5xl font-bold text-blue-500">
               Aprendu

@@ -59,24 +59,24 @@ export function DirectorDashboard() {
       const { data: students } = await supabase
         .from('students')
         .select('id, status, grade');
-      
+
       // Fetch teachers
       const { data: teachers } = await supabase
         .from('teachers')
         .select('id, status');
-      
+
       // Fetch classes
       const { data: classes } = await supabase
         .from('classes')
         .select('id');
-      
+
       // Fetch boletos
       const { data: boletos } = await supabase
         .from('boletos')
         .select('id, status, value, due_date, student_id, students(grade)');
 
       const today = new Date();
-      
+
       // Process boletos
       const processedBoletos = (boletos || []).map((b: any) => {
         let status = b.status;
@@ -89,11 +89,11 @@ export function DirectorDashboard() {
       const boletosPendentes = processedBoletos.filter(b => b.status === 'pendente').length;
       const boletosVencidos = processedBoletos.filter(b => b.status === 'vencido').length;
       const boletosPagos = processedBoletos.filter(b => b.status === 'pago').length;
-      
+
       const totalReceita = processedBoletos
         .filter(b => b.status === 'pago')
         .reduce((sum, b) => sum + (b.value || 0), 0);
-      
+
       const receitaPendente = processedBoletos
         .filter(b => b.status !== 'pago')
         .reduce((sum, b) => sum + (b.value || 0), 0);
@@ -144,24 +144,17 @@ export function DirectorDashboard() {
   const handleGenerateDocument = () => {
     if (!documentInput.trim()) return;
 
-    if ((window as any).addAIMessage) {
-      (window as any).addAIMessage(
-        `📄 Gerando documento: "${documentInput}"\n\n` +
-        '✅ Documento formal gerado com sucesso!\n\n' +
-        '**Prévia:**\n' +
-        '---\n' +
-        `ADVERTÊNCIA ESCOLAR\n\n` +
-        `Aos responsáveis pelo aluno(a) mencionado(a),\n\n` +
-        `Vimos por meio desta comunicar que...\n\n` +
-        '---\n' +
-        'Deseja fazer download do PDF completo?'
-      );
+    if ((window as any).sendUserMessage) {
+      const prompt = `Gere um documento formal: "${documentInput}". Peça os dados necessários (como nomes, datas, detalhes) se não estiverem claros. Quando tiver todos os dados, gere o documento final completo dentro de tags <document> e </document> para que eu possa gerar o PDF.`;
+      (window as any).sendUserMessage(prompt, documentInput);
+    } else if ((window as any).addAIMessage) {
+      (window as any).addAIMessage("Erro: Sistema de chat não inicializado. Tente recarregar a página.");
     }
     setDocumentInput('');
   };
 
-  const inadimplenciaPercent = stats && stats.totalBoletos > 0 
-    ? Math.round(((stats.boletosPendentes + stats.boletosVencidos) / stats.totalBoletos) * 100) 
+  const inadimplenciaPercent = stats && stats.totalBoletos > 0
+    ? Math.round(((stats.boletosPendentes + stats.boletosVencidos) / stats.totalBoletos) * 100)
     : 0;
 
   const enrollmentData = [
@@ -194,7 +187,7 @@ export function DirectorDashboard() {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card className="opacity-0 animate-fade-in" style={{ animationDelay: '100ms' }}>
           <CardContent className="p-4 flex items-center gap-4">
             <div className="p-3 rounded-xl bg-secondary/10">
@@ -206,7 +199,7 @@ export function DirectorDashboard() {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card className="opacity-0 animate-fade-in" style={{ animationDelay: '200ms' }}>
           <CardContent className="p-4 flex items-center gap-4">
             <div className="p-3 rounded-xl bg-success/10">
@@ -218,7 +211,7 @@ export function DirectorDashboard() {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card className="opacity-0 animate-fade-in" style={{ animationDelay: '300ms' }}>
           <CardContent className="p-4 flex items-center gap-4">
             <div className="p-3 rounded-xl bg-destructive/10">
@@ -230,7 +223,7 @@ export function DirectorDashboard() {
             </div>
           </CardContent>
         </Card>
-        
+
         <Card className="opacity-0 animate-fade-in" style={{ animationDelay: '400ms' }}>
           <CardContent className="p-4 flex items-center gap-4">
             <div className="p-3 rounded-xl bg-warning/10">
@@ -261,10 +254,10 @@ export function DirectorDashboard() {
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis dataKey="grade" tick={{ fill: 'hsl(var(--muted-foreground))' }} />
                   <YAxis tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                  <Tooltip 
+                  <Tooltip
                     formatter={(value: number) => [`R$ ${value.toLocaleString('pt-BR')}`, 'Valor']}
-                    contentStyle={{ 
-                      backgroundColor: 'hsl(var(--card))', 
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--card))',
                       border: '1px solid hsl(var(--border))',
                       borderRadius: '8px'
                     }}
@@ -390,7 +383,7 @@ export function DirectorDashboard() {
                 Gerar Documento
               </Button>
             </div>
-            
+
             <div className="pt-4 border-t border-border">
               <p className="text-sm text-muted-foreground mb-2">Documentos recentes:</p>
               <div className="space-y-2">

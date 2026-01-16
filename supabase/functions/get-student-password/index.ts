@@ -24,8 +24,8 @@ Deno.serve(async (req) => {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(
-        JSON.stringify({ error: "Não autorizado" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ success: false, error: "Não autorizado" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -41,8 +41,8 @@ Deno.serve(async (req) => {
     const { data: { user }, error: userError } = await supabaseUser.auth.getUser();
     if (userError || !user) {
       return new Response(
-        JSON.stringify({ error: "Usuário não autenticado" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ success: false, error: "Usuário não autenticado" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -55,8 +55,8 @@ Deno.serve(async (req) => {
 
     if (roleError || roleData?.role !== "secretaria") {
       return new Response(
-        JSON.stringify({ error: "Apenas a secretaria pode ver senhas de alunos" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ success: false, error: "Apenas a secretaria pode ver senhas de alunos" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -65,8 +65,8 @@ Deno.serve(async (req) => {
 
     if (!studentId) {
       return new Response(
-        JSON.stringify({ error: "ID do aluno é obrigatório" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ success: false, error: "ID do aluno é obrigatório" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -82,8 +82,8 @@ Deno.serve(async (req) => {
 
     if (studentError || !student) {
       return new Response(
-        JSON.stringify({ error: "Aluno não encontrado" }),
-        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ success: false, error: "Aluno não encontrado" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -103,8 +103,8 @@ Deno.serve(async (req) => {
         if (authError) {
           console.error("Error updating auth password:", authError);
           return new Response(
-            JSON.stringify({ error: `Erro ao atualizar senha: ${authError.message}` }),
-            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            JSON.stringify({ success: false, error: `Erro ao atualizar senha: ${authError.message}` }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
       }
@@ -133,8 +133,8 @@ Deno.serve(async (req) => {
     const message = error instanceof Error ? error.message : "Erro desconhecido";
     console.error("Error in get-student-password:", message);
     return new Response(
-      JSON.stringify({ error: `Erro interno: ${message}` }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ success: false, error: `Erro interno: ${message}` }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } } // Return 200 with error
     );
   }
 });

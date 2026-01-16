@@ -13,6 +13,7 @@ export interface StudentTask {
   className: string;
   classId: string;
   teacherName: string;
+  attachmentUrl: string | null;
 }
 
 export function useStudentTasks() {
@@ -73,7 +74,8 @@ export function useStudentTasks() {
             due_date,
             max_score,
             class_id,
-            teacher_id
+            teacher_id,
+            attachment_url
           `)
           .in('class_id', classIds)
           .eq('status', 'ativa')
@@ -109,13 +111,14 @@ export function useStudentTasks() {
           id: task.id,
           title: task.title,
           description: task.description,
-          dueDate: task.due_date 
+          dueDate: task.due_date
             ? format(new Date(task.due_date), "dd MMM", { locale: ptBR })
             : 'Sem prazo',
           maxScore: task.max_score,
           className: classMap.get(task.class_id) || 'Turma',
           classId: task.class_id,
           teacherName: teacherMap.get(task.teacher_id) || 'Professor',
+          attachmentUrl: task.attachment_url,
         }));
 
         setTasks(formattedTasks);

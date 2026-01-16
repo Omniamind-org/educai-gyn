@@ -26,10 +26,10 @@ serve(async (req) => {
 
   try {
     const { messages } = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
     
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+    if (!OPENAI_API_KEY) {
+      throw new Error("OPENAI_API_KEY is not configured");
     }
 
     const systemPrompt = `Você é o EduGov Copilot, um assistente inteligente de gestão educacional que gera dashboards dinâmicos.
@@ -89,14 +89,14 @@ EXEMPLOS:
 
 Responda APENAS com JSON válido, sem markdown.`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "gpt-4o-mini",
         messages: [
           { role: "system", content: systemPrompt },
           ...messages.map((m: { role: string; content: string }) => ({
@@ -115,7 +115,7 @@ Responda APENAS com JSON válido, sem markdown.`;
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      throw new Error(`AI error: ${response.status}`);
+      throw new Error(`OpenAI API error: ${response.status}`);
     }
 
     return new Response(response.body, {

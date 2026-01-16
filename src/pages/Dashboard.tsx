@@ -8,6 +8,7 @@ import { TeacherDashboard } from '@/components/dashboard/TeacherDashboard';
 import { CoordinatorDashboard } from '@/components/dashboard/CoordinatorDashboard';
 import { DirectorDashboard } from '@/components/dashboard/DirectorDashboard';
 import { SecretaryDashboard } from '@/components/dashboard/SecretaryDashboard';
+import { RegionalDashboard } from '@/components/dashboard/RegionalDashboard';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function Dashboard() {
@@ -20,7 +21,6 @@ export default function Dashboard() {
     }
   }, [loading, user, navigate]);
 
-  // Show loading while auth is loading OR while we have a user but role is still being fetched
   if (loading || (user && role === null)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -40,21 +40,12 @@ export default function Dashboard() {
           <CardHeader>
             <CardTitle>Perfil não configurado</CardTitle>
             <CardDescription>
-              Sua conta entrou, mas ainda não foi associada a um perfil (aluno/professor/coordenacao/diretor).
+              Sua conta entrou, mas ainda não foi associada a um perfil.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            <Button
-              className="w-full"
-              onClick={async () => {
-                await signOut();
-                navigate('/');
-              }}
-            >
+            <Button className="w-full" onClick={async () => { await signOut(); navigate('/'); }}>
               Sair
-            </Button>
-            <Button variant="outline" className="w-full" onClick={() => navigate('/auth')}>
-              Voltar ao login
             </Button>
           </CardContent>
         </Card>
@@ -74,6 +65,8 @@ export default function Dashboard() {
         return <DirectorDashboard />;
       case 'secretaria':
         return <SecretaryDashboard />;
+      case 'regional':
+        return <RegionalDashboard />;
       default:
         return null;
     }

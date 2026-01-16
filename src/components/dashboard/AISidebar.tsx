@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Send, Bot, Sparkles, Loader2 } from 'lucide-react';
+import { Send, Bot, Sparkles, Loader2, Download } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useApp } from '@/contexts/AppContext';
 import { Button } from '@/components/ui/button';
@@ -9,11 +9,13 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { STUDENT_CONTEXT } from '@/data/studentData';
+import { jsPDF } from "jspdf";
 
 interface ChatMessage {
   id: string;
   role: 'assistant' | 'user';
   content: string;
+  isDocument?: boolean;
 }
 
 const PERSONAS = [
@@ -67,13 +69,16 @@ export function AISidebar() {
     }
   }, [role]);
 
-  const handleSend = async () => {
-    if (!input.trim() || isLoading) return;
+  const handleSend = async (customContent?: string, displayContent?: string) => {
+    const contentToSend = customContent || input;
+    const contentToDisplay = displayContent || contentToSend;
+
+    if (!contentToSend.trim() || isLoading) return;
 
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       role: 'user',
-      content: input,
+      content: contentToDisplay,
     };
 
     setMessages((prev) => [...prev, userMessage]);
@@ -82,8 +87,21 @@ export function AISidebar() {
 
     try {
       // Prepare messages for API (excluding initial greeting)
-      const apiMessages = [...messages, userMessage]
-        .filter(m => m.id !== '1') // Remove initial greeting
+      // Note: We use contentToDisplay for history consistency, but for the LAST message we must use the hidden prompt (contentToSend)
+      // However, usually API expects the conversation history to match what "sent". 
+      // If we only show "Ata", but send "Generate Ata...", the API concept of history might get confused if we push "Ata" to history but sent "Generate Ata".
+      // Actually, standard practice for these hidden system/user prompts is to treat them as the user message for the API context, 
+      // but usually the history is what the user *sees*. 
+      // Let's create a temporary message object for the API call that replaces the last message content.
+
+      const messagesForApi = messages.map(m => ({ role: m.role, content: m.content }));
+      // Add the current message with the ACTUAL prompt content, not the display content
+      messagesForApi.push({ role: 'user', content: contentToSend });
+
+      // Remove initial greeting if it's there (id '1') - wait, mapped array lost IDs.
+      // Re-doing logic closer to original but safer.
+      const apiMessages = [...messages, { role: 'user' as const, content: contentToSend, id: 'temp' }]
+        .filter(m => m.id !== '1')
         .map(m => ({ role: m.role, content: m.content }));
 
       // Build context based on role - use centralized student data
@@ -117,10 +135,14 @@ export function AISidebar() {
         throw new Error(error.message);
       }
 
+      // Check if response contains document markers
+      const isDocument = data.message.includes('<document>') || data.message.includes('[DOCUMENTO]');
+
       const aiResponse: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
         content: data.message,
+        isDocument
       };
 
       setMessages((prev) => [...prev, aiResponse]);
@@ -153,13 +175,54 @@ export function AISidebar() {
     setMessages((prev) => [...prev, aiMessage]);
   };
 
-  // Expose addAIMessage to window for external triggers
+  const sendUserMessage = (content: string, displayContent?: string) => {
+    handleSend(content, displayContent);
+  }
+
+  // Expose addAIMessage and sendUserMessage to window for external triggers
   useEffect(() => {
     (window as any).addAIMessage = addAIMessage;
+    (window as any).sendUserMessage = sendUserMessage;
     return () => {
       delete (window as any).addAIMessage;
+      delete (window as any).sendUserMessage;
     };
-  }, []);
+  }, [messages, role, aiPersona]);
+
+  const generatePDF = (content: string) => {
+    try {
+      const doc = new jsPDF();
+
+      // Clean up tags if present
+      const cleanContent = content
+        .replace(/<document>/g, '')
+        .replace(/<\/document>/g, '')
+        .replace(/\[DOCUMENTO\]/g, '')
+        .trim();
+
+      // Split text to fit page
+      const splitText = doc.splitTextToSize(cleanContent, 180);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(12);
+      doc.text(splitText, 15, 20);
+
+      doc.save("documento_educai.pdf");
+
+      toast({
+        title: "PDF Gerado!",
+        description: "O download do seu documento começou.",
+        className: "bg-green-500 text-white"
+      });
+    } catch (e) {
+      console.error("Error generating PDF", e);
+      toast({
+        title: "Erro ao gerar PDF",
+        description: "Não foi possível criar o arquivo PDF.",
+        variant: "destructive"
+      });
+    }
+  };
 
   return (
     <aside className="ai-sidebar">
@@ -209,14 +272,26 @@ export function AISidebar() {
             <div
               className={cn(
                 'chat-bubble',
-                message.role === 'assistant' ? 'chat-bubble-ai' : 'chat-bubble-user'
+                message.role === 'assistant' ? 'chat-bubble-ai' : 'chat-bubble-user',
+                'flex flex-col gap-2'
               )}
             >
               <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+              {message.role === 'assistant' && (message.isDocument || message.content.includes('[DOCUMENTO]') || message.content.includes('<document>')) && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="w-full mt-2 gap-2 bg-white/20 hover:bg-white/30 text-inherit border-0"
+                  onClick={() => generatePDF(message.content)}
+                >
+                  <Download className="w-4 h-4" />
+                  Baixar PDF
+                </Button>
+              )}
             </div>
           </div>
         ))}
-        
+
         {isLoading && (
           <div className="flex justify-start animate-fade-in">
             <div className="chat-bubble chat-bubble-ai flex items-center gap-2">
@@ -238,7 +313,7 @@ export function AISidebar() {
             onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
             disabled={isLoading}
           />
-          <Button size="icon" onClick={handleSend} disabled={isLoading || !input.trim()}>
+          <Button size="icon" onClick={() => handleSend()} disabled={isLoading || !input.trim()}>
             {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </Button>
         </div>

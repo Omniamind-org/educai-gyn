@@ -19,44 +19,39 @@ interface RoleCardProps {
 
 export function RoleCard({ config, onClick, delay }: RoleCardProps) {
   const Icon = iconMap[config.icon];
-  
-  const colorStyles: Record<string, string> = {
-    student: 'hover:border-student hover:bg-student/5 group-hover:text-student',
-    teacher: 'hover:border-success hover:bg-success/5 group-hover:text-success',
-    coordinator: 'hover:border-warning hover:bg-warning/5 group-hover:text-warning',
-    director: 'hover:border-director hover:bg-director/5 group-hover:text-director',
-    secretary: 'hover:border-secretary hover:bg-secretary/5 group-hover:text-secretary',
-    regional: 'hover:border-primary hover:bg-primary/5 group-hover:text-primary',
-  };
-
-  const iconColors: Record<string, string> = {
-    student: 'text-student group-hover:scale-110',
-    teacher: 'text-success group-hover:scale-110',
-    coordinator: 'text-warning group-hover:scale-110',
-    director: 'text-director group-hover:scale-110',
-    secretary: 'text-secretary group-hover:scale-110',
-    regional: 'text-primary group-hover:scale-110',
-  };
 
   return (
     <button
       onClick={() => onClick(config.id)}
       className={cn(
-        'group role-card flex flex-col items-center justify-center gap-2 text-center p-4 md:p-5',
-        colorStyles[config.colorClass],
+        'group relative flex flex-col items-center justify-center gap-4 text-center p-8',
+        'bg-white border border-slate-100 rounded-[40px] shadow-sm',
+        'transition-all duration-300 ease-out',
+        'hover:bg-gradient-to-br hover:from-blue-500 hover:to-blue-600 hover:border-transparent hover:shadow-xl hover:shadow-blue-500/20 hover:-translate-y-1',
         'animate-fade-in'
       )}
       style={{ animationDelay: `${delay}ms` }}
     >
       <div className={cn(
-        'p-2.5 rounded-xl bg-muted transition-all duration-300',
-        iconColors[config.colorClass]
+        'p-4 rounded-2xl bg-slate-50 text-slate-600 transition-all duration-300',
+        'group-hover:bg-white/20 group-hover:text-white group-hover:scale-110'
       )}>
-        <Icon className="w-7 h-7 md:w-8 md:h-8 transition-transform duration-300" />
+        <Icon className="w-8 h-8" />
       </div>
+
       <div>
-        <h3 className="text-base md:text-lg font-semibold text-foreground mb-0.5">{config.title}</h3>
-        <p className="text-xs text-muted-foreground line-clamp-2">{config.description}</p>
+        <h3 className={cn(
+          "text-lg font-bold mb-2 transition-colors duration-300",
+          "text-slate-800 group-hover:text-white"
+        )}>
+          {config.title}
+        </h3>
+        <p className={cn(
+          "text-sm font-medium transition-colors duration-300",
+          "text-slate-400 group-hover:text-blue-50"
+        )}>
+          {config.description}
+        </p>
       </div>
     </button>
   );

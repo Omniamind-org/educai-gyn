@@ -4,7 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Search, Loader2, Key } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus, Search, Loader2, Key, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { isValidCPF } from "@/utils/cpfValidation";
@@ -250,17 +251,24 @@ export function StudentsView({ onCredentialsCreated }: StudentsViewProps) {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="grade">Série/Ano *</Label>
-                <Input
-                  id="grade"
+                <Select
                   value={newStudent.grade}
-                  onChange={(e) => setNewStudent({ ...newStudent, grade: e.target.value })}
-                  placeholder="Ex: 3º Ano Ensino Médio"
+                  onValueChange={(value) => setNewStudent({ ...newStudent, grade: value })}
                   disabled={isSubmitting}
-                />
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a série" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1º Ano do Ensino Médio">1º Ano do Ensino Médio</SelectItem>
+                    <SelectItem value="2º Ano do Ensino Médio">2º Ano do Ensino Médio</SelectItem>
+                    <SelectItem value="3º Ano do Ensino Médio">3º Ano do Ensino Médio</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              <Button 
-                className="w-full" 
-                onClick={handleAddStudent} 
+              <Button
+                className="w-full"
+                onClick={handleAddStudent}
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (
@@ -311,14 +319,47 @@ export function StudentsView({ onCredentialsCreated }: StudentsViewProps) {
                   <TableCell>{student.grade}</TableCell>
                   <TableCell>{getStatusBadge(student.status)}</TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleResetPassword(student.id)}
-                      title="Recuperar Senha"
-                    >
-                      <Key className="h-4 w-4" />
-                    </Button>
+                    <div className="flex justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleResetPassword(student.id)}
+                        title="Recuperar Senha"
+                      >
+                        <Key className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive"
+                        onClick={async () => {
+                          if (!confirm(`Tem certeza que deseja remover o aluno "${student.name}"? Esta ação não pode ser desfeita.`)) return;
+
+                          try {
+                            await supabase.from("class_students").delete().eq("student_id", student.id);
+                            const { error } = await supabase.from("students").delete().eq("id", student.id);
+
+                            if (error) throw error;
+
+                            toast({
+                              title: "Aluno removido!",
+                              description: `${student.name} foi removido do sistema.`,
+                            });
+
+                            await fetchStudents();
+                          } catch (error) {
+                            toast({
+                              title: "Erro",
+                              description: "Não foi possível remover o aluno.",
+                              variant: "destructive",
+                            });
+                          }
+                        }}
+                        title="Remover Aluno"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))

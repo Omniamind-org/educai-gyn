@@ -17,6 +17,7 @@ const ROLE_LABELS: Record<string, string> = {
   coordenacao: "Coordenação",
   diretor: "Diretor",
   secretaria: "Secretaria",
+  regional: "Gestão Estratégica Regional",
 };
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
@@ -88,8 +89,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         <div className="animate-fade-in">{children}</div>
       </main>
 
-      {/* AI Sidebar - Desktop Only */}
-      <AISidebar />
+      {/* AI Sidebar - Desktop Only (not for regional) */}
+      {role !== 'regional' && <AISidebar />}
     </div>
   );
 }

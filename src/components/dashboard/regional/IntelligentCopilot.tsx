@@ -113,26 +113,45 @@ export function IntelligentCopilot({
       // Try to parse as EduGovResponseV2
       let assistantMessage = '';
       let generatedDashboard: DashboardConfig | null = null;
+      let isJson = false;
 
       try {
-        // Try to extract JSON from the response
-        const jsonMatch = fullContent.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          const parsed = JSON.parse(jsonMatch[0]) as EduGovResponseV2;
-          assistantMessage = parsed.message;
-          
-          if (parsed.decision === 'CREATE_DASHBOARD' && parsed.dashboard) {
-            generatedDashboard = parsed.dashboard;
-            onDashboardGenerated(parsed.dashboard);
-          } else if (parsed.decision === 'UPDATE_DASHBOARD' && parsed.patch) {
-            onDashboardUpdate(parsed.patch);
-          }
-        } else {
-          // Fallback to plain text
-          assistantMessage = fullContent;
+        // 1. Clean markdown code blocks if present
+        let cleanContent = fullContent;
+        if (cleanContent.includes('```')) {
+          cleanContent = cleanContent.replace(/```json/g, '').replace(/```/g, '');
         }
-      } catch {
-        // Not JSON, use as plain text
+
+        // 2. Try to find the JSON object boundaries
+        const firstBrace = cleanContent.indexOf('{');
+        const lastBrace = cleanContent.lastIndexOf('}');
+
+        if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+          const potentialJson = cleanContent.slice(firstBrace, lastBrace + 1);
+          const parsed = JSON.parse(potentialJson) as EduGovResponseV2;
+          
+          if (parsed.intent && parsed.decision) {
+            isJson = true;
+            assistantMessage = parsed.message || "Painel gerado com sucesso.";
+            
+            if (parsed.decision === 'CREATE_DASHBOARD' && parsed.dashboard) {
+              generatedDashboard = parsed.dashboard;
+              console.log("Dashboard Generated:", generatedDashboard);
+              onDashboardGenerated(parsed.dashboard);
+            } else if (parsed.decision === 'UPDATE_DASHBOARD' && parsed.patch) {
+              console.log("Dashboard Updating:", parsed.patch);
+              onDashboardUpdate(parsed.patch);
+            }
+          }
+        }
+        
+        if (!isJson) {
+           assistantMessage = fullContent;
+        }
+
+      } catch (e) {
+        console.error("JSON Parse Error:", e);
+        // Not JSON or Malformed, use as plain text
         assistantMessage = fullContent;
       }
 

@@ -6,11 +6,14 @@ import { SchoolsCardsView } from './regional/SchoolsCardsView';
 import { SchoolsScatterView } from './regional/SchoolsScatterView';
 import { SchoolsHeatmapView } from './regional/SchoolsHeatmapView';
 import { SchoolDetailView } from './regional/SchoolDetailView';
-import { EduGovCopilot } from './regional/EduGovCopilot';
+import { IntelligentCopilot } from './regional/IntelligentCopilot';
+import { DynamicDashboardArea } from './regional/DynamicDashboardArea';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { List, LayoutGrid, TrendingUp, Grid3X3, Sparkles, Moon, Sun } from 'lucide-react';
+import { List, LayoutGrid, TrendingUp, Grid3X3, Sparkles } from 'lucide-react';
+import { DashboardConfig } from '@/types/dashboard';
+import { useDashboardRegistry } from '@/hooks/useDashboardRegistry';
 
 type ViewMode = 'table' | 'cards' | 'scatter' | 'heatmap';
 
@@ -18,48 +21,78 @@ export function RegionalDashboard() {
   const [selectedSchool, setSelectedSchool] = useState<SchoolUnit | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('table');
   const [copilotOpen, setCopilotOpen] = useState(false);
+  
+  const { 
+    activeDashboard, 
+    createDashboard, 
+    applyPatch, 
+    clearDashboard,
+    updateWidget 
+  } = useDashboardRegistry();
 
   const kpis = calculateKPIs(mockSchools);
 
+  const handleDashboardGenerated = (dashboard: DashboardConfig) => {
+    createDashboard(dashboard);
+  };
+
+  const handleDashboardUpdate = (patches: any[]) => {
+    applyPatch(patches);
+  };
+
   if (selectedSchool) {
     return (
-      <div className={copilotOpen ? 'mr-96' : ''}>
+      <div className={copilotOpen ? 'mr-80' : ''}>
         <SchoolDetailView school={selectedSchool} onBack={() => setSelectedSchool(null)} />
-        <EduGovCopilot isOpen={copilotOpen} onToggle={() => setCopilotOpen(!copilotOpen)} />
+        <IntelligentCopilot 
+          isOpen={copilotOpen} 
+          onToggle={() => setCopilotOpen(!copilotOpen)}
+          onDashboardGenerated={handleDashboardGenerated}
+          onDashboardUpdate={handleDashboardUpdate}
+        />
       </div>
     );
   }
 
   return (
-    <div className={copilotOpen ? 'mr-96 transition-all' : 'transition-all'}>
+    <div className={copilotOpen ? 'mr-80 transition-all' : 'transition-all'}>
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <div className="w-1 h-8 bg-primary rounded-full" />
-            Visão Geral da Rede
+            Aprendu Rede
           </h1>
           <p className="text-muted-foreground mt-1">Gestão Estratégica Regional</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant={copilotOpen ? 'default' : 'outline'}
-            className="gap-2"
-            onClick={() => setCopilotOpen(!copilotOpen)}
-          >
-            <Sparkles className="w-4 h-4" />
-            EduGov Copilot
-          </Button>
-        </div>
+        <Button
+          variant={copilotOpen ? 'default' : 'outline'}
+          className="gap-2"
+          onClick={() => setCopilotOpen(!copilotOpen)}
+        >
+          <Sparkles className="w-4 h-4" />
+          EduGov Copilot
+        </Button>
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <KPICard title="Total Alunos" value={kpis.totalStudents.toLocaleString()} />
-        <KPICard title="Permanência Média" value={`${kpis.avgPermanence}%`} trend={-1.5} />
-        <KPICard title="Unidades em Atenção" value={`0${kpis.criticalUnits}`} variant="warning" />
-        <KPICard title="Média Global" value={kpis.avgGrade} />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <KPICard title="Total de Alunos" value={kpis.totalStudents.toLocaleString()} />
+        <KPICard title="Engajamento Rede" value={`${kpis.avgPermanence}%`} trend={1.2} />
+        <KPICard title="Unidades Críticas" value={`0${kpis.criticalUnits}`} variant="warning" />
+        <KPICard title="Crescimento Ano" value={`+${kpis.avgGrade}%`} trend={2.5} />
       </div>
+
+      {/* Dynamic Dashboard Area - AI Generated */}
+      {activeDashboard && (
+        <div className="mb-6">
+          <DynamicDashboardArea
+            dashboard={activeDashboard}
+            onDismiss={clearDashboard}
+            onWidgetViewModeChange={(widgetId, mode) => updateWidget(widgetId, { viewMode: mode })}
+          />
+        </div>
+      )}
 
       {/* View Selector */}
       <Card className="mb-6">
@@ -86,23 +119,20 @@ export function RegionalDashboard() {
           </div>
         </CardHeader>
         <CardContent>
-          {viewMode === 'table' && (
-            <SchoolsTableView schools={mockSchools} onSelectSchool={setSelectedSchool} />
-          )}
-          {viewMode === 'cards' && (
-            <SchoolsCardsView schools={mockSchools} onSelectSchool={setSelectedSchool} />
-          )}
-          {viewMode === 'scatter' && (
-            <SchoolsScatterView schools={mockSchools} onSelectSchool={setSelectedSchool} />
-          )}
-          {viewMode === 'heatmap' && (
-            <SchoolsHeatmapView schools={mockSchools} onSelectSchool={setSelectedSchool} />
-          )}
+          {viewMode === 'table' && <SchoolsTableView schools={mockSchools} onSelectSchool={setSelectedSchool} />}
+          {viewMode === 'cards' && <SchoolsCardsView schools={mockSchools} onSelectSchool={setSelectedSchool} />}
+          {viewMode === 'scatter' && <SchoolsScatterView schools={mockSchools} onSelectSchool={setSelectedSchool} />}
+          {viewMode === 'heatmap' && <SchoolsHeatmapView schools={mockSchools} onSelectSchool={setSelectedSchool} />}
         </CardContent>
       </Card>
 
-      {/* Copilot Sidebar */}
-      <EduGovCopilot isOpen={copilotOpen} onToggle={() => setCopilotOpen(!copilotOpen)} />
+      {/* Intelligent Copilot */}
+      <IntelligentCopilot 
+        isOpen={copilotOpen} 
+        onToggle={() => setCopilotOpen(!copilotOpen)}
+        onDashboardGenerated={handleDashboardGenerated}
+        onDashboardUpdate={handleDashboardUpdate}
+      />
     </div>
   );
 }

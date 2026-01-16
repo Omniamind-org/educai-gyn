@@ -13,6 +13,7 @@ import { UserPlus, Printer, Users, FileText, Search, Plus, Copy, Key, CheckCircl
 import { DisciplinesTab } from "./secretary/DisciplinesTab";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { isValidCPF } from "@/utils/cpfValidation";
 
 interface Student {
   id: string;
@@ -145,12 +146,12 @@ export function SecretaryDashboard() {
 
   const fetchTeacherDisciplines = async (teacherIds: string[]) => {
     if (teacherIds.length === 0) return;
-    
+
     const { data } = await supabase
       .from("teacher_disciplines")
       .select("teacher_id, discipline_id, disciplines(name)")
       .in("teacher_id", teacherIds);
-    
+
     const map: Record<string, string[]> = {};
     (data || []).forEach((td: any) => {
       if (!map[td.teacher_id]) {
@@ -381,16 +382,16 @@ export function SecretaryDashboard() {
       return;
     }
 
-    // Validate CPF format (11 digits)
-    const cleanCpf = newStudent.cpf.replace(/\D/g, "");
-    if (cleanCpf.length !== 11) {
+    // Validate CPF format
+    if (!isValidCPF(newStudent.cpf)) {
       toast({
         title: "CPF inválido",
-        description: "O CPF deve conter 11 dígitos.",
+        description: "Por favor, insira um CPF válido.",
         variant: "destructive",
       });
       return;
     }
+    const cleanCpf = newStudent.cpf.replace(/\D/g, "");
 
     setIsSubmitting(true);
 
@@ -456,16 +457,16 @@ export function SecretaryDashboard() {
       return;
     }
 
-    // Validate CPF format (11 digits)
-    const cleanCpf = newTeacher.cpf.replace(/\D/g, "");
-    if (cleanCpf.length !== 11) {
+    // Validate CPF format
+    if (!isValidCPF(newTeacher.cpf)) {
       toast({
         title: "CPF inválido",
-        description: "O CPF deve conter 11 dígitos.",
+        description: "Por favor, insira um CPF válido.",
         variant: "destructive",
       });
       return;
     }
+    const cleanCpf = newTeacher.cpf.replace(/\D/g, "");
 
     setIsSubmitting(true);
 
@@ -753,7 +754,7 @@ export function SecretaryDashboard() {
       Status: ${boleto.status.toUpperCase()}
       ===============================
     `;
-    
+
     const printWindow = window.open("", "_blank");
     if (printWindow) {
       printWindow.document.write(`
@@ -1236,7 +1237,7 @@ export function SecretaryDashboard() {
                         <TableCell className="font-medium">{teacher.name}</TableCell>
                         <TableCell>{formatCpf(teacher.cpf)}</TableCell>
                         <TableCell>
-                          {teacherDisciplinesMap[teacher.id]?.length > 0 
+                          {teacherDisciplinesMap[teacher.id]?.length > 0
                             ? teacherDisciplinesMap[teacher.id].join(", ")
                             : "-"}
                         </TableCell>
@@ -1506,7 +1507,7 @@ export function SecretaryDashboard() {
               Selecione os alunos e professores desta turma ({selectedClass?.grade})
             </DialogDescription>
           </DialogHeader>
-          
+
           {isLoadingClassMembers ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />

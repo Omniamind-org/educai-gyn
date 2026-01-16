@@ -1,4 +1,4 @@
-import { GraduationCap, Presentation, ClipboardCheck, Building, FileText, LucideIcon } from 'lucide-react';
+import { GraduationCap, Presentation, ClipboardCheck, Building, FileText, Network, LucideIcon } from 'lucide-react';
 import { RoleConfig, UserRole } from '@/types/roles';
 import { cn } from '@/lib/utils';
 
@@ -8,6 +8,7 @@ const iconMap: Record<string, LucideIcon> = {
   ClipboardCheck,
   Building,
   FileText,
+  Network,
 };
 
 interface RoleCardProps {
@@ -25,6 +26,7 @@ export function RoleCard({ config, onClick, delay }: RoleCardProps) {
     coordinator: 'hover:border-warning hover:bg-warning/5 group-hover:text-warning',
     director: 'hover:border-director hover:bg-director/5 group-hover:text-director',
     secretary: 'hover:border-secretary hover:bg-secretary/5 group-hover:text-secretary',
+    regional: 'hover:border-primary hover:bg-primary/5 group-hover:text-primary',
   };
 
   const iconColors: Record<string, string> = {
@@ -33,6 +35,7 @@ export function RoleCard({ config, onClick, delay }: RoleCardProps) {
     coordinator: 'text-warning group-hover:scale-110',
     director: 'text-director group-hover:scale-110',
     secretary: 'text-secretary group-hover:scale-110',
+    regional: 'text-primary group-hover:scale-110',
   };
 
   return (

@@ -1,4 +1,4 @@
-export type UserRole = 'aluno' | 'professor' | 'coordenacao' | 'diretor' | 'secretaria' | null;
+export type UserRole = 'aluno' | 'professor' | 'coordenacao' | 'diretor' | 'secretaria' | 'regional' | null;
 
 export interface RoleConfig {
   id: UserRole;
@@ -40,8 +40,15 @@ export const ROLE_CONFIGS: RoleConfig[] = [
   {
     id: 'secretaria',
     title: 'Sou Secretaria',
-    description: 'Cadastre alunos e gerencie boletos',
+    description: 'Cadastros e mensalidades',
     icon: 'FileText',
     colorClass: 'secretary',
+  },
+  {
+    id: 'regional',
+    title: 'Sou Regional',
+    description: 'Visão da Rede e Expansão',
+    icon: 'Network',
+    colorClass: 'regional',
   },
 ];

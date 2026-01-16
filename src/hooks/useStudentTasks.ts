@@ -13,7 +13,6 @@ export interface StudentTask {
   className: string;
   classId: string;
   teacherName: string;
-  attachmentUrl: string | null;
 }
 
 export function useStudentTasks() {
@@ -74,8 +73,7 @@ export function useStudentTasks() {
             due_date,
             max_score,
             class_id,
-            teacher_id,
-            attachment_url
+            teacher_id
           `)
           .in('class_id', classIds)
           .eq('status', 'ativa')
@@ -118,7 +116,6 @@ export function useStudentTasks() {
           className: classMap.get(task.class_id) || 'Turma',
           classId: task.class_id,
           teacherName: teacherMap.get(task.teacher_id) || 'Professor',
-          attachmentUrl: task.attachment_url,
         }));
 
         setTasks(formattedTasks);

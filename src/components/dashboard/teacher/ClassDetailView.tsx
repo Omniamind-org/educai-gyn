@@ -58,7 +58,6 @@ interface Task {
   status: string;
   created_at: string;
   discipline_id: string | null;
-  attachment_url: string | null;
 }
 
 interface StudentGrade {
@@ -266,19 +265,6 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
 
       if (error) throw error;
 
-      // Upload attachment if file is selected
-      if (newTaskFile && taskData) {
-        setIsUploadingFile(true);
-        const attachmentUrl = await uploadAttachment(newTaskFile, taskData.id);
-
-        if (attachmentUrl) {
-          await supabase.from('tasks')
-            .update({ attachment_url: attachmentUrl })
-            .eq('id', taskData.id);
-        }
-        setIsUploadingFile(false);
-      }
-
       toast({
         title: 'Sucesso',
         description: 'Tarefa criada com sucesso!',
@@ -389,18 +375,6 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
 
     setIsUpdatingTask(true);
     try {
-      let attachmentUrl = selectedTask.attachment_url;
-
-      // Upload new attachment if selected
-      if (editTaskFile) {
-        setIsUploadingFile(true);
-        const newUrl = await uploadAttachment(editTaskFile, selectedTask.id);
-        if (newUrl) {
-          attachmentUrl = newUrl;
-        }
-        setIsUploadingFile(false);
-      }
-
       const { error } = await supabase
         .from('tasks')
         .update({
@@ -409,7 +383,6 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
           max_score: parseFloat(editTask.max_score) || 10,
           due_date: editTask.due_date || null,
           discipline_id: editTask.discipline_id || null,
-          attachment_url: attachmentUrl,
         })
         .eq('id', selectedTask.id);
 
@@ -736,12 +709,6 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
                               Entrega: {new Date(task.due_date).toLocaleDateString('pt-BR')}
                             </Badge>
                           )}
-                          {task.attachment_url && (
-                            <Badge variant="outline" className="gap-1">
-                              <Paperclip className="h-3 w-3" />
-                              PDF anexado
-                            </Badge>
-                          )}
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -817,69 +784,6 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
                   onChange={(e) => setEditTask(prev => ({ ...prev, due_date: e.target.value }))}
                 />
               </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Anexo PDF</Label>
-              <input
-                type="file"
-                accept=".pdf"
-                ref={editTaskFileInputRef}
-                className="hidden"
-                onChange={(e) => setEditTaskFile(e.target.files?.[0] || null)}
-              />
-              {selectedTask?.attachment_url && !editTaskFile && (
-                <div className="flex items-center gap-2 p-3 border rounded-lg bg-muted/50">
-                  <FileDown className="h-4 w-4 text-primary" />
-                  <a
-                    href={selectedTask.attachment_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm flex-1 truncate text-primary hover:underline"
-                  >
-                    Ver anexo atual
-                  </a>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => editTaskFileInputRef.current?.click()}
-                  >
-                    Substituir
-                  </Button>
-                </div>
-              )}
-              {editTaskFile && (
-                <div className="flex items-center gap-2 p-3 border rounded-lg bg-muted/50">
-                  <Paperclip className="h-4 w-4 text-primary" />
-                  <span className="text-sm flex-1 truncate">{editTaskFile.name}</span>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    onClick={() => {
-                      setEditTaskFile(null);
-                      if (editTaskFileInputRef.current) {
-                        editTaskFileInputRef.current.value = '';
-                      }
-                    }}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              )}
-              {!selectedTask?.attachment_url && !editTaskFile && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full gap-2"
-                  onClick={() => editTaskFileInputRef.current?.click()}
-                >
-                  <Paperclip className="h-4 w-4" />
-                  Anexar arquivo PDF
-                </Button>
-              )}
-              <p className="text-xs text-muted-foreground">Máximo 10MB. Apenas arquivos PDF.</p>
             </div>
           </div>
           <DialogFooter>

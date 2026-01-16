@@ -1,5 +1,8 @@
--- Create enum for roles
-CREATE TYPE public.app_role AS ENUM ('aluno', 'professor', 'coordenacao', 'diretor');
+DO $$ BEGIN
+    CREATE TYPE public.app_role AS ENUM ('aluno', 'professor', 'coordenacao', 'diretor');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
 
 -- Create profiles table
 CREATE TABLE public.profiles (

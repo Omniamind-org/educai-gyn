@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Flame, Star, Trophy, FileText, Calculator, BookOpen, Clock, ArrowLeft, MessageCircle, Video, Users, LucideIcon, TrendingUp, Loader2 } from 'lucide-react';
+import { Flame, Star, Trophy, FileText, Calculator, BookOpen, Clock, ArrowLeft, MessageCircle, Video, Users, LucideIcon, TrendingUp, Loader2, FileDown, Paperclip } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
@@ -34,7 +34,7 @@ export function StudentDashboard() {
 
   const handleTaskClick = (task: StudentTask) => {
     setSelectedTask(task);
-    
+
     // Trigger AI message when task is opened
     if ((window as any).addAIMessage) {
       setTimeout(() => {
@@ -109,8 +109,8 @@ export function StudentDashboard() {
 
     return (
       <div className="space-y-6">
-        <Button 
-          variant="ghost" 
+        <Button
+          variant="ghost"
           className="gap-2"
           onClick={() => setSelectedSubject(null)}
         >
@@ -130,22 +130,22 @@ export function StudentDashboard() {
 
         <Tabs defaultValue="tasks" className="w-full">
           <TabsList className="w-full grid grid-cols-3 mb-4 bg-muted/50 p-1 rounded-lg">
-            <TabsTrigger 
-              value="tasks" 
+            <TabsTrigger
+              value="tasks"
               className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md rounded-md transition-all"
             >
               <FileText className="w-4 h-4" />
               Tarefas
             </TabsTrigger>
-            <TabsTrigger 
-              value="content" 
+            <TabsTrigger
+              value="content"
               className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md rounded-md transition-all"
             >
               <Video className="w-4 h-4" />
               Conteúdos
             </TabsTrigger>
-            <TabsTrigger 
-              value="comments" 
+            <TabsTrigger
+              value="comments"
               className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md rounded-md transition-all"
             >
               <Users className="w-4 h-4" />
@@ -164,8 +164,8 @@ export function StudentDashboard() {
               ) : (
                 <div className="space-y-3">
                   {subjectTasks.map((task) => (
-                    <Card 
-                      key={task.id} 
+                    <Card
+                      key={task.id}
                       className="cursor-pointer hover:border-primary/50 transition-colors"
                       onClick={() => {
                         setSelectedSubject(null);
@@ -216,8 +216,8 @@ export function StudentDashboard() {
   if (selectedTask) {
     return (
       <div className="space-y-6">
-        <Button 
-          variant="ghost" 
+        <Button
+          variant="ghost"
           className="gap-2 mb-4"
           onClick={() => setSelectedTask(null)}
         >
@@ -244,6 +244,27 @@ export function StudentDashboard() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
+            {selectedTask.attachmentUrl && (
+              <div className="p-4 border rounded-lg bg-primary/5">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <FileDown className="w-5 h-5 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-medium">Material de Apoio</h4>
+                    <p className="text-sm text-muted-foreground">PDF disponibilizado pelo professor</p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    className="gap-2"
+                    onClick={() => window.open(selectedTask.attachmentUrl!, '_blank')}
+                  >
+                    <FileDown className="w-4 h-4" />
+                    Abrir PDF
+                  </Button>
+                </div>
+              </div>
+            )}
             <Textarea
               placeholder="Escreva sua resposta aqui..."
               className="min-h-[300px] resize-none"
@@ -274,18 +295,18 @@ export function StudentDashboard() {
             <AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg?seed=student" />
             <AvatarFallback>AL</AvatarFallback>
           </Avatar>
-          
+
           <div className="flex items-center gap-1 shrink-0">
             <Trophy className="w-4 h-4 text-warning" />
             <span className="font-semibold text-xs">Nível {STUDENT_CONTEXT.level}</span>
           </div>
-          
+
           <div className="flex items-center gap-1 flex-1 min-w-0">
             <span className="text-xs text-muted-foreground shrink-0">XP</span>
             <span className="text-xs font-medium shrink-0">{STUDENT_CONTEXT.xp.toLocaleString()}/2k</span>
             <Progress value={(STUDENT_CONTEXT.xp / 2000) * 100} className="h-1.5 flex-1 min-w-[40px]" />
           </div>
-          
+
           <div className="flex items-center gap-1 shrink-0">
             <Flame className="w-4 h-4 text-destructive" />
             <span className="font-semibold text-xs">{STUDENT_CONTEXT.streak} Dias</span>
@@ -294,7 +315,7 @@ export function StudentDashboard() {
       </div>
 
       {/* Learning Progress Button */}
-      <Card 
+      <Card
         className="cursor-pointer hover:border-primary/50 transition-all group"
         onClick={() => setCurrentView('progress')}
       >
@@ -320,7 +341,7 @@ export function StudentDashboard() {
           <Clock className="w-5 h-5 text-primary" />
           Atividades Pendentes ({tasks.length})
         </h2>
-        
+
         {tasksLoading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="w-6 h-6 animate-spin text-primary" />
@@ -339,7 +360,7 @@ export function StudentDashboard() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {tasks.map((task, index) => (
-              <Card 
+              <Card
                 key={task.id}
                 className="activity-card opacity-0 animate-fade-in cursor-pointer hover:border-primary/50 transition-colors"
                 style={{ animationDelay: `${index * 100}ms` }}
@@ -351,7 +372,12 @@ export function StudentDashboard() {
                       <FileText className="w-5 h-5" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-medium text-foreground mb-1">{task.title}</h3>
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-medium text-foreground">{task.title}</h3>
+                        {task.attachmentUrl && (
+                          <Paperclip className="w-4 h-4 text-muted-foreground" />
+                        )}
+                      </div>
                       <div className="flex items-center gap-3 text-sm">
                         <span className="text-muted-foreground">{task.className}</span>
                         <Badge variant="outline" className="text-xs">
@@ -376,7 +402,7 @@ export function StudentDashboard() {
           <BookOpen className="w-5 h-5 text-primary" />
           Minhas Matérias
         </h2>
-        
+
         {subjectsLoading ? (
           <div className="flex items-center justify-center py-8">
             <Loader2 className="w-6 h-6 animate-spin text-primary" />
@@ -397,7 +423,7 @@ export function StudentDashboard() {
             {subjects.map((subject, index) => {
               const SubjectIcon = iconMap[subject.icon] || BookOpen;
               return (
-                <Card 
+                <Card
                   key={subject.id}
                   className="cursor-pointer hover:border-primary/50 transition-all hover:scale-105 opacity-0 animate-fade-in"
                   style={{ animationDelay: `${index * 100}ms` }}

@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { ArrowLeft, Plus, Users, BookOpen, Loader2, GraduationCap, ClipboardList, Save, Pencil, Trash2 } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { ArrowLeft, Plus, Users, BookOpen, Loader2, GraduationCap, ClipboardList, Save, Pencil, Trash2, Paperclip, FileDown, X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -58,6 +58,7 @@ interface Task {
   status: string;
   created_at: string;
   discipline_id: string | null;
+  attachment_url: string | null;
 }
 
 interface StudentGrade {
@@ -108,6 +109,11 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
     due_date: '',
     discipline_id: '',
   });
+  const [newTaskFile, setNewTaskFile] = useState<File | null>(null);
+  const [editTaskFile, setEditTaskFile] = useState<File | null>(null);
+  const [isUploadingFile, setIsUploadingFile] = useState(false);
+  const newTaskFileInputRef = useRef<HTMLInputElement>(null);
+  const editTaskFileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchClassData();
@@ -129,7 +135,7 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
           .select('id, name')
           .in('id', discIds)
           .order('name', { ascending: true });
-        
+
         setDisciplines(discsData || []);
       } else {
         setDisciplines([]);
@@ -155,7 +161,7 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
           .from('students')
           .select('id, name, grade')
           .in('id', studentIds);
-        
+
         setStudents(studentsData || []);
       } else {
         setStudents([]);
@@ -201,6 +207,31 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
     }
   };
 
+  const uploadAttachment = async (file: File, taskId: string): Promise<string | null> => {
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${taskId}/${Date.now()}_${file.name}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('task-attachments')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false,
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('task-attachments')
+        .getPublicUrl(fileName);
+
+      return publicUrl;
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      return null;
+    }
+  };
+
   const handleCreateTask = async () => {
     if (!newTask.title.trim()) {
       toast({
@@ -222,7 +253,8 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
 
     setIsCreatingTask(true);
     try {
-      const { error } = await supabase.from('tasks').insert({
+      // Create task first
+      const { data: taskData, error } = await supabase.from('tasks').insert({
         class_id: classData.id,
         teacher_id: teacherId,
         title: newTask.title.trim(),
@@ -230,9 +262,22 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
         max_score: parseFloat(newTask.max_score) || 10,
         due_date: newTask.due_date || null,
         discipline_id: newTask.discipline_id,
-      });
+      }).select('id').single();
 
       if (error) throw error;
+
+      // Upload attachment if file is selected
+      if (newTaskFile && taskData) {
+        setIsUploadingFile(true);
+        const attachmentUrl = await uploadAttachment(newTaskFile, taskData.id);
+
+        if (attachmentUrl) {
+          await supabase.from('tasks')
+            .update({ attachment_url: attachmentUrl })
+            .eq('id', taskData.id);
+        }
+        setIsUploadingFile(false);
+      }
 
       toast({
         title: 'Sucesso',
@@ -240,6 +285,10 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
       });
 
       setNewTask({ title: '', description: '', max_score: '10', due_date: '', discipline_id: '' });
+      setNewTaskFile(null);
+      if (newTaskFileInputRef.current) {
+        newTaskFileInputRef.current.value = '';
+      }
       setNewTaskOpen(false);
       fetchClassData();
     } catch (error) {
@@ -251,6 +300,7 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
       });
     } finally {
       setIsCreatingTask(false);
+      setIsUploadingFile(false);
     }
   };
 
@@ -320,6 +370,10 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
       due_date: task.due_date ? task.due_date.split('T')[0] : '',
       discipline_id: task.discipline_id || '',
     });
+    setEditTaskFile(null);
+    if (editTaskFileInputRef.current) {
+      editTaskFileInputRef.current.value = '';
+    }
     setEditTaskOpen(true);
   };
 
@@ -335,6 +389,18 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
 
     setIsUpdatingTask(true);
     try {
+      let attachmentUrl = selectedTask.attachment_url;
+
+      // Upload new attachment if selected
+      if (editTaskFile) {
+        setIsUploadingFile(true);
+        const newUrl = await uploadAttachment(editTaskFile, selectedTask.id);
+        if (newUrl) {
+          attachmentUrl = newUrl;
+        }
+        setIsUploadingFile(false);
+      }
+
       const { error } = await supabase
         .from('tasks')
         .update({
@@ -343,6 +409,7 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
           max_score: parseFloat(editTask.max_score) || 10,
           due_date: editTask.due_date || null,
           discipline_id: editTask.discipline_id || null,
+          attachment_url: attachmentUrl,
         })
         .eq('id', selectedTask.id);
 
@@ -355,6 +422,7 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
 
       setEditTaskOpen(false);
       setSelectedTask(null);
+      setEditTaskFile(null);
       fetchClassData();
     } catch (error) {
       console.error('Error updating task:', error);
@@ -365,6 +433,7 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
       });
     } finally {
       setIsUpdatingTask(false);
+      setIsUploadingFile(false);
     }
   };
 
@@ -502,6 +571,47 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
                   />
                 </div>
               </div>
+              <div className="space-y-2">
+                <Label>Anexar PDF (opcional)</Label>
+                <input
+                  type="file"
+                  accept=".pdf"
+                  ref={newTaskFileInputRef}
+                  className="hidden"
+                  onChange={(e) => setNewTaskFile(e.target.files?.[0] || null)}
+                />
+                {newTaskFile ? (
+                  <div className="flex items-center gap-2 p-3 border rounded-lg bg-muted/50">
+                    <Paperclip className="h-4 w-4 text-primary" />
+                    <span className="text-sm flex-1 truncate">{newTaskFile.name}</span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={() => {
+                        setNewTaskFile(null);
+                        if (newTaskFileInputRef.current) {
+                          newTaskFileInputRef.current.value = '';
+                        }
+                      }}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full gap-2"
+                    onClick={() => newTaskFileInputRef.current?.click()}
+                  >
+                    <Paperclip className="h-4 w-4" />
+                    Anexar arquivo PDF
+                  </Button>
+                )}
+                <p className="text-xs text-muted-foreground">Máximo 10MB. Apenas arquivos PDF.</p>
+              </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setNewTaskOpen(false)}>
@@ -518,7 +628,7 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card 
+        <Card
           className="cursor-pointer hover:bg-accent/50 transition-colors"
           onClick={() => setStudentsListOpen(true)}
         >
@@ -532,7 +642,7 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
             </div>
           </CardContent>
         </Card>
-        <Card 
+        <Card
           className="cursor-pointer hover:bg-accent/50 transition-colors"
           onClick={() => setTasksListOpen(true)}
         >
@@ -619,11 +729,17 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
                         {task.description && (
                           <p className="text-sm text-muted-foreground">{task.description}</p>
                         )}
-                        <div className="flex items-center gap-4 mt-2">
+                        <div className="flex items-center gap-4 mt-2 flex-wrap">
                           <Badge variant="outline">Nota máx: {task.max_score}</Badge>
                           {task.due_date && (
                             <Badge variant="secondary">
                               Entrega: {new Date(task.due_date).toLocaleDateString('pt-BR')}
+                            </Badge>
+                          )}
+                          {task.attachment_url && (
+                            <Badge variant="outline" className="gap-1">
+                              <Paperclip className="h-3 w-3" />
+                              PDF anexado
                             </Badge>
                           )}
                         </div>
@@ -702,6 +818,69 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
                 />
               </div>
             </div>
+            <div className="space-y-2">
+              <Label>Anexo PDF</Label>
+              <input
+                type="file"
+                accept=".pdf"
+                ref={editTaskFileInputRef}
+                className="hidden"
+                onChange={(e) => setEditTaskFile(e.target.files?.[0] || null)}
+              />
+              {selectedTask?.attachment_url && !editTaskFile && (
+                <div className="flex items-center gap-2 p-3 border rounded-lg bg-muted/50">
+                  <FileDown className="h-4 w-4 text-primary" />
+                  <a
+                    href={selectedTask.attachment_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm flex-1 truncate text-primary hover:underline"
+                  >
+                    Ver anexo atual
+                  </a>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => editTaskFileInputRef.current?.click()}
+                  >
+                    Substituir
+                  </Button>
+                </div>
+              )}
+              {editTaskFile && (
+                <div className="flex items-center gap-2 p-3 border rounded-lg bg-muted/50">
+                  <Paperclip className="h-4 w-4 text-primary" />
+                  <span className="text-sm flex-1 truncate">{editTaskFile.name}</span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={() => {
+                      setEditTaskFile(null);
+                      if (editTaskFileInputRef.current) {
+                        editTaskFileInputRef.current.value = '';
+                      }
+                    }}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+              {!selectedTask?.attachment_url && !editTaskFile && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full gap-2"
+                  onClick={() => editTaskFileInputRef.current?.click()}
+                >
+                  <Paperclip className="h-4 w-4" />
+                  Anexar arquivo PDF
+                </Button>
+              )}
+              <p className="text-xs text-muted-foreground">Máximo 10MB. Apenas arquivos PDF.</p>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditTaskOpen(false)}>
@@ -721,7 +900,7 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir Tarefa</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir a tarefa "{selectedTask?.title}"? 
+              Tem certeza que deseja excluir a tarefa "{selectedTask?.title}"?
               Esta ação não pode ser desfeita e todas as notas associadas serão perdidas.
             </AlertDialogDescription>
           </AlertDialogHeader>

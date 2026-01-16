@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { UserPlus, Printer, Users, FileText, Search, Plus, Copy, Key, CheckCircle, Loader2, GraduationCap, BookOpen, Settings, Bookmark } from "lucide-react";
+import { UserPlus, Printer, Users, FileText, Search, Plus, Copy, Key, CheckCircle, Loader2, GraduationCap, BookOpen, Settings, Bookmark, Trash2 } from "lucide-react";
 import { DisciplinesTab } from "./secretary/DisciplinesTab";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -1176,20 +1176,54 @@ export function SecretaryDashboard() {
                         <TableCell>{getStatusBadge(student.status)}</TableCell>
                         <TableCell>{new Date(student.created_at).toLocaleDateString("pt-BR")}</TableCell>
                         <TableCell>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="gap-2"
-                            onClick={() => handleResetStudentPassword(student.id)}
-                            disabled={isResettingPassword && resetPasswordStudentId === student.id}
-                          >
-                            {isResettingPassword && resetPasswordStudentId === student.id ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <Key className="h-4 w-4" />
-                            )}
-                            Verificar Senha
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="gap-2"
+                              onClick={() => handleResetStudentPassword(student.id)}
+                              disabled={isResettingPassword && resetPasswordStudentId === student.id}
+                            >
+                              {isResettingPassword && resetPasswordStudentId === student.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <Key className="h-4 w-4" />
+                              )}
+                              Senha
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={async () => {
+                                if (!confirm(`Tem certeza que deseja remover o aluno "${student.name}"? Esta ação não pode ser desfeita.`)) return;
+
+                                try {
+                                  // Remove from classes first
+                                  await supabase.from("class_students").delete().eq("student_id", student.id);
+
+                                  // Delete student record
+                                  const { error } = await supabase.from("students").delete().eq("id", student.id);
+
+                                  if (error) throw error;
+
+                                  toast({
+                                    title: "Aluno removido!",
+                                    description: `${student.name} foi removido do sistema.`,
+                                  });
+
+                                  await fetchStudents();
+                                } catch (error) {
+                                  toast({
+                                    title: "Erro",
+                                    description: "Não foi possível remover o aluno.",
+                                    variant: "destructive",
+                                  });
+                                }
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -1579,22 +1613,61 @@ export function SecretaryDashboard() {
               </div>
 
               <div className="flex items-center justify-between pt-4 border-t">
-                <div className="text-sm text-muted-foreground">
-                  {classStudents.length} aluno(s) e {classTeachers.length} professor(es) selecionado(s)
-                </div>
-                <Button onClick={handleSaveClassMembers} disabled={isSavingClassMembers} className="gap-2">
-                  {isSavingClassMembers ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Salvando...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle className="h-4 w-4" />
-                      Salvar Alterações
-                    </>
-                  )}
+                <Button
+                  variant="destructive"
+                  onClick={async () => {
+                    if (!selectedClass) return;
+                    if (!confirm(`Tem certeza que deseja excluir a turma "${selectedClass.name}"? Esta ação não pode ser desfeita.`)) return;
+
+                    try {
+                      // Delete class associations first
+                      await supabase.from("class_students").delete().eq("class_id", selectedClass.id);
+                      await supabase.from("class_teachers").delete().eq("class_id", selectedClass.id);
+
+                      // Delete the class
+                      const { error } = await supabase.from("classes").delete().eq("id", selectedClass.id);
+
+                      if (error) throw error;
+
+                      toast({
+                        title: "Turma excluída!",
+                        description: `A turma ${selectedClass.name} foi removida.`,
+                      });
+
+                      setIsManageClassOpen(false);
+                      setSelectedClass(null);
+                      await fetchClasses();
+                    } catch (error) {
+                      toast({
+                        title: "Erro",
+                        description: "Não foi possível excluir a turma.",
+                        variant: "destructive",
+                      });
+                    }
+                  }}
+                  className="gap-2"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Excluir Turma
                 </Button>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-muted-foreground">
+                    {classStudents.length} aluno(s) e {classTeachers.length} professor(es)
+                  </span>
+                  <Button onClick={handleSaveClassMembers} disabled={isSavingClassMembers} className="gap-2">
+                    {isSavingClassMembers ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Salvando...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="h-4 w-4" />
+                        Salvar Alterações
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
             </div>
           )}

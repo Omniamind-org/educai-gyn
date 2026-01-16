@@ -16,36 +16,36 @@ export type Database = {
     Tables: {
       boletos: {
         Row: {
-          created_at: string
+          created_at: string | null
           due_date: string
           id: string
           paid_at: string | null
           reference: string
-          status: string
+          status: string | null
           student_id: string
-          updated_at: string
+          updated_at: string | null
           value: number
         }
         Insert: {
-          created_at?: string
+          created_at?: string | null
           due_date: string
           id?: string
           paid_at?: string | null
           reference: string
-          status?: string
+          status?: string | null
           student_id: string
-          updated_at?: string
+          updated_at?: string | null
           value: number
         }
         Update: {
-          created_at?: string
+          created_at?: string | null
           due_date?: string
           id?: string
           paid_at?: string | null
           reference?: string
-          status?: string
+          status?: string | null
           student_id?: string
-          updated_at?: string
+          updated_at?: string | null
           value?: number
         }
         Relationships: [
@@ -61,19 +61,19 @@ export type Database = {
       class_students: {
         Row: {
           class_id: string
-          created_at: string
+          created_at: string | null
           id: string
           student_id: string
         }
         Insert: {
           class_id: string
-          created_at?: string
+          created_at?: string | null
           id?: string
           student_id: string
         }
         Update: {
           class_id?: string
-          created_at?: string
+          created_at?: string | null
           id?: string
           student_id?: string
         }
@@ -97,19 +97,19 @@ export type Database = {
       class_teachers: {
         Row: {
           class_id: string
-          created_at: string
+          created_at: string | null
           id: string
           teacher_id: string
         }
         Insert: {
           class_id: string
-          created_at?: string
+          created_at?: string | null
           id?: string
           teacher_id: string
         }
         Update: {
           class_id?: string
-          created_at?: string
+          created_at?: string | null
           id?: string
           teacher_id?: string
         }
@@ -132,49 +132,49 @@ export type Database = {
       }
       classes: {
         Row: {
-          created_at: string
+          created_at: string | null
           grade: string
           id: string
           name: string
-          updated_at: string
-          year: number
+          updated_at: string | null
+          year: number | null
         }
         Insert: {
-          created_at?: string
+          created_at?: string | null
           grade: string
           id?: string
           name: string
-          updated_at?: string
-          year?: number
+          updated_at?: string | null
+          year?: number | null
         }
         Update: {
-          created_at?: string
+          created_at?: string | null
           grade?: string
           id?: string
           name?: string
-          updated_at?: string
-          year?: number
+          updated_at?: string | null
+          year?: number | null
         }
         Relationships: []
       }
       disciplines: {
         Row: {
-          created_at: string
+          created_at: string | null
           id: string
           name: string
-          updated_at: string
+          updated_at: string | null
         }
         Insert: {
-          created_at?: string
+          created_at?: string | null
           id?: string
           name: string
-          updated_at?: string
+          updated_at?: string | null
         }
         Update: {
-          created_at?: string
+          created_at?: string | null
           id?: string
           name?: string
-          updated_at?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -182,32 +182,32 @@ export type Database = {
         Row: {
           bncc_objective: string | null
           content: string
-          created_at: string
+          created_at: string | null
           id: string
           series: string | null
           teacher_id: string
           topic: string
-          updated_at: string
+          updated_at: string | null
         }
         Insert: {
           bncc_objective?: string | null
           content: string
-          created_at?: string
+          created_at?: string | null
           id?: string
           series?: string | null
           teacher_id: string
           topic: string
-          updated_at?: string
+          updated_at?: string | null
         }
         Update: {
           bncc_objective?: string | null
           content?: string
-          created_at?: string
+          created_at?: string | null
           id?: string
           series?: string | null
           teacher_id?: string
           topic?: string
-          updated_at?: string
+          updated_at?: string | null
         }
         Relationships: [
           {
@@ -223,32 +223,32 @@ export type Database = {
         Row: {
           bncc_objective: string | null
           content: string
-          created_at: string
+          created_at: string | null
           id: string
           series: string | null
           teacher_id: string
           topic: string
-          updated_at: string
+          updated_at: string | null
         }
         Insert: {
           bncc_objective?: string | null
           content: string
-          created_at?: string
+          created_at?: string | null
           id?: string
           series?: string | null
           teacher_id: string
           topic: string
-          updated_at?: string
+          updated_at?: string | null
         }
         Update: {
           bncc_objective?: string | null
           content?: string
-          created_at?: string
+          created_at?: string | null
           id?: string
           series?: string | null
           teacher_id?: string
           topic?: string
-          updated_at?: string
+          updated_at?: string | null
         }
         Relationships: [
           {
@@ -262,31 +262,31 @@ export type Database = {
       }
       profiles: {
         Row: {
-          created_at: string
+          created_at: string | null
           email: string
           full_name: string | null
           id: string
-          updated_at: string
+          updated_at: string | null
         }
         Insert: {
-          created_at?: string
+          created_at?: string | null
           email: string
           full_name?: string | null
           id: string
-          updated_at?: string
+          updated_at?: string | null
         }
         Update: {
-          created_at?: string
+          created_at?: string | null
           email?: string
           full_name?: string | null
           id?: string
-          updated_at?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
       student_grades: {
         Row: {
-          created_at: string
+          created_at: string | null
           feedback: string | null
           graded_at: string | null
           id: string
@@ -294,10 +294,10 @@ export type Database = {
           student_id: string
           submitted_at: string | null
           task_id: string
-          updated_at: string
+          updated_at: string | null
         }
         Insert: {
-          created_at?: string
+          created_at?: string | null
           feedback?: string | null
           graded_at?: string | null
           id?: string
@@ -305,10 +305,10 @@ export type Database = {
           student_id: string
           submitted_at?: string | null
           task_id: string
-          updated_at?: string
+          updated_at?: string | null
         }
         Update: {
-          created_at?: string
+          created_at?: string | null
           feedback?: string | null
           graded_at?: string | null
           id?: string
@@ -316,7 +316,7 @@ export type Database = {
           student_id?: string
           submitted_at?: string | null
           task_id?: string
-          updated_at?: string
+          updated_at?: string | null
         }
         Relationships: [
           {
@@ -338,81 +338,84 @@ export type Database = {
       students: {
         Row: {
           cpf: string
-          created_at: string
+          created_at: string | null
           grade: string
           id: string
           name: string
           password: string | null
           phone: string | null
-          status: string
-          updated_at: string
+          status: string | null
+          updated_at: string | null
           user_id: string | null
         }
         Insert: {
           cpf: string
-          created_at?: string
+          created_at?: string | null
           grade: string
           id?: string
           name: string
           password?: string | null
           phone?: string | null
-          status?: string
-          updated_at?: string
+          status?: string | null
+          updated_at?: string | null
           user_id?: string | null
         }
         Update: {
           cpf?: string
-          created_at?: string
+          created_at?: string | null
           grade?: string
           id?: string
           name?: string
           password?: string | null
           phone?: string | null
-          status?: string
-          updated_at?: string
+          status?: string | null
+          updated_at?: string | null
           user_id?: string | null
         }
         Relationships: []
       }
       tasks: {
         Row: {
+          attachment_url: string | null
           class_id: string
-          created_at: string
+          created_at: string | null
           description: string | null
           discipline_id: string | null
           due_date: string | null
           id: string
-          max_score: number
-          status: string
+          max_score: number | null
+          status: string | null
           teacher_id: string
           title: string
-          updated_at: string
+          updated_at: string | null
         }
         Insert: {
+          attachment_url?: string | null
           class_id: string
-          created_at?: string
+          created_at?: string | null
           description?: string | null
           discipline_id?: string | null
           due_date?: string | null
           id?: string
-          max_score?: number
-          status?: string
+          max_score?: number | null
+          status?: string | null
           teacher_id: string
           title: string
-          updated_at?: string
+          updated_at?: string | null
         }
         Update: {
+          attachment_url?: string | null
           class_id?: string
-          created_at?: string
+          created_at?: string | null
           description?: string | null
           discipline_id?: string | null
           due_date?: string | null
           id?: string
-          max_score?: number
-          status?: string
+          max_score?: number | null
+          status?: string | null
           teacher_id?: string
           title?: string
-          updated_at?: string
+          updated_at?: string | null
         }
         Relationships: [
           {
@@ -440,19 +443,19 @@ export type Database = {
       }
       teacher_disciplines: {
         Row: {
-          created_at: string
+          created_at: string | null
           discipline_id: string
           id: string
           teacher_id: string
         }
         Insert: {
-          created_at?: string
+          created_at?: string | null
           discipline_id: string
           id?: string
           teacher_id: string
         }
         Update: {
-          created_at?: string
+          created_at?: string | null
           discipline_id?: string
           id?: string
           teacher_id?: string
@@ -477,57 +480,57 @@ export type Database = {
       teachers: {
         Row: {
           cpf: string
-          created_at: string
+          created_at: string | null
           id: string
           name: string
           password: string | null
           phone: string | null
-          status: string
+          status: string | null
           subject: string | null
-          updated_at: string
+          updated_at: string | null
           user_id: string | null
         }
         Insert: {
           cpf: string
-          created_at?: string
+          created_at?: string | null
           id?: string
           name: string
           password?: string | null
           phone?: string | null
-          status?: string
+          status?: string | null
           subject?: string | null
-          updated_at?: string
+          updated_at?: string | null
           user_id?: string | null
         }
         Update: {
           cpf?: string
-          created_at?: string
+          created_at?: string | null
           id?: string
           name?: string
           password?: string | null
           phone?: string | null
-          status?: string
+          status?: string | null
           subject?: string | null
-          updated_at?: string
+          updated_at?: string | null
           user_id?: string | null
         }
         Relationships: []
       }
       user_roles: {
         Row: {
-          created_at: string
+          created_at: string | null
           id: string
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Insert: {
-          created_at?: string
+          created_at?: string | null
           id?: string
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Update: {
-          created_at?: string
+          created_at?: string | null
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
@@ -549,7 +552,13 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "aluno" | "professor" | "coordenacao" | "diretor" | "secretaria"
+      app_role:
+        | "aluno"
+        | "professor"
+        | "coordenacao"
+        | "diretor"
+        | "secretaria"
+        | "regional"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -677,7 +686,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["aluno", "professor", "coordenacao", "diretor", "secretaria"],
+      app_role: [
+        "aluno",
+        "professor",
+        "coordenacao",
+        "diretor",
+        "secretaria",
+        "regional",
+      ],
     },
   },
 } as const

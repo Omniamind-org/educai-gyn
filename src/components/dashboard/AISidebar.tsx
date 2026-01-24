@@ -234,7 +234,7 @@ export function AISidebar() {
           </div>
           <div>
             <h2 className="font-semibold text-sidebar-foreground">IA Assistente</h2>
-            <p className="text-xs text-muted-foreground">Powered by GPT-5 Mini</p>
+            <p className="text-xs text-muted-foreground">Powered by GPT-4o Mini</p>
           </div>
         </div>
 

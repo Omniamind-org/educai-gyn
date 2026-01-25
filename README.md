@@ -45,28 +45,28 @@ O sistema opera sob o princípio de *"Single Source of Truth"* (Fonte Única da 
 
 ##  Mapa Tecnológico e Arquitetura
 
-O sistema adota uma arquitetura **Híbrida Moderna**:
+O sistema adota uma arquitetura **Híbrida**:
 *   **Frontend Checkpoint:** Hospedado na **Hostinger**.
 *   **Backend Intelligence:** **Serverless** via Supabase (Banco de dados, Auth e IA sem gestão de servidores).
 
 ```mermaid
 graph TD
-    Client[Client-Side (React)] -->|Data/Auth| Supabase[Supabase Platform]
-    Client -->|AI Requests| Edge[Edge Functions]
+    Client["Client-Side (React)"] -->|Data/Auth| Supabase["Supabase Platform"]
+    Client -->|AI Requests| Edge["Edge Functions"]
     
     subgraph Data Layer
-    Supabase -->|Auth| Auth[GoTrue]
-    Supabase -->|Database| DB[(PostgreSQL)]
-    Supabase -->|Storage| Storage[S3 Buckets]
+    Supabase -->|Auth| Auth["GoTrue"]
+    Supabase -->|Database| DB[("PostgreSQL")]
+    Supabase -->|Storage| Storage["S3 Buckets"]
     end
     
     subgraph AI Layer
-    Edge -->|Prompt Engineering| OpenAI[LLM Provider]
+    Edge -->|Prompt Engineering| OpenAI["LLM Provider"]
     Edge -->|Context| DB
     end
 
     subgraph Security Layer
-    DB -->|RLS Policies| Roles[Roles: Manager, Director, Teacher]
+    DB -->|RLS Policies| Roles["Roles: Manager, Director, Teacher"]
     end
 ```
 

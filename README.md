@@ -130,4 +130,4 @@ O projeto implementa **Row Level Security (RLS)** no banco de dados, garantindo 
 
 ---
 
-**Desenvolvido por Omni Mind** - *Transformando Educação com Dados.*
+**Desenvolvido por Omnia Mind** - *Transformando Educação com Dados.*

@@ -12,10 +12,11 @@ import { DynamicDashboardArea } from './regional/DynamicDashboardArea';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { List, LayoutGrid, TrendingUp, Grid3X3, Sparkles, Loader2 } from 'lucide-react'; // Added Loader2
+import { List, LayoutGrid, TrendingUp, Grid3X3, Sparkles, Loader2, Settings } from 'lucide-react'; // Added Settings
 import { DashboardConfig } from '@/types/dashboard';
 import { useDashboardRegistry } from '@/hooks/useDashboardRegistry';
-import { useToast } from '@/hooks/use-toast'; // Assuming hook exists
+import { useToast } from '@/hooks/use-toast';
+import { SurveyCampaignManager } from './regional/SurveyCampaignManager';
 
 type ViewMode = 'table' | 'cards' | 'scatter' | 'heatmap';
 
@@ -23,6 +24,7 @@ export function RegionalDashboard() {
   const [selectedSchool, setSelectedSchool] = useState<SchoolUnit | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('table');
   const [copilotOpen, setCopilotOpen] = useState(false);
+  const [campaignManagerOpen, setCampaignManagerOpen] = useState(false);
   const [schools, setSchools] = useState<SchoolUnit[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
@@ -62,6 +64,7 @@ export function RegionalDashboard() {
             teacherSatisfaction: s.teacher_satisfaction,
             continuedEducation: s.continued_education,
             infrastructure: s.infrastructure as any,
+            infrastructure_score: s.infrastructure_score, // Added mapped field
             academicPerformance: {
               math: s.school_metrics.find((m: any) => m.subject === 'math')?.grade || 0,
               languages: s.school_metrics.find((m: any) => m.subject === 'languages')?.grade || 0,
@@ -131,6 +134,14 @@ export function RegionalDashboard() {
           <p className="text-muted-foreground mt-1">Gestão Estratégica Regional</p>
         </div>
         <Button
+          variant="outline"
+          className="gap-2 mr-2"
+          onClick={() => setCampaignManagerOpen(true)}
+        >
+          <Settings className="w-4 h-4" />
+          Configurações
+        </Button>
+        <Button
           variant={copilotOpen ? 'default' : 'outline'}
           className="gap-2"
           onClick={() => setCopilotOpen(!copilotOpen)}
@@ -197,6 +208,11 @@ export function RegionalDashboard() {
         onToggle={() => setCopilotOpen(!copilotOpen)}
         onDashboardGenerated={handleDashboardGenerated}
         onDashboardUpdate={handleDashboardUpdate}
+      />
+      
+      <SurveyCampaignManager 
+        open={campaignManagerOpen} 
+        onOpenChange={setCampaignManagerOpen} 
       />
     </div>
   );

@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { supabase } from '@/integrations/supabase/client';
+import { InfrastructureCensusSheet } from './director/InfrastructureCensusSheet';
 
 interface DashboardStats {
   totalStudents: number;
@@ -20,6 +21,8 @@ interface DashboardStats {
   boletosPagos: number;
   totalReceita: number;
   receitaPendente: number;
+  infrastructure?: Record<string, any>;
+  infrastructureScore?: number;
 }
 
 interface BoletosByGrade {
@@ -47,6 +50,8 @@ export function DirectorDashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [boletosByGrade, setBoletosByGrade] = useState<BoletosByGrade[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCensusOpen, setIsCensusOpen] = useState(false);
+  const [schoolId, setSchoolId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchDashboardData();
@@ -55,25 +60,54 @@ export function DirectorDashboard() {
   const fetchDashboardData = async () => {
     setIsLoading(true);
     try {
+      // Fetch School ID logic first
+      let currentSchoolId = null;
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        const { data: profile } = await supabase.from('profiles').select('school_id').eq('id', user.id).maybeSingle();
+        if (profile?.school_id) {
+            currentSchoolId = profile.school_id;
+            setSchoolId(profile.school_id);
+        } else {
+             const { data: schoolData } = await supabase.from('schools').select('id').limit(1).maybeSingle();
+             if (schoolData) {
+                currentSchoolId = schoolData.id;
+                setSchoolId(schoolData.id);
+             }
+        }
+      }
+
       // Fetch students
-      const { data: students } = await supabase
-        .from('students')
-        .select('id, status, grade');
+      const { data: students } = await supabase.from('students').select('id, status, grade');
 
       // Fetch teachers
-      const { data: teachers } = await supabase
-        .from('teachers')
-        .select('id, status');
+      const { data: teachers } = await supabase.from('teachers').select('id, status');
 
       // Fetch classes
-      const { data: classes } = await supabase
-        .from('classes')
-        .select('id');
+      const { data: classes } = await supabase.from('classes').select('id');
 
       // Fetch boletos
-      const { data: boletos } = await supabase
-        .from('boletos')
-        .select('id, status, value, due_date, student_id, students(grade)');
+      const { data: boletos } = await supabase.from('boletos').select('id, status, value, due_date, student_id, students(grade)');
+      
+      // Fetch Infrastructure Data if school known
+      let infraData = {};
+      let infraScore = 0;
+      if (currentSchoolId) {
+          const { data: school } = await supabase.from('schools').select('infrastructure, risk_level').eq('id', currentSchoolId).single();
+          if (school) {
+              infraData = school.infrastructure || {};
+              // For score, we might need to fetch the latest survey or calculate it. 
+              // Simplification: Fetch latest survey score
+               const { data: survey } = await supabase.from('infrastructure_surveys')
+                 .select('score')
+                 .eq('school_id', currentSchoolId)
+                 .order('created_at', { ascending: false })
+                 .limit(1)
+                 .maybeSingle();
+               if (survey) infraScore = survey.score || 0;
+          }
+      }
 
       const today = new Date();
 
@@ -131,9 +165,12 @@ export function DirectorDashboard() {
         boletosPagos,
         totalReceita,
         receitaPendente,
+        infrastructure: infraData,
+        infrastructureScore: infraScore
       });
 
       setBoletosByGrade(gradeData);
+
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
@@ -402,12 +439,20 @@ export function DirectorDashboard() {
       {/* Projects */}
       <Card className="opacity-0 animate-fade-in" style={{ animationDelay: '900ms' }}>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Hammer className="w-5 h-5 text-warning" />
-            Obras e Recursos
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Hammer className="w-5 h-5 text-warning" />
+              Obras e Recursos
+            </CardTitle>
+            <Button size="sm" variant="outline" onClick={() => setIsCensusOpen(true)}>
+              Atualizar Censo
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
+          <div className="space-y-4">
+            {/* Project List Restored */}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {PROJECTS.map((project) => (
               <div key={project.id} className="p-3 rounded-lg border border-border">
@@ -420,15 +465,28 @@ export function DirectorDashboard() {
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">{project.budget}</span>
                   <div className="flex items-center gap-2">
-                    <Progress value={project.progress} className="w-20 h-2" />
+                    <Progress value={project.progress} className="w-20 h-2 bg-muted [&>div]:bg-primary" />
                     <span className="text-xs font-medium">{project.progress}%</span>
                   </div>
                 </div>
               </div>
             ))}
           </div>
+          </div>
         </CardContent>
       </Card>
+
+      {schoolId && (
+        <InfrastructureCensusSheet 
+          open={isCensusOpen} 
+          onOpenChange={(open) => {
+            setIsCensusOpen(open);
+            // Refresh data when closing
+            if (!open) fetchDashboardData();
+          }}
+          schoolId={schoolId} 
+        />
+      )}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Users, Plus, Lightbulb, BookOpen, ListChecks, Calendar, BarChart2, Loader2, FolderOpen, Save } from 'lucide-react';
+import { Users, Plus, Lightbulb, BookOpen, ListChecks, Calendar, BarChart2, Loader2, FolderOpen, Save, MessageSquare, X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,6 +14,7 @@ import { LessonPlanEditor } from './teacher/LessonPlanEditor';
 import { SavedLessonPlansView } from './teacher/SavedLessonPlansView';
 import { ExerciseListEditor } from './teacher/ExerciseListEditor';
 import { SavedExerciseListsView } from './teacher/SavedExerciseListsView';
+import { SatisfactionSurveyDialog } from './teacher/SatisfactionSurveyDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -232,6 +233,9 @@ export function TeacherDashboard() {
   const [isGeneratingExercises, setIsGeneratingExercises] = useState(false);
   const [generatedPlan, setGeneratedPlan] = useState<GeneratedLessonPlan | null>(null);
   const [generatedExerciseList, setGeneratedExerciseList] = useState<GeneratedExerciseList | null>(null);
+  const [surveyOpen, setSurveyOpen] = useState(false);
+  const [activeCampaign, setActiveCampaign] = useState<{id: string, title: string} | null>(null);
+  const [showSurveyAlert, setShowSurveyAlert] = useState(false);
 
   useEffect(() => {
     fetchTeacherClasses();
@@ -321,6 +325,9 @@ export function TeacherDashboard() {
       );
 
       setClasses(classesWithCounts);
+
+      // Check for active surveys
+      checkActiveSurvey(teacherData.id);
     } catch (error) {
       console.error('Error fetching classes:', error);
       toast({
@@ -330,6 +337,40 @@ export function TeacherDashboard() {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const checkActiveSurvey = async (teacherId: string) => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      
+      // 1. Find active campaign
+      const { data: campaigns } = await supabase
+        .from('survey_campaigns')
+        .select('*')
+        .eq('target_role', 'professor')
+        .eq('is_active', true)
+        .lte('start_date', today)
+        .gte('end_date', today)
+        .limit(1);
+
+      if (!campaigns || campaigns.length === 0) return;
+
+      const campaign = campaigns[0];
+
+      // 2. Check if already answered
+      const { count } = await supabase
+        .from('climate_surveys')
+        .select('*', { count: 'exact', head: true })
+        .eq('campaign_id', campaign.id)
+        .eq('teacher_id', teacherId);
+
+      if (count === 0) {
+        setActiveCampaign({ id: campaign.id, title: campaign.title });
+        setShowSurveyAlert(true);
+      }
+    } catch (error) {
+      console.error('Error checking surveys:', error);
     }
   };
 
@@ -600,6 +641,36 @@ export function TeacherDashboard() {
 
   return (
     <div className="space-y-6">
+      {/* Survey Alert */}
+      {showSurveyAlert && activeCampaign && (
+        <Card className="bg-primary/5 border-primary/20 relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-1 h-full bg-primary" />
+          <CardContent className="p-4 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-full bg-primary/10 text-primary">
+                <MessageSquare className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-lg text-primary">Pesquisa de Clima Disponível</h3>
+                <p className="text-muted-foreground">Sua opinião é fundamental! Participe da {activeCampaign.title}.</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button onClick={() => setSurveyOpen(true)}>
+                Participar Agora
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                onClick={() => setShowSurveyAlert(false)}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
       {/* Teacher Disciplines Card */}
       {teacherDisciplines.length > 0 && (
         <Card>
@@ -863,6 +934,27 @@ export function TeacherDashboard() {
           </div>
         )}
       </div>
+
+      {teacherId && activeCampaign && (
+        <SatisfactionSurveyDialog
+          open={surveyOpen}
+          onOpenChange={(open) => {
+            setSurveyOpen(open);
+            if (!open) {
+              // Optionally re-check or hide alert if submitted
+              // ideally parent callback handles this, but for now simple close
+              // If submitted successfully, we might want to hide the alert.
+              // We can rely on next checkActiveSurvey on refresh, or hide it manually if we knew it was success.
+              // For simplicity, we keep the alert until user dismisses or refreshes and it's gone.
+              // Better: check again
+              checkActiveSurvey(teacherId);
+            }
+          }}
+          teacherId={teacherId}
+          campaignId={activeCampaign.id}
+          campaignTitle={activeCampaign.title}
+        />
+      )}
     </div>
   );
 }

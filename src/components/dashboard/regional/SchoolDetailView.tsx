@@ -191,51 +191,148 @@ export function SchoolDetailView({ school, onBack }: SchoolDetailViewProps) {
                 Infraestrutura
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="p-4 rounded-lg border space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-primary/10">
-                      <BookOpen className="w-5 h-5 text-primary" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold">Biblioteca</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Acervo: {school.infrastructure.library.books.toLocaleString()} livros
-                      </p>
-                    </div>
+            <CardContent className="space-y-6">
+              
+              {/* Score Highlight Section */}
+              <div className="flex flex-col md:flex-row gap-6 items-center p-6 bg-muted/30 rounded-xl border border-border">
+                {/* Gauge / Circular Score */}
+                <div className="relative w-32 h-32 flex items-center justify-center">
+                  <svg className="w-full h-full transform -rotate-90">
+                    <circle
+                      cx="64"
+                      cy="64"
+                      r="56"
+                      stroke="currentColor"
+                      strokeWidth="12"
+                      fill="transparent"
+                      className="text-muted/20"
+                    />
+                    <circle
+                      cx="64"
+                      cy="64"
+                      r="56"
+                      stroke="currentColor"
+                      strokeWidth="12"
+                      fill="transparent"
+                      strokeDasharray={351.86}
+                      strokeDashoffset={351.86 - ((school.infrastructure_score || 0) / 100) * 351.86}
+                      className={`${
+                        (school.infrastructure_score || 0) >= 80 ? 'text-success' : 
+                        (school.infrastructure_score || 0) >= 50 ? 'text-warning' : 'text-destructive'
+                      } transition-all duration-1000 ease-out`}
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-3xl font-bold">{school.infrastructure_score ?? '-'}</span>
+                    <span className="text-xs text-muted-foreground uppercase">Score</span>
                   </div>
-                  <Badge 
-                    className={school.infrastructure.library.status === 'active' 
-                      ? 'bg-success/10 text-success' 
-                      : 'bg-warning/10 text-warning'
-                    }
-                  >
-                    {school.infrastructure.library.status === 'active' ? 'ATIVA' : 'MANUTENÇÃO'}
-                  </Badge>
                 </div>
 
-                <div className="p-4 rounded-lg border space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-primary/10">
-                      <Monitor className="w-5 h-5 text-primary" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold">Laboratório Info</h4>
-                      <p className="text-sm text-muted-foreground">
-                        {school.infrastructure.lab.machines} Máquinas
-                      </p>
-                    </div>
-                  </div>
-                  <Badge 
-                    className={school.infrastructure.lab.status === 'active' 
-                      ? 'bg-success/10 text-success' 
-                      : 'bg-warning/10 text-warning'
+                {/* Score Description */}
+                <div className="flex-1 space-y-2 text-center md:text-left">
+                  <h3 className="text-lg font-semibold flex items-center gap-2 justify-center md:justify-start">
+                    Status da Infraestrutura
+                    {(school.infrastructure_score || 0) >= 80 && (
+                      <Badge className="bg-success text-success-foreground hover:bg-success">Excelente</Badge>
+                    )}
+                    {(school.infrastructure_score || 0) >= 50 && (school.infrastructure_score || 0) < 80 && (
+                      <Badge className="bg-warning text-warning-foreground hover:bg-warning">Regular</Badge>
+                    )}
+                    {(school.infrastructure_score || 0) < 50 && school.infrastructure_score !== undefined && (
+                      <Badge className="bg-destructive text-destructive-foreground hover:bg-destructive">Crítico</Badge>
+                    )}
+                  </h3>
+                  <p className="text-muted-foreground max-w-lg">
+                    {(school.infrastructure_score || 0) >= 80 
+                      ? "A escola apresenta condições ideais de funcionamento, com a maioria dos recursos ativos."
+                      : (school.infrastructure_score || 0) >= 50 
+                      ? "A escola requer atenção em alguns pontos de manutenção, mas mantém operacionalidade."
+                      : "A escola apresenta múltiplos pontos críticos que exigem intervenção imediata da Regional."
                     }
-                  >
-                    {school.infrastructure.lab.status === 'active' ? 'ATIVA' : 'MANUTENÇÃO'}
-                  </Badge>
+                  </p>
                 </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {(() => {
+                  const INFRA_CONFIG: Record<string, { label: string; icon: any }> = {
+                    library: { label: 'Biblioteca', icon: BookOpen },
+                    lab: { label: 'Laboratório Info', icon: Monitor },
+                    classrooms: { label: 'Salas de Aula', icon: Building },
+                    bathrooms: { label: 'Banheiros', icon: AlertCircle },
+                    kitchen: { label: 'Cozinha', icon: AlertCircle }, 
+                    courtyard: { label: 'Pátio', icon: Building },
+                    accessibility: { label: 'Acessibilidade', icon: AlertCircle },
+                    internet: { label: 'Internet', icon: Monitor },
+                    ventilation: { label: 'Ventilação', icon: Building },
+                    lighting: { label: 'Iluminação', icon: AlertCircle },
+                    water: { label: 'Água', icon: AlertCircle },
+                    sanitation: { label: 'Sanitários', icon: AlertCircle },
+                    cleanliness: { label: 'Limpeza', icon: AlertCircle },
+                    desks: { label: 'Carteiras', icon: Building },
+                    boards: { label: 'Lousas', icon: Monitor }
+                  };
+
+                  // Merge known keys from config with any extra keys in school.infrastructure
+                  const keys = Array.from(new Set([
+                    ...Object.keys(INFRA_CONFIG),
+                    ...Object.keys(school.infrastructure || {})
+                  ]));
+
+                  // Filter to only show keys that arguably exist or are in our main config
+                  return keys.map(key => {
+                    const data = school.infrastructure?.[key];
+                    const config = INFRA_CONFIG[key];
+                    
+                    // Skip if no data and not a main config item we want to show as 'N/A'
+                    if (!data && !config) return null;
+
+                    const Icon = config?.icon || Building;
+                    const label = config?.label || key;
+                    
+                    // Resolve Status
+                    const status = typeof data === 'string' ? data : data?.status;
+                    const quantity = typeof data !== 'string' ? data?.quantity : null;
+                    const legacyQuantity = key === 'library' ? (school.infrastructure as any)?.library?.books : 
+                                           key === 'lab' ? (school.infrastructure as any)?.lab?.machines : null;
+                    
+                    const finalQuantity = quantity || legacyQuantity;
+
+                    // Determine Badge
+                     const badgeClass = status === 'good' || status === 'active'
+                      ? 'bg-success/10 text-success' 
+                      : (status === 'fair' || status === 'maintenance' ? 'bg-warning/10 text-warning' : 
+                         (status === 'critical' ? 'bg-destructive/10 text-destructive' : 'bg-muted text-muted-foreground'));
+                      
+                     const statusLabel = status === 'good' || status === 'active'
+                      ? 'ATIVA' 
+                      : (status === 'fair' || status === 'maintenance' ? 'MANUTENÇÃO' 
+                      : (status === 'critical' ? 'CRÍTICO' : 'N/A'));
+
+                    return (
+                        <div key={key} className="p-4 rounded-lg border space-y-3">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-lg bg-primary/10">
+                            <Icon className="w-5 h-5 text-primary" />
+                            </div>
+                            <div>
+                            <h4 className="font-semibold capitalize">{label}</h4>
+                            <p className="text-sm text-muted-foreground">
+                                {finalQuantity ? (
+                                    key === 'library' ? `Acervo: ${finalQuantity} livros` :
+                                    key === 'lab' ? `${finalQuantity} Máquinas` :
+                                    `Quantidade: ${finalQuantity}`
+                                ) : (
+                                    'Status reportado'
+                                )}
+                            </p>
+                            </div>
+                        </div>
+                        <Badge className={badgeClass}>{statusLabel}</Badge>
+                        </div>
+                    );
+                  });
+                })()}
               </div>
             </CardContent>
           </Card>

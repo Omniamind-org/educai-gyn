@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Plus, Users, BookOpen, Loader2, GraduationCap, ClipboardList, Save, Pencil, Trash2, Paperclip, FileDown, X } from 'lucide-react';
+import { ArrowLeft, Plus, Users, BookOpen, Loader2, GraduationCap, ClipboardList, Save, Pencil, Trash2, Paperclip, FileDown, X, Calendar } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AttendanceDialog } from './AttendanceDialog';
 import {
   Dialog,
   DialogContent,
@@ -42,6 +43,7 @@ interface Student {
   id: string;
   name: string;
   grade: string;
+  status: 'active' | 'transferred' | 'dropout';
 }
 
 interface Discipline {
@@ -58,6 +60,7 @@ interface Task {
   status: string;
   created_at: string;
   discipline_id: string | null;
+  type: 'exam' | 'assignment' | 'project' | null;
 }
 
 interface StudentGrade {
@@ -86,6 +89,7 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
   const [isLoading, setIsLoading] = useState(true);
   const [isCreatingTask, setIsCreatingTask] = useState(false);
   const [isSavingGrades, setIsSavingGrades] = useState(false);
+  const [attendanceOpen, setAttendanceOpen] = useState(false);
   const [newTaskOpen, setNewTaskOpen] = useState(false);
   const [tasksListOpen, setTasksListOpen] = useState(false);
   const [studentsListOpen, setStudentsListOpen] = useState(false);
@@ -100,6 +104,7 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
     max_score: '10',
     due_date: '',
     discipline_id: '',
+    type: 'assignment',
   });
   const [editTask, setEditTask] = useState({
     title: '',
@@ -107,6 +112,7 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
     max_score: '10',
     due_date: '',
     discipline_id: '',
+    type: 'assignment',
   });
   const [newTaskFile, setNewTaskFile] = useState<File | null>(null);
   const [editTaskFile, setEditTaskFile] = useState<File | null>(null);
@@ -158,10 +164,13 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
         const studentIds = classStudents.map(cs => cs.student_id);
         const { data: studentsData } = await supabase
           .from('students')
-          .select('id, name, grade')
+          .select('id, name, grade, status')
           .in('id', studentIds);
 
-        setStudents(studentsData || []);
+        setStudents(((studentsData || []).map(s => ({
+          ...s,
+          status: (s.status as any) || 'active'
+        }))) as Student[]);
       } else {
         setStudents([]);
       }
@@ -203,6 +212,33 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleUpdateStudentStatus = async (studentId: string, newStatus: string) => {
+    try {
+      const { error } = await supabase
+        .from('students')
+        .update({ status: newStatus })
+        .eq('id', studentId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Status Atualizado",
+        description: "A situação do aluno foi alterada com sucesso.",
+      });
+
+      setStudents(prev => prev.map(s => 
+        s.id === studentId ? { ...s, status: newStatus as any } : s
+      ));
+    } catch (error) {
+      console.error('Error updating status:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar o status.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -261,6 +297,7 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
         max_score: parseFloat(newTask.max_score) || 10,
         due_date: newTask.due_date || null,
         discipline_id: newTask.discipline_id,
+        type: newTask.type as any,
       }).select('id').single();
 
       if (error) throw error;
@@ -270,7 +307,7 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
         description: 'Tarefa criada com sucesso!',
       });
 
-      setNewTask({ title: '', description: '', max_score: '10', due_date: '', discipline_id: '' });
+      setNewTask({ title: '', description: '', max_score: '10', due_date: '', discipline_id: '', type: 'assignment' });
       setNewTaskFile(null);
       if (newTaskFileInputRef.current) {
         newTaskFileInputRef.current.value = '';
@@ -355,6 +392,7 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
       max_score: task.max_score.toString(),
       due_date: task.due_date ? task.due_date.split('T')[0] : '',
       discipline_id: task.discipline_id || '',
+      type: (task.type as string) || 'assignment',
     });
     setEditTaskFile(null);
     if (editTaskFileInputRef.current) {
@@ -383,6 +421,7 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
           max_score: parseFloat(editTask.max_score) || 10,
           due_date: editTask.due_date || null,
           discipline_id: editTask.discipline_id || null,
+          type: editTask.type as any,
         })
         .eq('id', selectedTask.id);
 
@@ -469,6 +508,23 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
           </h1>
           <p className="text-muted-foreground">{classData.grade} • {classData.year}</p>
         </div>
+        <Button 
+          variant="outline" 
+          className="gap-2 mr-2"
+          onClick={() => setAttendanceOpen(true)}
+        >
+          <Calendar className="h-4 w-4" />
+          Chamada
+        </Button>
+        
+        <AttendanceDialog 
+          open={attendanceOpen} 
+          onOpenChange={setAttendanceOpen}
+          classId={classData.id}
+          className={classData.name}
+          students={students}
+        />
+
         <Dialog open={newTaskOpen} onOpenChange={setNewTaskOpen}>
           <DialogTrigger asChild>
             <Button className="gap-2">
@@ -523,6 +579,22 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
                     </SelectContent>
                   </Select>
                 )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="task-type">Tipo de Atividade</Label>
+                <Select
+                  value={newTask.type}
+                  onValueChange={(value) => setNewTask(prev => ({ ...prev, type: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="assignment">Trabalho / Tarefa</SelectItem>
+                    <SelectItem value="exam">Avaliação / Prova</SelectItem>
+                    <SelectItem value="project">Projeto</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -660,7 +732,11 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
                     </Avatar>
                     <div className="flex-1">
                       <h4 className="font-semibold">{student.name}</h4>
-                      <p className="text-sm text-muted-foreground">{student.grade}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm text-muted-foreground">{student.grade}</p>
+                        {student.status === 'transferred' && <Badge variant="secondary" className="h-5 text-[10px]">Transferido</Badge>}
+                        {student.status === 'dropout' && <Badge variant="destructive" className="h-5 text-[10px]">Evadido</Badge>}
+                      </div>
                     </div>
                     <Badge variant="outline">
                       <GraduationCap className="h-3 w-3 mr-1" />
@@ -699,6 +775,10 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
                     <div className="flex items-start justify-between">
                       <div className="space-y-1 flex-1">
                         <h4 className="font-semibold text-lg">{task.title}</h4>
+                        <div className="flex gap-2">
+                          {task.type === 'exam' && <Badge variant="destructive" className="h-5 text-[10px] px-1.5">PROVA</Badge>}
+                          {task.type === 'project' && <Badge variant="default" className="bg-purple-500 h-5 text-[10px] px-1.5">PROJETO</Badge>}
+                        </div>
                         {task.description && (
                           <p className="text-sm text-muted-foreground">{task.description}</p>
                         )}
@@ -764,6 +844,22 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
                 value={editTask.description}
                 onChange={(e) => setEditTask(prev => ({ ...prev, description: e.target.value }))}
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-task-type">Tipo de Atividade</Label>
+              <Select
+                value={editTask.type}
+                onValueChange={(value) => setEditTask(prev => ({ ...prev, type: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="assignment">Trabalho / Tarefa</SelectItem>
+                  <SelectItem value="exam">Avaliação / Prova</SelectItem>
+                  <SelectItem value="project">Projeto</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">

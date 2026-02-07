@@ -126,61 +126,125 @@ supabase/
 ## Diagrama de Arquitetura
 
 ```mermaid
-graph TB
+flowchart TB
+    %% Styling
+    classDef userStyle fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+    classDef dashStyle fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    classDef frontStyle fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
+    classDef backStyle fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    classDef aiStyle fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef secStyle fill:#fff8e1,stroke:#f9a825,stroke-width:2px
+
+    %% Users
     subgraph Users ["Perfis de Usuário"]
+        direction TB
         Regional["Secretaria Regional"]
         Director["Diretor"]
         Coordinator["Coordenador"]
+        Secretary["Secretário"]
         Teacher["Professor"]
         Student["Aluno"]
-        Secretary["Secretário"]
     end
 
-    subgraph Frontend ["Frontend (Hostinger)"]
-        React["React 18 + TypeScript"]
-        Components["Components / Hooks / Services"]
+    %% Dashboards
+    subgraph Dashboards ["Dashboards Específicos"]
+        direction TB
+        RegionalDash["RegionalDashboard"]
+        DirectorDash["DirectorDashboard"]
+        CoordDash["CoordinatorDashboard"]
+        SecretaryDash["SecretaryDashboard"]
+        TeacherDash["TeacherDashboard"]
+        StudentDash["StudentDashboard"]
     end
 
-    subgraph Backend ["Backend (Supabase)"]
-        Auth["Auth (GoTrue)"]
+    %% Frontend
+    subgraph Frontend ["Frontend - Hostinger"]
+        direction TB
+        React["React 18 + TypeScript + Vite"]
+        
+        subgraph Arch ["Arquitetura Interna"]
+            Components["Components"]
+            Hooks["Custom Hooks"]
+            Services["Services Layer"]
+        end
+    end
+
+    %% Backend
+    subgraph Backend ["Backend - Supabase"]
+        direction TB
+        Auth["Auth - GoTrue"]
         DB[("PostgreSQL 16")]
-        Storage["Storage (S3)"]
-        Edge["Edge Functions (Deno)"]
+        Storage["Storage - S3"]
+        Edge["Edge Functions - Deno"]
     end
 
+    %% AI Layer
     subgraph AI ["Camada de IA"]
         LLM["OpenAI GPT-4o"]
+        ChatAI["chat-ai"]
+        LessonPlan["generate-lesson-plan"]
     end
 
+    %% Security
     subgraph Security ["Segurança"]
         RLS["Row Level Security"]
     end
 
-    Regional --> React
-    Director --> React
-    Coordinator --> React
-    Teacher --> React
-    Student --> React
-    Secretary --> React
+    %% User to Dashboard connections
+    Regional --> RegionalDash
+    Director --> DirectorDash
+    Coordinator --> CoordDash
+    Secretary --> SecretaryDash
+    Teacher --> TeacherDash
+    Student --> StudentDash
 
+    %% Dashboard to Frontend
+    RegionalDash --> React
+    DirectorDash --> React
+    CoordDash --> React
+    SecretaryDash --> React
+    TeacherDash --> React
+    StudentDash --> React
+
+    %% Frontend internal flow
     React --> Components
-    Components --> Auth
-    Components --> DB
-    Components --> Edge
+    Components --> Hooks
+    Hooks --> Services
 
-    Edge --> LLM
+    %% Frontend to Backend
+    Services --> Auth
+    Services --> DB
+    Services --> Edge
+
+    %% AI connections
+    Edge --> ChatAI
+    Edge --> LessonPlan
+    ChatAI --> LLM
+    LessonPlan --> LLM
     Edge --> DB
 
+    %% Security
     DB --> RLS
-    RLS --> |"Isolamento por Perfil"| DB
+
+    %% Apply styles
+    class Regional,Director,Coordinator,Secretary,Teacher,Student userStyle
+    class RegionalDash,DirectorDash,CoordDash,SecretaryDash,TeacherDash,StudentDash dashStyle
+    class React,Components,Hooks,Services frontStyle
+    class Auth,DB,Storage,Edge backStyle
+    class LLM,ChatAI,LessonPlan aiStyle
+    class RLS secStyle
 ```
 
 **Legenda:**
-- **Users:** Diferentes perfis com dashboards específicos
-- **Frontend:** Aplicação React hospedada na Hostinger
-- **Backend:** Supabase gerenciando auth, banco e storage
-- **AI:** Edge Functions conectando à OpenAI para funcionalidades de IA
-- **Security:** RLS garantindo isolamento de dados por perfil
+
+| Camada | Cor | Descrição |
+|--------|-----|-----------|
+| Usuários | Azul claro | Perfis com acesso ao sistema |
+| Dashboards | Laranja | Interfaces específicas por perfil |
+| Frontend | Verde | React + arquitetura interna (Components/Hooks/Services) |
+| Backend | Rosa | Supabase (Auth, DB, Storage, Edge Functions) |
+| IA | Roxo | Edge Functions que conectam à OpenAI |
+| Segurança | Amarelo | RLS para isolamento de dados |
 
 ---
 

@@ -317,7 +317,46 @@ export function StudentsView({ onCredentialsCreated }: StudentsViewProps) {
                   <TableCell className="font-medium">{student.name}</TableCell>
                   <TableCell>{student.cpf}</TableCell>
                   <TableCell>{student.grade}</TableCell>
-                  <TableCell>{getStatusBadge(student.status)}</TableCell>
+                  <TableCell>
+                    <Select 
+                      value={student.status || 'active'} 
+                      onValueChange={async (val) => {
+                        try {
+                          const { error } = await supabase
+                            .from('students')
+                            .update({ status: val })
+                            .eq('id', student.id);
+                          
+                          if (error) throw error;
+                          
+                          setStudents(prev => prev.map(s => s.id === student.id ? { ...s, status: val } : s));
+                          
+                          toast({ title: "Status Atualizado", description: `Aluno marcado como ${val}.` });
+                        } catch (e) {
+                          toast({ title: "Erro", description: "Falha ao atualizar status.", variant: "destructive" });
+                        }
+                      }}
+                    >
+                      <SelectTrigger className={`w-[130px] h-8 text-xs ${
+                        student.status === 'active' ? 'bg-green-100 text-green-700 border-green-200' :
+                        student.status === 'transferred' ? 'bg-yellow-100 text-yellow-700 border-yellow-200' :
+                        'bg-red-100 text-red-700 border-red-200'
+                      }`}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="active">
+                          <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-green-500" />Ativo</div>
+                        </SelectItem>
+                        <SelectItem value="transferred">
+                          <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-yellow-500" />Transferido</div>
+                        </SelectItem>
+                        <SelectItem value="dropout">
+                          <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-red-500" />Evadido</div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
                       <Button

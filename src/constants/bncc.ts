@@ -1,0 +1,166 @@
+export const SERIES = ['1º Ano do Ensino Médio', '2º Ano do Ensino Médio', '3º Ano do Ensino Médio'];
+
+export const BNCC_AREAS = [
+  { id: 'matematica', name: 'Matemática e suas tecnologias' },
+  { id: 'linguagens', name: 'Linguagens e suas tecnologias' },
+  { id: 'ciencias_humanas', name: 'Ciências humanas e suas tecnologias' },
+  { id: 'ciencias_natureza', name: 'Ciências da natureza e suas tecnologias' },
+];
+
+export const BNCC_SKILLS: Record<string, { code: string; description: string }[]> = {
+  matematica: [
+    // Competência Específica 1
+    { code: 'EM13MAT101', description: 'Interpretar situações econômicas, sociais e das Ciências da Natureza que envolvem a variação de duas grandezas, pela análise dos gráficos das funções representadas e das taxas de variação, com ou sem apoio de tecnologias digitais.' },
+    { code: 'EM13MAT102', description: 'Analisar gráficos e métodos de amostragem de pesquisas estatísticas divulgadas por diferentes meios de comunicação, identificando inadequações que possam induzir a erros de interpretação, como escalas e amostras não apropriadas.' },
+    { code: 'EM13MAT103', description: 'Interpretar o emprego de unidades de medida de diferentes grandezas, inclusive novas unidades como as de armazenamento de dados e distâncias astronômicas e microscópicas.' },
+    { code: 'EM13MAT104', description: 'Interpretar taxas e índices de natureza socioeconômica, como índice de desenvolvimento humano e taxas de inflação, investigando seus processos de cálculo.' },
+    { code: 'EM13MAT105', description: 'Utilizar transformações isométricas e homotéticas para analisar produções humanas como construções civis e obras de arte.' },
+    // Competência Específica 2
+    { code: 'EM13MAT201', description: 'Propor ações comunitárias envolvendo cálculos de área, volume, capacidade ou massa adequados às demandas da região.' },
+    { code: 'EM13MAT202', description: 'Planejar e executar pesquisa amostral sobre questões relevantes, comunicando resultados por meio de gráficos e medidas estatísticas.' },
+    { code: 'EM13MAT203', description: 'Planejar e executar ações envolvendo aplicativos, jogos, planilhas e simuladores para aplicar conceitos matemáticos e tomar decisões.' },
+    // Competência Específica 3
+    { code: 'EM13MAT301', description: 'Resolver e elaborar problemas com equações lineares simultâneas.' },
+    { code: 'EM13MAT302', description: 'Resolver e elaborar problemas com funções polinomiais de 1º e 2º graus.' },
+    { code: 'EM13MAT303', description: 'Resolver e elaborar problemas envolvendo porcentagens e juros compostos.' },
+    { code: 'EM13MAT304', description: 'Resolver e elaborar problemas com funções exponenciais.' },
+    { code: 'EM13MAT305', description: 'Resolver e elaborar problemas com funções logarítmicas.' },
+    { code: 'EM13MAT306', description: 'Resolver e elaborar problemas envolvendo fenômenos periódicos e funções seno e cosseno.' },
+    { code: 'EM13MAT307', description: 'Empregar métodos para obtenção da área de superfícies e deduzir expressões de cálculo.' },
+    { code: 'EM13MAT308', description: 'Resolver e elaborar problemas com triângulos envolvendo congruência e semelhança.' },
+    { code: 'EM13MAT309', description: 'Resolver e elaborar problemas envolvendo áreas e volumes de sólidos geométricos.' },
+    { code: 'EM13MAT310', description: 'Resolver e elaborar problemas de contagem usando princípios aditivo e multiplicativo.' },
+    { code: 'EM13MAT311', description: 'Resolver e elaborar problemas de probabilidade de eventos aleatórios.' },
+    { code: 'EM13MAT312', description: 'Resolver e elaborar problemas de probabilidade em experimentos sucessivos.' },
+    { code: 'EM13MAT313', description: 'Resolver e elaborar problemas envolvendo algarismos significativos e notação científica.' },
+    { code: 'EM13MAT314', description: 'Resolver e elaborar problemas envolvendo grandezas compostas como velocidade e densidade.' },
+    { code: 'EM13MAT315', description: 'Reconhecer e expressar problemas algorítmicos por meio de algoritmos e fluxogramas.' },
+    { code: 'EM13MAT316', description: 'Resolver e elaborar problemas envolvendo média, moda, mediana, variância e desvio padrão.' },
+    // Competência Específica 4
+    { code: 'EM13MAT401', description: 'Converter funções polinomiais de 1º grau da forma algébrica para a gráfica.' },
+    { code: 'EM13MAT402', description: 'Converter funções polinomiais de 2º grau da forma algébrica para a gráfica.' },
+    { code: 'EM13MAT403', description: 'Comparar funções exponenciais e logarítmicas em gráficos.' },
+    { code: 'EM13MAT404', description: 'Identificar características das funções seno e cosseno.' },
+    { code: 'EM13MAT405', description: 'Reconhecer funções definidas por tabelas e sentenças como contas de consumo.' },
+    { code: 'EM13MAT406', description: 'Utilizar conceitos básicos de programação para implementar algoritmos.' },
+    { code: 'EM13MAT407', description: 'Interpretar vistas ortogonais de figuras espaciais.' },
+    { code: 'EM13MAT408', description: 'Construir e interpretar tabelas e gráficos estatísticos.' },
+    { code: 'EM13MAT409', description: 'Interpretar e comparar dados por meio de histogramas, box-plot e outros gráficos.' },
+    // Competência Específica 5
+    { code: 'EM13MAT501', description: 'Investigar relações em tabelas e representá-las no plano cartesiano como função de 1º grau.' },
+    { code: 'EM13MAT502', description: 'Investigar relações em tabelas como função de 2º grau.' },
+    { code: 'EM13MAT503', description: 'Investigar pontos de máximo e mínimo de funções quadráticas.' },
+    { code: 'EM13MAT504', description: 'Investigar o cálculo de volumes de sólidos geométricos.' },
+    { code: 'EM13MAT505', description: 'Resolver problemas de ladrilhamentos do plano.' },
+    { code: 'EM13MAT506', description: 'Representar a variação da área e do perímetro de polígonos regulares.' },
+    { code: 'EM13MAT507', description: 'Associar progressões aritméticas a funções afins.' },
+    { code: 'EM13MAT508', description: 'Associar progressões geométricas a funções exponenciais.' },
+    { code: 'EM13MAT509', description: 'Investigar projeções cartográficas.' },
+    { code: 'EM13MAT510', description: 'Investigar a relação entre duas variáveis usando tecnologias.' },
+    { code: 'EM13MAT511', description: 'Investigar diferentes espaços amostrais e suas implicações na probabilidade.' },
+    { code: 'EM13MAT512', description: 'Investigar propriedades de figuras geométricas por meio de conjecturas e contraexemplos.' },
+  ],
+  linguagens: [
+    // Competência Específica 1
+    { code: 'EM13LGG101', description: 'Compreender e analisar processos de produção e circulação de discursos nas diferentes linguagens para fazer escolhas fundamentadas em função de interesses pessoais e coletivos.' },
+    { code: 'EM13LGG102', description: 'Analisar visões de mundo, conflitos de interesse, preconceitos e ideologias presentes nos discursos veiculados nas diferentes mídias.' },
+    { code: 'EM13LGG103', description: 'Analisar o funcionamento das linguagens para interpretar e produzir criticamente discursos em textos de diversas semioses.' },
+    { code: 'EM13LGG104', description: 'Utilizar diferentes linguagens para a compreensão e produção de textos e discursos em diversos campos de atuação social.' },
+    { code: 'EM13LGG105', description: 'Analisar e experimentar processos de remidiação de produções multissemióticas, multimídia e transmídia.' },
+    // Competência Específica 2
+    { code: 'EM13LGG201', description: 'Utilizar adequadamente linguagens artísticas, corporais e verbais em diferentes contextos.' },
+    { code: 'EM13LGG202', description: 'Analisar interesses, relações de poder e perspectivas de mundo nos discursos das práticas de linguagem.' },
+    { code: 'EM13LGG203', description: 'Analisar diálogos, conflitos e disputas de legitimidade nas práticas de linguagem.' },
+    { code: 'EM13LGG204', description: 'Negociar sentidos e produzir entendimento mútuo pautado em valores democráticos e Direitos Humanos.' },
+    // Competência Específica 3
+    { code: 'EM13LGG301', description: 'Participar de processos de produção individual e colaborativa em diferentes linguagens.' },
+    { code: 'EM13LGG302', description: 'Posicionar-se criticamente diante de visões de mundo presentes nos discursos.' },
+    { code: 'EM13LGG303', description: 'Debater questões polêmicas de relevância social, analisando argumentos e tomando decisões democraticamente sustentadas.' },
+    { code: 'EM13LGG304', description: 'Mapear e criar possibilidades de atuação social, política, artística e cultural.' },
+    // Competência Específica 4
+    { code: 'EM13LGG401', description: 'Analisar textos para caracterizar as línguas como fenômeno geopolítico, histórico e social.' },
+    { code: 'EM13LGG402', description: 'Empregar variedade e estilo de língua adequados às situações comunicativas, combatendo o preconceito linguístico.' },
+    { code: 'EM13LGG403', description: 'Utilizar o inglês como língua global considerando seus usos e funções no mundo contemporâneo.' },
+    // Competência Específica 5
+    { code: 'EM13LGG501', description: 'Selecionar e utilizar movimentos corporais para interação social ética e respeitosa.' },
+    { code: 'EM13LGG502', description: 'Analisar criticamente preconceitos, estereótipos e relações de poder nas práticas corporais.' },
+    { code: 'EM13LGG503', description: 'Valorizar a cultura corporal de movimento como autoconhecimento, autocuidado e construção de vínculos sociais.' },
+    // Competência Específica 6
+    { code: 'EM13LGG601', description: 'Apropriar-se do patrimônio artístico e da cultura corporal de diferentes tempos e lugares.' },
+    { code: 'EM13LGG602', description: 'Fruir e apreciar manifestações artísticas e culturais locais e globais.' },
+    { code: 'EM13LGG603', description: 'Expressar-se em processos criativos que integrem diferentes linguagens artísticas.' },
+    { code: 'EM13LGG604', description: 'Relacionar práticas artísticas e corporais às dimensões sociais, políticas, históricas e econômicas.' },
+    // Competência Específica 7
+    { code: 'EM13LGG701', description: 'Explorar e utilizar TDIC de modo ético, responsável e adequado.' },
+    { code: 'EM13LGG702', description: 'Avaliar impactos das tecnologias digitais na formação do sujeito e nas práticas sociais.' },
+    { code: 'EM13LGG703', description: 'Utilizar linguagens, mídias e ferramentas digitais em produções coletivas e autorais.' },
+    { code: 'EM13LGG704', description: 'Apropriar-se criticamente de processos de pesquisa e busca de informação na cultura digital.' },
+  ],
+  ciencias_humanas: [
+    // Competência Específica 1
+    { code: 'EM13CHS101', description: 'Analisar e comparar fontes e narrativas em diversas linguagens para compreender e criticar processos históricos, geográficos, políticos, econômicos, sociais, ambientais e culturais.' },
+    { code: 'EM13CHS102', description: 'Analisar as circunstâncias da emergência de matrizes conceituais hegemônicas, comparando-as a outras narrativas.' },
+    { code: 'EM13CHS103', description: 'Elaborar hipóteses, selecionar evidências e construir argumentos com base em dados qualitativos e quantitativos.' },
+    { code: 'EM13CHS104', description: 'Analisar objetos da cultura material e imaterial como portadores de valores, crenças e práticas sociais.' },
+    { code: 'EM13CHS105', description: 'Criticar tipologias evolutivas e oposições dicotômicas, evidenciando ambiguidades e complexidades.' },
+    { code: 'EM13CHS106', description: 'Utilizar linguagens cartográfica, gráfica, iconográfica, textuais e digitais de forma crítica e ética.' },
+    // Competência Específica 2
+    { code: 'EM13CHS201', description: 'Analisar as dinâmicas das populações, mercadorias e capital nos continentes.' },
+    { code: 'EM13CHS202', description: 'Avaliar os impactos das tecnologias nas dinâmicas sociais, políticas, econômicas e culturais.' },
+    { code: 'EM13CHS203', description: 'Contrapor significados de território, fronteiras e vazio em diferentes sociedades.' },
+    { code: 'EM13CHS204', description: 'Comparar processos de ocupação do espaço e formação de territórios e fronteiras.' },
+    { code: 'EM13CHS205', description: 'Analisar a produção de territorialidades no Brasil e no mundo contemporâneo.' },
+    { code: 'EM13CHS206', description: 'Aplicar princípios do raciocínio geográfico na análise da ocupação do espaço.' },
+    // Competência Específica 3
+    { code: 'EM13CHS301', description: 'Problematizar práticas de produção e descarte de resíduos e propor ações sustentáveis.' },
+    { code: 'EM13CHS302', description: 'Avaliar impactos socioambientais de cadeias produtivas e atividades agropecuárias.' },
+    { code: 'EM13CHS303', description: 'Analisar o papel da indústria cultural e das culturas de massa no consumismo.' },
+    { code: 'EM13CHS304', description: 'Analisar impactos socioambientais de práticas institucionais e individuais.' },
+    { code: 'EM13CHS305', description: 'Analisar o papel de organismos reguladores e acordos ambientais internacionais.' },
+    { code: 'EM13CHS306', description: 'Avaliar impactos de diferentes modelos econômicos sobre a sustentabilidade.' },
+    // Competência Específica 4
+    { code: 'EM13CHS401', description: 'Analisar transformações técnicas, tecnológicas e informacionais e seus efeitos sobre o trabalho.' },
+    { code: 'EM13CHS402', description: 'Comparar indicadores de emprego, trabalho e renda e suas relações com desigualdades.' },
+    { code: 'EM13CHS403', description: 'Analisar transformações contemporâneas para propor ações de superação de opressões.' },
+    { code: 'EM13CHS404', description: 'Analisar os múltiplos aspectos do trabalho em diferentes contextos históricos e geográficos.' },
+    // Competência Específica 5
+    { code: 'EM13CHS501', description: 'Analisar fundamentos da ética em diferentes culturas.' },
+    { code: 'EM13CHS502', description: 'Problematizar desigualdades e preconceitos na vida cotidiana e propor ações de promoção dos Direitos Humanos.' },
+    { code: 'EM13CHS503', description: 'Identificar e analisar diferentes formas de violência e propor mecanismos de enfrentamento.' },
+    { code: 'EM13CHS504', description: 'Avaliar impasses éticos e políticos das transformações científicas e tecnológicas.' },
+    // Competência Específica 6
+    { code: 'EM13CHS601', description: 'Relacionar demandas de indígenas e afrodescendentes aos processos históricos e sociais.' },
+    { code: 'EM13CHS602', description: 'Analisar autoritarismo, populismo e paternalismo na política e na sociedade.' },
+    { code: 'EM13CHS603', description: 'Aplicar conceitos políticos na análise de países, povos e nações.' },
+    { code: 'EM13CHS604', description: 'Analisar o papel dos organismos internacionais.' },
+    { code: 'EM13CHS605', description: 'Analisar a Declaração dos Direitos Humanos para propor ações contra desigualdades e violações.' },
+  ],
+  ciencias_natureza: [
+    // Competência Específica 1
+    { code: 'EM13CNT101', description: 'Analisar e representar transformações e conservações de matéria, energia e movimento para prever situações do cotidiano e processos produtivos sustentáveis.' },
+    { code: 'EM13CNT102', description: 'Realizar previsões e construir protótipos de sistemas térmicos sustentáveis.' },
+    { code: 'EM13CNT103', description: 'Avaliar potencialidades e riscos das radiações em aplicações cotidianas, médicas, industriais e energéticas.' },
+    { code: 'EM13CNT104', description: 'Avaliar impactos de materiais e produtos à saúde e ao ambiente e propor soluções de uso adequado.' },
+    { code: 'EM13CNT105', description: 'Analisar os ciclos dos elementos químicos e os efeitos da ação humana.' },
+    { code: 'EM13CNT106', description: 'Avaliar tecnologias e soluções para geração, transporte e consumo de energia elétrica.' },
+    // Competência Específica 2
+    { code: 'EM13CNT201', description: 'Analisar modelos científicos sobre a origem e evolução da Vida, da Terra e do Universo.' },
+    { code: 'EM13CNT202', description: 'Interpretar manifestações da vida em seus níveis de organização e condições ambientais.' },
+    { code: 'EM13CNT203', description: 'Avaliar efeitos de intervenções nos ecossistemas e nos seres vivos.' },
+    { code: 'EM13CNT204', description: 'Elaborar explicações sobre movimentos de objetos com base na gravitação.' },
+    { code: 'EM13CNT205', description: 'Utilizar probabilidade e incerteza na interpretação de fenômenos naturais e tecnológicos.' },
+    { code: 'EM13CNT206', description: 'Justificar a preservação da biodiversidade e avaliar impactos humanos e políticas ambientais.' },
+    { code: 'EM13CNT207', description: 'Analisar vulnerabilidades das juventudes e propor ações de promoção da saúde e do bem-estar.' },
+    // Competência Específica 3
+    { code: 'EM13CNT301', description: 'Elaborar hipóteses, realizar medições e interpretar dados para resolver situações-problema.' },
+    { code: 'EM13CNT302', description: 'Comunicar resultados científicos em diferentes mídias e contextos.' },
+    { code: 'EM13CNT303', description: 'Avaliar textos de divulgação científica e selecionar fontes confiáveis.' },
+    { code: 'EM13CNT304', description: 'Analisar situações controversas sobre aplicações da ciência com base em ética e evidências.' },
+    { code: 'EM13CNT305', description: 'Investigar o uso indevido da ciência em processos de discriminação e violação de direitos.' },
+    { code: 'EM13CNT306', description: 'Avaliar riscos em atividades cotidianas e justificar práticas de segurança.' },
+    { code: 'EM13CNT307', description: 'Avaliar propriedades dos materiais para usos seguros e sustentáveis.' },
+    { code: 'EM13CNT308', description: 'Analisar o funcionamento de equipamentos e sistemas tecnológicos.' },
+    { code: 'EM13CNT309', description: 'Analisar a dependência dos recursos fósseis e alternativas energéticas.' },
+    { code: 'EM13CNT310', description: 'Avaliar serviços básicos e propor ações de melhoria da qualidade de vida.' },
+  ],
+};

@@ -14,6 +14,65 @@ export type Database = {
   }
   public: {
     Tables: {
+      schools: {
+        Row: {
+          id: string
+          name: string
+          created_at: string
+          region_id: string | null
+          total_students: number | null
+          permanence: number | null
+          average_grade: number | null
+          attendance: number | null
+          risk_level: string | null
+          teacher_count: number | null
+          teacher_satisfaction: number | null
+          continued_education: number | null
+          infrastructure: Json | null
+          alerts: string[] | null
+        }
+        Insert: {
+          id?: string
+          name: string
+          created_at?: string
+          region_id?: string | null
+          total_students?: number | null
+          permanence?: number | null
+          average_grade?: number | null
+          attendance?: number | null
+          risk_level?: string | null
+          teacher_count?: number | null
+          teacher_satisfaction?: number | null
+          continued_education?: number | null
+          infrastructure?: Json | null
+          alerts?: string[] | null
+        }
+        Update: {
+          id?: string
+          name?: string
+          created_at?: string
+          region_id?: string | null
+          total_students?: number | null
+          permanence?: number | null
+          average_grade?: number | null
+          attendance?: number | null
+          risk_level?: string | null
+          teacher_count?: number | null
+          teacher_satisfaction?: number | null
+          continued_education?: number | null
+          infrastructure?: Json | null
+          alerts?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "schools_region_id_fkey"
+            columns: ["region_id"]
+            isOneToOne: false
+            referencedRelation: "regions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       boletos: {
         Row: {
           created_at: string
@@ -57,6 +116,151 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      daily_attendance: {
+        Row: {
+          class_id: string
+          created_at: string
+          created_by: string | null
+          date: string
+          id: string
+          present_students: Json | null
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          created_by?: string | null
+          date?: string
+          id?: string
+          present_students?: Json | null
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          created_by?: string | null
+          date?: string
+          id?: string
+          present_students?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_attendance_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      climate_surveys: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          feedback: string | null
+          id: string
+          nps_score: number
+          teacher_id: string
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          feedback?: string | null
+          id?: string
+          nps_score: number
+          teacher_id: string
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          feedback?: string | null
+          id?: string
+          nps_score?: number
+          teacher_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "climate_surveys_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "survey_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "climate_surveys_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "teachers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      infrastructure_surveys: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          data: Json
+          id: string
+          school_id: string
+          score: number | null
+          term: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          data?: Json
+          id?: string
+          school_id: string
+          score?: number | null
+          term: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          data?: Json
+          id?: string
+          school_id?: string
+          score?: number | null
+          term?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "infrastructure_surveys_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      survey_campaigns: {
+        Row: {
+          created_at: string
+          end_date: string
+          id: string
+          is_active: boolean | null
+          start_date: string
+          target_role: Database["public"]["Enums"]["app_role"]
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          end_date: string
+          id?: string
+          is_active?: boolean | null
+          start_date: string
+          target_role: Database["public"]["Enums"]["app_role"]
+          title: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string
+          id?: string
+          is_active?: boolean | null
+          start_date?: string
+          target_role?: Database["public"]["Enums"]["app_role"]
+          title?: string
+        }
+        Relationships: []
       }
       class_students: {
         Row: {
@@ -265,6 +469,7 @@ export type Database = {
           created_at: string
           email: string
           full_name: string | null
+          school_id: string | null
           id: string
           updated_at: string
         }
@@ -387,6 +592,7 @@ export type Database = {
           teacher_id: string
           title: string
           updated_at: string
+          type: 'exam' | 'assignment' | 'project' | null
         }
         Insert: {
           class_id: string
@@ -400,6 +606,7 @@ export type Database = {
           teacher_id: string
           title: string
           updated_at?: string
+          type?: 'exam' | 'assignment' | 'project' | null
         }
         Update: {
           class_id?: string
@@ -413,6 +620,7 @@ export type Database = {
           teacher_id?: string
           title?: string
           updated_at?: string
+          type?: 'exam' | 'assignment' | 'project' | null
         }
         Relationships: [
           {

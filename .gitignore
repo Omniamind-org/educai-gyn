@@ -27,3 +27,21 @@ dist-ssr
 .env
 .env.*
 !.env.example
+
+# OS specific files
+.Thumbs.db
+Thumbs.db
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+
+# Testing
+coverage/
+
+# Tools & Cache
+.eslintcache
+*.tsbuildinfo
+
+# Supabase Local
+supabase/.branches
+supabase/.temp

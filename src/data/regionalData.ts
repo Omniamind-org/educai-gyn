@@ -12,10 +12,8 @@ export interface SchoolUnit {
   teachers: number;
   teacherSatisfaction: number;
   continuedEducation: number;
-  infrastructure: {
-    library: { books: number; status: 'active' | 'maintenance' };
-    lab: { machines: number; status: 'active' | 'maintenance' };
-  };
+  infrastructure: any;
+  infrastructure_score?: number; // Added field because of new migration
   academicPerformance: {
     math: number;
     languages: number;
@@ -42,6 +40,7 @@ export const mockSchools: SchoolUnit[] = [
       library: { books: 2500, status: 'active' },
       lab: { machines: 20, status: 'maintenance' },
     },
+    infrastructure_score: 85,
     academicPerformance: {
       math: 8.5,
       languages: 9.0,
@@ -66,6 +65,7 @@ export const mockSchools: SchoolUnit[] = [
       library: { books: 1800, status: 'active' },
       lab: { machines: 15, status: 'active' },
     },
+    infrastructure_score: 72,
     academicPerformance: {
       math: 6.8,
       languages: 7.5,
@@ -90,6 +90,7 @@ export const mockSchools: SchoolUnit[] = [
       library: { books: 1200, status: 'maintenance' },
       lab: { machines: 10, status: 'maintenance' },
     },
+    infrastructure_score: 45,
     academicPerformance: {
       math: 5.8,
       languages: 6.5,
@@ -114,6 +115,7 @@ export const mockSchools: SchoolUnit[] = [
       library: { books: 4000, status: 'active' },
       lab: { machines: 35, status: 'active' },
     },
+    infrastructure_score: 95,
     academicPerformance: {
       math: 8.9,
       languages: 9.2,

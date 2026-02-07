@@ -390,4 +390,4 @@ chore: update Dockerfile to node:22 and improve README documentation
 
 ---
 
-**Desenvolvido por Omni Mind** - *Transformando Educação com Dados.*
+**Desenvolvido por Omnia Mind** - *Transformando Educação com Dados.*

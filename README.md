@@ -126,25 +126,61 @@ supabase/
 ## Diagrama de Arquitetura
 
 ```mermaid
-graph TD
-    Client["Client-Side (React)"] -->|Data/Auth| Supabase["Supabase Platform"]
-    Client -->|AI Requests| Edge["Edge Functions"]
-    
-    subgraph Data Layer
-    Supabase -->|Auth| Auth["GoTrue"]
-    Supabase -->|Database| DB[("PostgreSQL")]
-    Supabase -->|Storage| Storage["S3 Buckets"]
-    end
-    
-    subgraph AI Layer
-    Edge -->|Prompt Engineering| OpenAI["LLM Provider"]
-    Edge -->|Context| DB
+graph TB
+    subgraph Users ["Perfis de Usuário"]
+        Regional["Secretaria Regional"]
+        Director["Diretor"]
+        Coordinator["Coordenador"]
+        Teacher["Professor"]
+        Student["Aluno"]
+        Secretary["Secretário"]
     end
 
-    subgraph Security Layer
-    DB -->|RLS Policies| Roles["Roles: Manager, Director, Teacher"]
+    subgraph Frontend ["Frontend (Hostinger)"]
+        React["React 18 + TypeScript"]
+        Components["Components / Hooks / Services"]
     end
+
+    subgraph Backend ["Backend (Supabase)"]
+        Auth["Auth (GoTrue)"]
+        DB[("PostgreSQL 16")]
+        Storage["Storage (S3)"]
+        Edge["Edge Functions (Deno)"]
+    end
+
+    subgraph AI ["Camada de IA"]
+        LLM["OpenAI GPT-4o"]
+    end
+
+    subgraph Security ["Segurança"]
+        RLS["Row Level Security"]
+    end
+
+    Regional --> React
+    Director --> React
+    Coordinator --> React
+    Teacher --> React
+    Student --> React
+    Secretary --> React
+
+    React --> Components
+    Components --> Auth
+    Components --> DB
+    Components --> Edge
+
+    Edge --> LLM
+    Edge --> DB
+
+    DB --> RLS
+    RLS --> |"Isolamento por Perfil"| DB
 ```
+
+**Legenda:**
+- **Users:** Diferentes perfis com dashboards específicos
+- **Frontend:** Aplicação React hospedada na Hostinger
+- **Backend:** Supabase gerenciando auth, banco e storage
+- **AI:** Edge Functions conectando à OpenAI para funcionalidades de IA
+- **Security:** RLS garantindo isolamento de dados por perfil
 
 ---
 

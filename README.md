@@ -172,10 +172,10 @@ flowchart TB
     %% Backend
     subgraph Backend ["Backend - Supabase"]
         direction TB
+        Edge["Edge Functions - Deno"]
+        Storage["Storage - S3"]
         Auth["Auth - GoTrue"]
         DB[("PostgreSQL 16")]
-        Storage["Storage - S3"]
-        Edge["Edge Functions - Deno"]
     end
 
     %% AI Layer

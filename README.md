@@ -10,12 +10,30 @@
 
 ---
 
+## Índice
+
+- [Proposta de Valor](#proposta-de-valor)
+- [Arquitetura do Sistema](#arquitetura-do-sistema)
+- [Stack Tecnológica](#stack-tecnológica)
+- [Estrutura do Projeto](#estrutura-do-projeto)
+- [Diagrama de Arquitetura](#diagrama-de-arquitetura)
+- [Instalação e Execução Local](#instalação-e-execução-local)
+- [Primeiros Passos](#primeiros-passos-ambiente-de-desenvolvimento)
+- [Segurança e Privacidade](#segurança-e-privacidade)
+- [Contribuindo](#contribuindo)
+- [Scripts Disponíveis](#scripts-disponíveis)
+
+---
+
 ## Proposta de Valor
 
 Diferente dos sistemas acadêmicos legados (ERP), o Aprendu foca em **Analytics e Sucesso do Aluno**:
-*   **Predictive Analytics:** Identificação precoce de risco de evasão escolar.
-*   **Gestão de Infraestrutura:** Monitoramento centralizado da saúde física de multiplas unidades escolares.
-*   **Eficiência Operacional:** Automação de Censo, Chamada e Planejamento de Aulas com IA.
+
+| Pilar | Descrição |
+|-------|-----------|
+| **Predictive Analytics** | Identificação precoce de risco de evasão escolar |
+| **Gestão de Infraestrutura** | Monitoramento centralizado da saúde física de múltiplas unidades escolares |
+| **Eficiência Operacional** | Automação de Censo, Chamada e Planejamento de Aulas com IA |
 
 ---
 
@@ -25,24 +43,45 @@ O sistema opera sob o princípio de *"Single Source of Truth"* (Fonte Única da 
 
 ### Módulos Principais
 
-#### 1. Dashboard Regional (Secretaria de Educação)
+<details>
+<summary><strong>Dashboard Regional (Secretaria de Educação)</strong></summary>
+
 *Visão macroestratégica para gestores públicos.*
-*   **Intelligent Copilot:** Assistente de IA que gera relatórios executivos sobre dados da rede.
-*   **Infrastructure Score:** Monitoramento em tempo real das condições físicas das escolas (Gauge Charts).
-*   **Heatmaps de Desempenho:** Visualização geográfica de déficits de aprendizagem por região.
-*   **Campanhas de Clima:** Gestão de pesquisas de satisfação (NPS) em larga escala.
 
-#### 2. Portal do Diretor (Gestão Escolar)
+| Funcionalidade | Descrição |
+|----------------|-----------|
+| Intelligent Copilot | Assistente de IA que gera relatórios executivos sobre dados da rede |
+| Infrastructure Score | Monitoramento em tempo real das condições físicas das escolas |
+| Heatmaps de Desempenho | Visualização geográfica de déficits de aprendizagem por região |
+| Campanhas de Clima | Gestão de pesquisas de satisfação (NPS) em larga escala |
+
+</details>
+
+<details>
+<summary><strong>Portal do Diretor (Gestão Escolar)</strong></summary>
+
 *Ferramentas táticas para a liderança da unidade.*
-*   **Gestão Financeira:** Controle de Obras, Reformas e Orçamento (Visual Enterprise).
-*   **Censo Automatizado:** Fluxo de inventário integrado que calcula automaticamente a nota de infraestrutura da escola.
-*   **Monitoramento de Turmas:** Acompanhamento de frequência e desempenho por série.
 
-#### 3. Painel do Professor (Sala de Aula)
+| Funcionalidade | Descrição |
+|----------------|-----------|
+| Gestão Financeira | Controle de Obras, Reformas e Orçamento |
+| Censo Automatizado | Fluxo de inventário integrado que calcula a nota de infraestrutura |
+| Monitoramento de Turmas | Acompanhamento de frequência e desempenho por série |
+
+</details>
+
+<details>
+<summary><strong>Painel do Professor (Sala de Aula)</strong></summary>
+
 *Produtividade e foco no ensino.*
-*   **Chamada Digital:** Registro rápido de presença com cálculo automático de risco de evasão.
-*   **Planejador de Aulas com IA:** Geração automática de roteiros de aula alinhados à BNCC.
-*   **Análise de Progresso:** Feedback visual sobre o desempenho individual de cada aluno.
+
+| Funcionalidade | Descrição |
+|----------------|-----------|
+| Chamada Digital | Registro rápido de presença com cálculo automático de risco de evasão |
+| Planejador de Aulas com IA | Geração automática de roteiros de aula alinhados à BNCC |
+| Análise de Progresso | Feedback visual sobre o desempenho individual de cada aluno |
+
+</details>
 
 ---
 
@@ -129,20 +168,27 @@ npm install
 npm run dev
 ```
 
-### Configuração do Banco de Dados (Supabase)
+<details>
+<summary><strong>Configuração do Banco de Dados (Supabase)</strong></summary>
 
 O projeto utiliza Supabase como backend. Para replicar o ambiente:
+
 1. Crie um projeto no [Supabase Dashboard](https://supabase.com/dashboard)
 2. Copie as chaves para o arquivo `.env`
 3. Execute os scripts SQL localizados em `supabase/migrations` no Editor SQL do Supabase (ordem cronológica)
 
-### Edge Functions (IA)
+</details>
+
+<details>
+<summary><strong>Edge Functions (IA)</strong></summary>
 
 Para testar as funcionalidades de IA (Copilot), certifique-se de que as funções estão deployadas ou rodando localmente:
 
 ```bash
 supabase functions serve
 ```
+
+</details>
 
 ---
 
@@ -163,10 +209,13 @@ VALUES ('USER_UUID', 'dev@local', 'regional_manager', 'Dev Admin');
 
 ## Segurança e Privacidade
 
-O projeto implementa **Row Level Security (RLS)** no banco de dados, garantindo que:
-*   Professores acessam apenas suas turmas.
-*   Diretores acessam apenas sua escola.
-*   Gestores Regionais têm visão agregada (anonimizada onde necessário).
+O projeto implementa **Row Level Security (RLS)** no banco de dados:
+
+| Perfil | Acesso |
+|--------|--------|
+| Professor | Apenas suas turmas |
+| Diretor | Apenas sua escola |
+| Gestor Regional | Visão agregada (anonimizada onde necessário) |
 
 ---
 
@@ -174,32 +223,58 @@ O projeto implementa **Row Level Security (RLS)** no banco de dados, garantindo 
 
 ### Branches
 
-| Branch | Propósito |
-|--------|-----------|
+| Prefixo | Propósito |
+|---------|-----------|
 | `main` | Produção estável |
-| `develop` | Desenvolvimento ativo |
-| `feature/*` | Novas funcionalidades |
-| `refactor/*` | Melhorias de código |
+| `feat/*` | Novas funcionalidades |
+| `feature/*` | Novas funcionalidades (alternativo) |
+| `refactor/*` | Melhorias de código e organização |
 | `fix/*` | Correções de bugs |
 
 ### Padrão de Commits
 
-Utilizamos [Conventional Commits](https://www.conventionalcommits.org/):
+Utilizamos [Conventional Commits](https://www.conventionalcommits.org/). O formato é:
 
 ```
-feat: adiciona novo componente de gráfico
-fix: corrige cálculo de média
-refactor: modulariza Dashboard do Diretor
-docs: atualiza README
-chore: atualiza dependências
+<tipo>: <descrição curta>
 ```
+
+**Tipos disponíveis:**
+
+| Tipo | Quando usar |
+|------|-------------|
+| `feat` | Nova funcionalidade para o usuário |
+| `fix` | Correção de bug |
+| `refactor` | Reestruturação de código sem mudar comportamento |
+| `docs` | Alterações em documentação |
+| `chore` | Tarefas de manutenção (deps, configs) |
+| `style` | Formatação, espaços, ponto-e-vírgula |
+| `test` | Adição ou correção de testes |
+
+<details>
+<summary><strong>Exemplos reais deste projeto</strong></summary>
+
+```bash
+# Refatoração de componentes
+refactor: modularize Coordinator Dashboard (service/mock, hook, components)
+refactor: modularize Secretary Dashboard (service, hook, components)
+refactor: modularize Student Dashboard (extract views to components)
+
+# Correção de bugs
+fix: update chat-ai model to gpt-4o-mini and cleanup imports
+
+# Manutenção
+chore: update Dockerfile to node:22 and improve README documentation
+```
+
+</details>
 
 ### Pull Requests
 
-1. Crie uma branch a partir de `develop`
+1. Crie uma branch a partir de `main`
 2. Faça suas alterações
 3. Execute `npm run build` e `npm run lint`
-4. Abra um PR para `develop` com descrição clara
+4. Abra um PR para `main` com descrição clara
 
 ---
 

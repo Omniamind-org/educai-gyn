@@ -214,6 +214,7 @@ flowchart TB
     %% Frontend to Backend
     Services --> Auth
     Services --> DB
+    Services --> Storage
     Services --> Edge
 
     %% AI connections

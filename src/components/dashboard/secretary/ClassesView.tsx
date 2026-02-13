@@ -54,8 +54,8 @@ export function ClassesView() {
 
   const fetchSelectionLists = async () => {
     const [studentsRes, teachersRes] = await Promise.all([
-      supabase.from("students").select("id, name").eq("status", "ativo"),
-      supabase.from("teachers").select("id, name").eq("status", "ativo")
+      supabase.from("students").select("id, name").in("status", ["ativo", "active"]),
+      supabase.from("teachers").select("id, name").in("status", ["ativo", "active"])
     ]);
     setAllStudents(studentsRes.data || []);
     setAllTeachers(teachersRes.data || []);

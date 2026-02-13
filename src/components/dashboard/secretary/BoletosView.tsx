@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DatePicker } from "@/components/ui/date-picker";
 
 interface Boleto {
   id: string;
@@ -293,11 +294,11 @@ export function BoletosView() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="due_date">Vencimento *</Label>
-                <Input
+                <DatePicker
                   id="due_date"
-                  type="date"
                   value={newBoleto.due_date}
-                  onChange={(e) => setNewBoleto({ ...newBoleto, due_date: e.target.value })}
+                  onChange={(value) => setNewBoleto({ ...newBoleto, due_date: value })}
+                  placeholder="DD/MM/AAAA"
                 />
               </div>
 

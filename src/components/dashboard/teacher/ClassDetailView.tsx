@@ -38,6 +38,7 @@ import {
 } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { DatePicker } from '@/components/ui/date-picker';
 
 interface Student {
   id: string;
@@ -608,11 +609,11 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="task-due-date">Data de Entrega</Label>
-                  <Input
+                  <DatePicker
                     id="task-due-date"
-                    type="date"
                     value={newTask.due_date}
-                    onChange={(e) => setNewTask(prev => ({ ...prev, due_date: e.target.value }))}
+                    onChange={(value) => setNewTask(prev => ({ ...prev, due_date: value }))}
+                    placeholder="DD/MM/AAAA"
                   />
                 </div>
               </div>
@@ -873,11 +874,11 @@ export function ClassDetailView({ classData, teacherId, onBack }: ClassDetailVie
               </div>
               <div className="space-y-2">
                 <Label htmlFor="edit-task-due-date">Data de Entrega</Label>
-                <Input
+                <DatePicker
                   id="edit-task-due-date"
-                  type="date"
                   value={editTask.due_date}
-                  onChange={(e) => setEditTask(prev => ({ ...prev, due_date: e.target.value }))}
+                  onChange={(value) => setEditTask(prev => ({ ...prev, due_date: value }))}
+                  placeholder="DD/MM/AAAA"
                 />
               </div>
             </div>

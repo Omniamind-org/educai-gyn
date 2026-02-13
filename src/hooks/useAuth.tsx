@@ -117,12 +117,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string): Promise<SignInResult> => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    let error: Error | null = null;
+    try {
+      const result = await supabase.auth.signInWithPassword({ email, password });
+      error = result.error;
+    } catch (err) {
+      error = err instanceof Error ? err : new Error('Erro de conexão');
+    }
 
     if (error) {
+      const isNetworkError = error.message === 'Failed to fetch' || error.message?.includes('NetworkError');
       toast({
         title: 'Erro ao entrar',
-        description: error.message,
+        description: isNetworkError
+          ? 'Sem conexão com o servidor. Confira o .env (VITE_SUPABASE_URL e chave), reinicie o npm run dev e tente de novo.'
+          : error.message,
         variant: 'destructive',
       });
       return { error };

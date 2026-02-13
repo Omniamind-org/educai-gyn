@@ -404,7 +404,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: "gpt-5-nano",
         messages: [
           { role: "system", content: fullSystemPrompt },
           ...validatedMessages.map((m: { role: string; content: string }) => ({
@@ -419,7 +419,14 @@ serve(async (req) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error("OpenAI API error:", response.status, errorText);
-      throw new Error(`OpenAI API error: ${response.status}`);
+      let errDetail = errorText;
+      try {
+        const errJson = JSON.parse(errorText);
+        errDetail = errJson?.error?.message || errJson?.error || errorText;
+      } catch {
+        // keep errorText
+      }
+      throw new Error(errDetail.slice(0, 200));
     }
 
     const data = await response.json();

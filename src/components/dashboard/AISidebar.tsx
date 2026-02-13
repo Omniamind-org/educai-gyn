@@ -116,26 +116,40 @@ export function AISidebar() {
         },
       });
 
+      const getErrorMsg = (): string => {
+        if (data?.error && typeof data.error === 'string') return data.error;
+        if (data?.error && typeof data.error === 'object' && (data.error as { message?: string }).message) return (data.error as { message: string }).message;
+        if (error && typeof error === 'object') {
+          const err = error as { message?: string; context?: { body?: { error?: string } }; status?: number };
+          if (err.context?.body?.error) return String(err.context.body.error);
+          if (err.message) return err.message;
+          if (err.status) return `Erro HTTP ${err.status}`;
+        }
+        return 'Falha na conexão. Confira se OPENAI_API_KEY está configurada no Supabase (Settings > Edge Functions > Secrets) e se a função chat-ai foi deployada.';
+      };
+
       if (error) {
-        // Check for authentication errors
-        if (error.message?.includes('401') || error.message?.includes('Invalid JWT') || error.message?.includes('Unauthorized')) {
+        const errStr = typeof error === 'object' && error !== null && 'message' in error ? String((error as { message: string }).message) : String(error);
+        if (errStr.includes('401') || errStr.includes('Invalid JWT') || errStr.includes('Unauthorized')) {
           toast({
             title: 'Sessão expirada',
             description: 'Por favor, faça login novamente.',
             variant: 'destructive',
           });
-          // Clear invalid local session (server may already have removed it)
           try {
             await supabase.auth.signOut({ scope: 'local' });
           } catch {
             // ignore
           }
-          return;
+          throw new Error('Sessão expirada');
         }
-        throw new Error(error.message);
+        throw new Error(getErrorMsg());
       }
 
-      // Check if response contains document markers
+      if (!data?.message) {
+        throw new Error(getErrorMsg());
+      }
+
       const isDocument = data.message.includes('<document>') || data.message.includes('[DOCUMENTO]');
 
       const aiResponse: ChatMessage = {
@@ -146,19 +160,22 @@ export function AISidebar() {
       };
 
       setMessages((prev) => [...prev, aiResponse]);
-    } catch (error) {
-      console.error('Error calling AI:', error);
+    } catch (e) {
+      console.error('Error calling AI:', e);
+      let errMsg = 'Falha na conexão com a IA.';
+      if (e instanceof Error && e.message) errMsg = e.message;
+      else if (e && typeof e === 'object' && 'message' in e) errMsg = String((e as { message: unknown }).message);
+      else if (typeof e === 'string') errMsg = e;
       toast({
         title: 'Erro ao conectar com IA',
-        description: error instanceof Error ? error.message : 'Tente novamente',
+        description: errMsg,
         variant: 'destructive',
       });
 
-      // Add error message to chat
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: '❌ Desculpe, ocorreu um erro ao processar sua mensagem. Por favor, tente novamente.',
+        content: `❌ Erro: ${errMsg}\n\nTente novamente ou reduza o tamanho do texto.`,
       };
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
@@ -234,7 +251,7 @@ export function AISidebar() {
           </div>
           <div>
             <h2 className="font-semibold text-sidebar-foreground">IA Assistente</h2>
-            <p className="text-xs text-muted-foreground">Powered by GPT-4o Mini</p>
+            <p className="text-xs text-muted-foreground">Powered by GPT-5 Nano</p>
           </div>
         </div>
 

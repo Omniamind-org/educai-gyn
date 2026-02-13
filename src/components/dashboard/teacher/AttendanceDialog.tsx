@@ -5,6 +5,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Loader2, Calendar as CalendarIcon, Save, CheckSquare, Square } from 'lucide-react';
+import { DatePicker } from '@/components/ui/date-picker';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
@@ -136,12 +137,12 @@ export function AttendanceDialog({ open, onOpenChange, classId, className, stude
           {/* Date Selector */}
           <div className="flex items-center gap-2">
             <Label htmlFor="attendance-date" className="w-20">Data:</Label>
-            <input 
+            <DatePicker
               id="attendance-date"
-              type="date" 
-              value={date} 
-              onChange={(e) => setDate(e.target.value)}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              value={date}
+              onChange={setDate}
+              placeholder="DD/MM/AAAA"
+              className="flex-1"
             />
           </div>
 

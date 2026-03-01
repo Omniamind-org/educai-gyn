@@ -1,0 +1,49 @@
+name: migrations-guard
+
+on:
+  pull_request:
+    branches: [develop, main]
+    paths:
+      - "supabase/migrations/**"
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate migrations naming + duplicates
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd supabase/migrations
+
+          # lista .sql
+          files=$(ls -1 *.sql 2>/dev/null || true)
+          if [[ -z "${files}" ]]; then
+            echo "No migrations found."
+            exit 0
+          fi
+
+          # valida prefixo timestamp (14 digitos) OU padrão usado no repo (algumas têm texto após)
+          bad=0
+          while IFS= read -r f; do
+            if [[ ! "$f" =~ ^[0-9]{14}_.+\.sql$ ]]; then
+              echo "Bad migration filename: $f"
+              bad=1
+            fi
+          done <<< "$files"
+          if [[ $bad -eq 1 ]]; then
+            exit 1
+          fi
+
+          # checa timestamps duplicados
+          stamps=$(echo "$files" | sed -E 's/^([0-9]{14}).*/\1/' | sort)
+          dups=$(echo "$stamps" | uniq -d || true)
+          if [[ -n "$dups" ]]; then
+            echo "Duplicate migration timestamps found:"
+            echo "$dups"
+            exit 1
+          fi
+
+          echo "Migrations OK."

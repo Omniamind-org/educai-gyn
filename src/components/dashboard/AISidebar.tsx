@@ -63,6 +63,14 @@ const INITIAL_MESSAGES: Record<string, ChatMessage[]> = {
         "Bom dia! 🏫 Posso ajudar com gestão escolar, gerar documentos formais ou analisar indicadores. O que precisa hoje?",
     },
   ],
+  secretaria: [
+    {
+      id: "1",
+      role: "assistant",
+      content:
+        "Olá! 👋 Estou aqui para auxiliar na gestão administrativa. Posso ajudar a localizar informações, alocar ou alterar professores em turmas. O que deseja fazer?",
+    },
+  ],
 };
 
 export function AISidebar() {
@@ -249,7 +257,7 @@ export function AISidebar() {
   };
 
   // Expose addAIMessage and sendUserMessage to window for external triggers
-   
+
   useEffect(() => {
     (window as unknown as Record<string, unknown>).addAIMessage = addAIMessage;
     (window as unknown as Record<string, unknown>).sendUserMessage =

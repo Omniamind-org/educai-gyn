@@ -1,5 +1,11 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Users, GraduationCap, BookOpen, Bookmark, FileText } from "lucide-react";
+import {
+  Users,
+  GraduationCap,
+  BookOpen,
+  Bookmark,
+  FileText,
+} from "lucide-react";
 import { DisciplinesTab } from "./secretary/DisciplinesTab";
 import { StudentsView } from "./secretary/StudentsView";
 import { TeachersView } from "./secretary/TeachersView";
@@ -7,6 +13,7 @@ import { ClassesView } from "./secretary/ClassesView";
 import { BoletosView } from "./secretary/BoletosView";
 import { SecretaryStatsGrid } from "./secretary/SecretaryStatsGrid";
 import { CredentialsDialog } from "./secretary/CredentialsDialog";
+import { ChangeTeacherAgentDialog } from "./secretary/ChangeTeacherAgentDialog";
 import { useSecretaryDashboard } from "@/hooks/dashboard/useSecretaryDashboard";
 
 export function SecretaryDashboard() {
@@ -17,7 +24,7 @@ export function SecretaryDashboard() {
     newCredentials,
     copied,
     handleCredentialsCreated,
-    copyToClipboard
+    copyToClipboard,
   } = useSecretaryDashboard();
 
   return (
@@ -25,7 +32,9 @@ export function SecretaryDashboard() {
       {/* Header */}
       <div>
         <h2 className="text-2xl font-bold text-foreground">Secretaria</h2>
-        <p className="text-muted-foreground">Gerencie alunos, professores, turmas e boletos</p>
+        <p className="text-muted-foreground">
+          Gerencie alunos, professores, turmas e boletos
+        </p>
       </div>
 
       {/* Stats Cards */}
@@ -80,13 +89,14 @@ export function SecretaryDashboard() {
       </Tabs>
 
       {/* Credentials Dialog */}
-      <CredentialsDialog 
+      <CredentialsDialog
         isOpen={showCredentials}
         onOpenChange={setShowCredentials}
         credentials={newCredentials}
         onCopy={copyToClipboard}
         copiedState={copied}
       />
+      <ChangeTeacherAgentDialog />
     </div>
   );
 }

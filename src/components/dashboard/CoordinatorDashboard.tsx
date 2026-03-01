@@ -3,7 +3,14 @@ import { CoordinatorStatsCards } from "./coordinator/CoordinatorStatsCards";
 import { LessonPlansTable } from "./coordinator/LessonPlansTable";
 
 export function CoordinatorDashboard() {
-  const { lessonPlans, stats, loading, handleCompetenceClick } = useCoordinatorDashboard();
+  const {
+    lessonPlans,
+    stats,
+    loading,
+    handleCompetenceClick,
+    handleStatusUpdate,
+    handleBulkStatusUpdate
+  } = useCoordinatorDashboard();
 
   return (
     <div className="space-y-6">
@@ -11,10 +18,12 @@ export function CoordinatorDashboard() {
       <CoordinatorStatsCards stats={stats} />
 
       {/* Radar BNCC Table */}
-      <LessonPlansTable 
-        plans={lessonPlans} 
-        loading={loading} 
-        onCompetenceClick={handleCompetenceClick} 
+      <LessonPlansTable
+        plans={lessonPlans}
+        loading={loading}
+        onCompetenceClick={handleCompetenceClick}
+        onStatusUpdate={handleStatusUpdate}
+        onBulkStatusUpdate={handleBulkStatusUpdate}
       />
     </div>
   );

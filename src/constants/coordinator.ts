@@ -51,6 +51,26 @@ export const LESSON_PLANS: LessonPlan[] = [
     bnccScore: 55,
     missingCompetence: 'EF09GE02',
   },
+  {
+    id: 6,
+    teacher: 'Ricardo Gomes',
+    subject: 'Física',
+    topic: 'Termodinâmica',
+    grade: '2º Ano',
+    status: 'pending',
+    bnccScore: 45,
+    missingCompetence: 'EM13CNT101',
+  },
+  {
+    id: 7,
+    teacher: 'Fernanda Lima',
+    subject: 'Artes',
+    topic: 'Vanguardas Europeias',
+    grade: '1º Ano',
+    status: 'pending',
+    bnccScore: 68,
+    missingCompetence: 'EM13LGG601',
+  },
 ];
 
 export const COMPETENCE_EXPLANATIONS: Record<string, string> = {

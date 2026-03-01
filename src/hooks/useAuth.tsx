@@ -83,14 +83,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(session?.user ?? null);
 
       if (session?.user) {
+        console.log("User detected, fetching role for:", session.user.email);
         setRoleLoading(true);
         setTimeout(async () => {
-          const ensuredRole = await ensureUserRole(session.user);
-          setRole(ensuredRole);
-          setRoleLoading(false);
-          setLoading(false);
+          try {
+            const ensuredRole = await ensureUserRole(session.user);
+            console.log("Role ensured:", ensuredRole);
+            setRole(ensuredRole);
+          } catch (e) {
+            console.error("Error ensuring role:", e);
+          } finally {
+            setRoleLoading(false);
+            setLoading(false);
+          }
         }, 0);
       } else {
+        console.log("No user session.");
         setRole(null);
         setRoleLoading(false);
         setLoading(false);
@@ -102,13 +110,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(session?.user ?? null);
 
       if (session?.user) {
+        console.log("Initial session user:", session.user.email);
         setRoleLoading(true);
         ensureUserRole(session.user).then((ensuredRole) => {
+          console.log("Initial role ensured:", ensuredRole);
           setRole(ensuredRole);
+        }).catch(err => {
+          console.error("Error ensuring initial role:", err);
+        }).finally(() => {
           setRoleLoading(false);
           setLoading(false);
         });
       } else {
+        console.log("No initial session.");
         setLoading(false);
       }
     });

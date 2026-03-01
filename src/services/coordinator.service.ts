@@ -22,4 +22,20 @@ export class CoordinatorService {
 
     return { total, approved, pending };
   }
+
+  /**
+   * Updates a lesson plan status. Simulates API call.
+   */
+  static async updateStatus(planId: number, status: 'approved' | 'pending'): Promise<boolean> {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    return true;
+  }
+
+  /**
+   * Updates multiple lesson plans status. Simulates API call.
+   */
+  static async bulkUpdateStatus(planIds: number[], status: 'approved' | 'pending'): Promise<boolean> {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return true;
+  }
 }

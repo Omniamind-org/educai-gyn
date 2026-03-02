@@ -93,9 +93,11 @@ REGRAS DE NEGÓCIO:
    - "Evolução histórica", "Tendência" -> TREND_MONITORING
    - "Desigualdade", "Gaps" -> EQUITY_GAP
    - "Onde focar?", "Escolas críticas" -> INTERVENTION_TARGETING
-   - Perguntas gerais -> GENERAL_QUERY (decision: NO_DASHBOARD)
+   - "Panorama", "Visão geral", "Resumo" -> PERFORMANCE_COMPARE (decision: CREATE_DASHBOARD)
+   - Saudações e perguntas fora do escopo de dados da rede -> GENERAL_QUERY (decision: NO_DASHBOARD)
 
 2. CRIAÇÃO DE DASHBOARD (CREATE_DASHBOARD):
+   - SEMPRE prefira gerar um dashboard se a pergunta envolver métricas, status, escolas, alunos ou visão geral.
    - Se o usuário pedir uma análise visual, crie um dashboard.
    - Use no MÁXIMO 2 widgets por dashboard para manter a clareza.
    - Widgets permitidos:

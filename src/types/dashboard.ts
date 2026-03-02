@@ -3,42 +3,42 @@
 // ==========================================
 
 // Intenções gerenciais que o agente pode classificar
-export type ManagerialIntent = 
-  | 'PERFORMANCE_COMPARE'     // Comparação de desempenho entre escolas/regiões
-  | 'COMPLIANCE_DELAY'        // Atrasos em entregas/conformidade
-  | 'TREND_MONITORING'        // Monitoramento de tendências temporais
-  | 'EQUITY_GAP'              // Análise de equidade e gaps
-  | 'INTERVENTION_TARGETING'  // Identificação de alvos para intervenção
-  | 'GENERAL_QUERY';          // Consulta geral sem dashboard
+export type ManagerialIntent =
+  | "PERFORMANCE_COMPARE" // Comparação de desempenho entre escolas/regiões
+  | "COMPLIANCE_DELAY" // Atrasos em entregas/conformidade
+  | "TREND_MONITORING" // Monitoramento de tendências temporais
+  | "EQUITY_GAP" // Análise de equidade e gaps
+  | "INTERVENTION_TARGETING" // Identificação de alvos para intervenção
+  | "GENERAL_QUERY"; // Consulta geral sem dashboard
 
 // Decisões que o agente pode tomar sobre dashboards
-export type DashboardDecision = 
-  | 'NO_DASHBOARD'        // Não requer dashboard
-  | 'UPDATE_DASHBOARD'    // Atualizar dashboard existente
-  | 'CREATE_DASHBOARD'    // Criar novo dashboard
-  | 'MERGE_DASHBOARDS';   // Combinar dashboards existentes
+export type DashboardDecision =
+  | "NO_DASHBOARD" // Não requer dashboard
+  | "UPDATE_DASHBOARD" // Atualizar dashboard existente
+  | "CREATE_DASHBOARD" // Criar novo dashboard
+  | "MERGE_DASHBOARDS"; // Combinar dashboards existentes
 
 // Tipos de widgets primitivos permitidos
-export type WidgetType = 
-  | 'RankedTable'
-  | 'KPIGrid'
-  | 'HeatmapRegion'
-  | 'TimeSeries'
-  | 'StatusSLA'
-  | 'Distribution';
+export type WidgetType =
+  | "RankedTable"
+  | "KPIGrid"
+  | "HeatmapRegion"
+  | "TimeSeries"
+  | "StatusSLA"
+  | "Distribution";
 
 // View mode dos widgets
-export type WidgetViewMode = 'table' | 'chart' | 'cards';
+export type WidgetViewMode = "table" | "chart" | "cards";
 
 // Configuração de coluna para tabelas
 export interface TableColumn {
   key: string;
   label: string;
-  type: 'text' | 'number' | 'badge' | 'progress' | 'trend';
+  type: "text" | "number" | "badge" | "progress" | "trend";
   format?: string;
   badgeConfig?: {
     [value: string]: {
-      variant: 'success' | 'warning' | 'danger' | 'info' | 'default';
+      variant: "success" | "warning" | "danger" | "info" | "default";
       label: string;
     };
   };
@@ -65,12 +65,12 @@ export interface WidgetConfig {
   columns?: TableColumn[];
   data: WidgetData;
   sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
+  sortOrder?: "asc" | "desc";
   limit?: number;
   highlight?: {
-    condition: 'top' | 'bottom' | 'threshold';
+    condition: "top" | "bottom" | "threshold";
     value: number;
-    color: 'success' | 'warning' | 'danger';
+    color: "success" | "warning" | "danger";
   };
 }
 
@@ -89,14 +89,14 @@ export interface DashboardConfig {
   subtitle?: string;
   createdAt: string;
   intent: ManagerialIntent;
-  viewMode: 'executive' | 'operational';
+  viewMode: "executive" | "operational";
   filters: GlobalFilters;
   widgets: WidgetConfig[];
   axes: {
-    entity?: string;      // escola, região, aluno
-    time?: string;        // período, ano
-    metric?: string;      // nota, permanência, etc
-    region?: string;      // região específica
+    entity?: string; // escola, região, aluno
+    time?: string; // período, ano
+    metric?: string; // nota, permanência, etc
+    region?: string; // região específica
   };
 }
 
@@ -113,7 +113,7 @@ export interface EduGovResponseV2 {
 
 // JSON Patch para atualizações incrementais
 export interface JsonPatch {
-  op: 'add' | 'remove' | 'replace' | 'move' | 'copy';
+  op: "add" | "remove" | "replace" | "move" | "copy";
   path: string;
   value?: unknown;
   from?: string;
@@ -122,8 +122,9 @@ export interface JsonPatch {
 // Mensagem do chat
 export interface ChatMessage {
   id: string;
-  role: 'user' | 'assistant' | 'system';
+  role: "user" | "assistant" | "system";
   content: string;
+  rawContent?: string;
   timestamp: string;
   dashboardId?: string;
   intent?: ManagerialIntent;
@@ -148,9 +149,9 @@ export interface SchoolMetrics {
   mathGrade: number;
   portugueseGrade: number;
   scienceGrade: number;
-  riskLevel: 'stable' | 'alert' | 'critical';
+  riskLevel: "stable" | "alert" | "critical";
   engagement: number;
-  submissionStatus: 'on_time' | 'delayed' | 'pending';
+  submissionStatus: "on_time" | "delayed" | "pending";
   trend: number;
 }
 

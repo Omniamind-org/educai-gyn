@@ -134,81 +134,105 @@ export function AISidebar() {
       // Build context based on role - use centralized student data
       const context = role === "aluno" ? STUDENT_CONTEXT : undefined;
 
-      const { data, error } = await supabase.functions.invoke("chat-ai", {
-        body: {
-          messages: apiMessages,
-          role: role,
-          persona: aiPersona,
-          context,
-        },
-      });
+      let invokeResult: { data: any; error: any };
+      try {
+        invokeResult = await supabase.functions.invoke("chat-ai", {
+          body: {
+            messages: apiMessages,
+            role: role,
+            persona: aiPersona,
+            context,
+          },
+        });
+      } catch (invokeErr) {
+        console.error("[chat-ai] INVOKE THREW:", invokeErr);
+        throw new Error(`Erro na chamada: ${invokeErr instanceof Error ? invokeErr.message : String(invokeErr)}`);
+      }
 
-      const getErrorMsg = (): string => {
-        if (data?.error && typeof data.error === "string") return data.error;
-        if (
-          data?.error &&
-          typeof data.error === "object" &&
-          (data.error as { message?: string }).message
-        )
-          return (data.error as { message: string }).message;
-        if (error && typeof error === "object") {
-          const err = error as {
-            message?: string;
-            context?: { body?: { error?: string } };
-            status?: number;
-          };
-          if (err.context?.body?.error) return String(err.context.body.error);
-          if (err.message) return err.message;
-          if (err.status) return `Erro HTTP ${err.status}`;
-        }
-        return "Falha na conexão. Confira se OPENAI_API_KEY está configurada no Supabase (Settings > Edge Functions > Secrets) e se a função chat-ai foi deployada.";
-      };
+      const { data, error } = invokeResult;
+
+      // Debug detalhado — verifique o Console (F12) para o erro real
+      console.log("[chat-ai] data:", data);
+      console.log("[chat-ai] error:", error);
+      console.log("[chat-ai] data type:", typeof data);
+      console.log("[chat-ai] data?.message exists:", !!data?.message);
 
       if (error) {
-        const errStr =
-          typeof error === "object" && error !== null && "message" in error
-            ? String((error as { message: string }).message)
-            : String(error);
-        if (
-          errStr.includes("401") ||
-          errStr.includes("Invalid JWT") ||
-          errStr.includes("Unauthorized")
-        ) {
-          toast({
-            title: "Sessão expirada",
-            description: "Por favor, faça login novamente.",
-            variant: "destructive",
-          });
-          try {
-            await supabase.auth.signOut({ scope: "local" });
-          } catch {
-            // ignore
-          }
-          throw new Error("Sessão expirada");
+        console.error("[chat-ai] Error:", error);
+        console.error("[chat-ai] Data alongside error:", data);
+        
+        // Tentativa 1: o SDK pode colocar o body parseado em data mesmo com erro
+        if (data?.error && typeof data.error === "string") {
+          throw new Error(data.error);
         }
-        throw new Error(getErrorMsg());
+
+        // Tentativa 2: ler o body da Response no context do FunctionsHttpError
+        const err = error as any;
+        try {
+          if (err?.context && typeof err.context.json === "function") {
+            const body = await err.context.json();
+            console.error("[chat-ai] Error response body:", body);
+            if (body?.error) {
+              throw new Error(typeof body.error === "string" ? body.error : JSON.stringify(body.error));
+            }
+          }
+        } catch (parseErr) {
+          // Se json() já foi consumido, tenta text()
+          if (parseErr instanceof Error && !parseErr.message.includes("IA retornou")) {
+            console.error("[chat-ai] Could not parse error body:", parseErr);
+          } else {
+            throw parseErr; // Re-throw se já é nossa mensagem
+          }
+        }
+        
+        // Fallback
+        const msg = err?.message || "Erro desconhecido na Edge Function";
+        throw new Error(msg);
       }
 
-      if (!data?.message) {
-        throw new Error(getErrorMsg());
+      if (data?.message == null || data.message.trim() === "") {
+        console.error("[chat-ai] Empty/null message. Full data:", JSON.stringify(data, null, 2));
+        const serverErr = data?.error;
+        if (serverErr) {
+          throw new Error(typeof serverErr === "string" ? serverErr : JSON.stringify(serverErr));
+        }
+        throw new Error("A IA retornou uma resposta vazia. Tente novamente em alguns segundos.");
       }
+
+      console.log("[chat-ai] SUCCESS. Message length:", data.message.length);
 
       const isDocument =
         data.message.includes("<document>") ||
         data.message.includes("[DOCUMENTO]");
 
-      let displayContent = data.message;
-      // Tratar a tag <intent>
-      const intentMatch = displayContent.match(
-        /<intent\s+type="change_teacher"\s+class="([^"]+)"\s+teacher="([^"]+)"\s*\/>/,
-      );
-      if (intentMatch) {
-        const event = new CustomEvent("changeTeacherIntent", {
-          detail: { className: intentMatch[1], teacherName: intentMatch[2] },
-        });
-        window.dispatchEvent(event);
-        // Oculta a intent da visualização
-        displayContent = displayContent.replace(intentMatch[0], "").trim();
+      let displayContent: string = data.message;
+      
+      // Tratar a tag <intent> — protegido por try-catch
+      try {
+        const teacherIntentMatch = displayContent.match(
+          /<intent\s+type="change_teacher"\s+class="([^"]+)"\s+teacher="([^"]+)"\s*\/>/,
+        );
+        if (teacherIntentMatch) {
+          const event = new CustomEvent("changeTeacherIntent", {
+            detail: { className: teacherIntentMatch[1], teacherName: teacherIntentMatch[2] },
+          });
+          window.dispatchEvent(event);
+          displayContent = displayContent.replace(teacherIntentMatch[0], "").trim();
+        }
+
+        const pddeIntentMatch = displayContent.match(
+          /<intent\s+type="smart_pdde"\s+amount="(\d+)"\s*\/>/i,
+        );
+        if (pddeIntentMatch) {
+          const event = new CustomEvent("smartPddeIntent", {
+            detail: { amount: parseInt(pddeIntentMatch[1], 10) },
+          });
+          window.dispatchEvent(event);
+          displayContent = displayContent.replace(pddeIntentMatch[0], "").trim();
+        }
+      } catch (intentErr) {
+        console.error("[chat-ai] Intent processing error:", intentErr);
+        // Não deixa o erro de processamento de intent impedir a exibição da mensagem
       }
 
       const aiResponse: ChatMessage = {
@@ -220,7 +244,7 @@ export function AISidebar() {
 
       setMessages((prev) => [...prev, aiResponse]);
     } catch (e) {
-      console.error("Error calling AI:", e);
+      console.error("[chat-ai] FINAL ERROR:", e);
       let errMsg = "Falha na conexão com a IA.";
       if (e instanceof Error && e.message) errMsg = e.message;
       else if (e && typeof e === "object" && "message" in e)

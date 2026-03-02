@@ -149,16 +149,27 @@ export function MobileChatBar() {
 
       let displayContent = data.message;
       // Tratar a tag <intent>
-      const intentMatch = displayContent.match(
+      const teacherIntentMatch = displayContent.match(
         /<intent\s+type="change_teacher"\s+class="([^"]+)"\s+teacher="([^"]+)"\s*\/>/,
       );
-      if (intentMatch) {
+      if (teacherIntentMatch) {
         const event = new CustomEvent("changeTeacherIntent", {
-          detail: { className: intentMatch[1], teacherName: intentMatch[2] },
+          detail: { className: teacherIntentMatch[1], teacherName: teacherIntentMatch[2] },
         });
         window.dispatchEvent(event);
         // Oculta a intent da visualização
-        displayContent = displayContent.replace(intentMatch[0], "").trim();
+        displayContent = displayContent.replace(teacherIntentMatch[0], "").trim();
+      }
+
+      const pddeIntentMatch = displayContent.match(
+        /<intent\s+type="smart_pdde"\s+amount="(\d+)"\s*\/>/i,
+      );
+      if (pddeIntentMatch) {
+        const event = new CustomEvent("smartPddeIntent", {
+          detail: { amount: parseInt(pddeIntentMatch[1], 10) },
+        });
+        window.dispatchEvent(event);
+        displayContent = displayContent.replace(pddeIntentMatch[0], "").trim();
       }
 
       const aiResponse: ChatMessage = {

@@ -283,9 +283,15 @@ IMPORTANTE - SUA IDENTIDADE:
 SUAS CAPACIDADES:
 - Gerar documentos formais (advertências, declarações, ofícios)
 - Analisar indicadores financeiros e administrativos
-- Auxiliar no planejamento estratégico
+- Auxiliar no planejamento estratégico e alocação de verbas (Smart PDDE)
 - Gestão de projetos
 - Comunicação institucional
+
+REGRA CRÍTICA PARA ORÇAMENTO/PDDE (Copiloto de Orçamento Público):
+Se o usuário pedir sugestões de como gastar, investir ou alocar uma verba (ex: "Recebi 15 mil do PDDE, onde invisto?"), você DEVE obrigatoriamente incluir na sua resposta o seguinte código exato (substitua o X pelo valor numérico total mencionado, sem formatação):
+<intent type="smart_pdde" amount="X" />
+Além disso, responda amigavelmente sugerindo uma divisão desse valor baseada em necessidades estruturais comuns (ex: goteiras, laboratórios) e informe que gerou o painel de aprovação visual.
+Exemplo: <intent type="smart_pdde" amount="15000" /> Analisei as métricas de infraestrutura. Preparei uma proposta de investimento focada em laboratórios e reparos...
 
 Seja formal e profissional. Responda em português brasileiro.`;
 
@@ -385,10 +391,10 @@ serve(async (req) => {
       auth: { persistSession: false, autoRefreshToken: false },
     });
 
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser(token);
+    const authResponse = await supabase.auth.getUser(token);
+    const user = authResponse?.data?.user;
+    const userError = authResponse?.error;
+
     if (userError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
@@ -462,7 +468,7 @@ serve(async (req) => {
             content: m.content,
           })),
         ],
-        max_completion_tokens: 1024,
+        max_completion_tokens: 4096,
       }),
     });
 
@@ -476,11 +482,33 @@ serve(async (req) => {
       } catch {
         // keep errorText
       }
-      throw new Error(errDetail.slice(0, 200));
+      
+      // Retorna o status exato da OpenAI (ex: 429) ou 502 Bad Gateway
+      return new Response(JSON.stringify({ error: errDetail.slice(0, 200) }), {
+        status: response.status >= 400 && response.status < 600 ? response.status : 502,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const data = await response.json();
-    const aiMessage = data.choices[0].message.content;
+    
+    // Log detalhado para debug
+    console.log("OpenAI response status:", response.status);
+    console.log("OpenAI finish_reason:", data.choices?.[0]?.finish_reason);
+    console.log("OpenAI content length:", data.choices?.[0]?.message?.content?.length ?? "NULL");
+    console.log("OpenAI model used:", data.model);
+    
+    const aiMessage = data.choices?.[0]?.message?.content;
+
+    if (!aiMessage || aiMessage.trim() === "") {
+      console.error("OpenAI returned empty content. Full response:", JSON.stringify(data, null, 2));
+      return new Response(JSON.stringify({ 
+        error: `A IA retornou uma resposta vazia (finish_reason: ${data.choices?.[0]?.finish_reason || "unknown"}, model: ${data.model || "unknown"}). Tente novamente.` 
+      }), {
+        status: 502,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     console.log("AI response received, length:", aiMessage.length);
 
@@ -491,8 +519,18 @@ serve(async (req) => {
     console.error("Error in chat-ai function:", error);
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error";
+      
+    let statusCode = 500;
+    
+    // Tratando erros de validação do cliente que antes retornavam 500
+    if (errorMessage.includes("must be") || errorMessage.includes("allowed") || errorMessage.includes("Invalid") || errorMessage.includes("exceeds")) {
+      statusCode = 400; 
+    } else if (errorMessage.includes("não está configurada") || errorMessage.includes("is not configured")) {
+      statusCode = 503; 
+    }
+
     return new Response(JSON.stringify({ error: errorMessage }), {
-      status: 500,
+      status: statusCode,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }

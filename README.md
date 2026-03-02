@@ -10,6 +10,19 @@
 
 ---
 
+---
+
+## Demonstrações em vídeo dos chatbots com Agentes de IA no Aprendu
+
+### Secretaria
+[![Demo Aprendu - Agente IA Secretaria](https://img.youtube.com/vi/4VbriTIkSOA/0.jpg)](https://youtu.be/4VbriTIkSOA)
+
+### Diretor
+[![Demo Aprendu - Agente IA Diretor](https://img.youtube.com/vi/-VOvp67_JJk/0.jpg)](https://youtu.be/-VOvp67_JJk)
+
+### Gestão Regional
+[![Demo Aprendu - Agente IA Regional](https://img.youtube.com/vi/S9I-xGr7zVY/0.jpg)](https://youtu.be/S9I-xGr7zVY)
+
 ## Índice
 
 - [Proposta de Valor](#proposta-de-valor)

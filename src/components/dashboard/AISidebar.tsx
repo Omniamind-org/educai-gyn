@@ -105,7 +105,11 @@ export function AISidebar() {
         .map(m => ({ role: m.role, content: m.content }));
 
       // Build context based on role - use centralized student data
-      const context = role === 'aluno' ? STUDENT_CONTEXT : undefined;
+      const context = role === 'aluno'
+        ? STUDENT_CONTEXT
+        : role === 'coordenacao'
+          ? { lessonPlans: (window as any).__coordinatorPlans ?? [] }
+          : undefined;
 
       const { data, error } = await supabase.functions.invoke('chat-ai', {
         body: {
@@ -150,12 +154,42 @@ export function AISidebar() {
         throw new Error(getErrorMsg());
       }
 
-      const isDocument = data.message.includes('<document>') || data.message.includes('[DOCUMENTO]');
+      // Parse and strip <intent> tags from the AI message before displaying
+      // Uses order-independent attribute extraction so the LLM can emit attributes in any order
+      const TAG_REGEX = /<intent\s+[^>]*?\/>/g;
+      const attr = (tag: string, name: string) => {
+        const m = new RegExp(`${name}="([^"]*)"`, 'i').exec(tag);
+        return m ? m[1] : null;
+      };
+      let cleanMessage = data.message;
+      let tagMatch: RegExpExecArray | null;
+      while ((tagMatch = TAG_REGEX.exec(data.message)) !== null) {
+        const fullTag = tagMatch[0];
+        const intentType = attr(fullTag, 'type');
+        const intentAction = attr(fullTag, 'action');
+        const planIdsStr = attr(fullTag, 'planIds');
+        if (!intentType || !intentAction || !planIdsStr) {
+          console.warn('AISidebar: Incomplete intent tag, skipping:', fullTag);
+          cleanMessage = cleanMessage.replace(fullTag, '').trim();
+          continue;
+        }
+        try {
+          const planIds: number[] = JSON.parse(planIdsStr);
+          window.dispatchEvent(new CustomEvent('ai_intent', {
+            detail: { type: intentType, action: intentAction, planIds }
+          }));
+        } catch (parseErr) {
+          console.warn('AISidebar: Failed to parse intent planIds', planIdsStr, parseErr);
+        }
+        cleanMessage = cleanMessage.replace(fullTag, '').trim();
+      }
+
+      const isDocument = cleanMessage.includes('<document>') || cleanMessage.includes('[DOCUMENTO]');
 
       const aiResponse: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: data.message,
+        content: cleanMessage,
         isDocument
       };
 

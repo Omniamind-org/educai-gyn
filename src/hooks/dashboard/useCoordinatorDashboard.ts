@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { toast } from "@/hooks/use-toast";
 import { CoordinatorService } from "@/services/coordinator.service";
 import { LessonPlan, CoordinatorStats } from "@/types/coordinator";
@@ -8,7 +8,15 @@ import { COMPETENCE_EXPLANATIONS } from "@/constants/coordinator";
 declare global {
   interface Window {
     addAIMessage?: (message: string) => void;
+    __coordinatorPlans?: import("@/types/coordinator").LessonPlan[];
   }
+}
+
+// Custom event dispatched by AISidebar when the AI emits an <intent> tag
+export interface AIIntentDetail {
+  type: string;
+  action: string;
+  planIds: number[];
 }
 
 export function useCoordinatorDashboard() {
@@ -52,6 +60,12 @@ export function useCoordinatorDashboard() {
       const computedStats = CoordinatorService.calculateStats(lessonPlans);
       setStats(computedStats);
     }
+  }, [lessonPlans]);
+
+  // Expose current lesson plans to AISidebar so it can send context to the AI
+  useEffect(() => {
+    (window as Window).__coordinatorPlans = lessonPlans;
+    return () => { delete (window as Window).__coordinatorPlans; };
   }, [lessonPlans]);
 
   const handleCompetenceClick = useCallback((competence: string | null) => {
@@ -114,6 +128,24 @@ export function useCoordinatorDashboard() {
       });
     }
   }, []);
+
+  // Listen for AI Intent events dispatched by AISidebar
+  useEffect(() => {
+    const handleAIIntent = (e: Event) => {
+      const { type, action, planIds } = (e as CustomEvent<AIIntentDetail>).detail;
+      if (type !== 'update_bncc') return;
+      const validStatus = action === 'approve' ? 'approved' : action === 'pending' ? 'pending' : null;
+      if (!validStatus || !Array.isArray(planIds) || planIds.length === 0) return;
+      console.log('COORD: AI Intent received', { type, action, planIds });
+      if (planIds.length === 1) {
+        handleStatusUpdate(planIds[0], validStatus);
+      } else {
+        handleBulkStatusUpdate(planIds, validStatus);
+      }
+    };
+    window.addEventListener('ai_intent', handleAIIntent);
+    return () => window.removeEventListener('ai_intent', handleAIIntent);
+  }, [handleStatusUpdate, handleBulkStatusUpdate]);
 
   return {
     lessonPlans,

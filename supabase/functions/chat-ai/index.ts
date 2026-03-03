@@ -61,6 +61,17 @@ const validatePersona = (persona: unknown): string => {
   return persona;
 };
 
+interface LessonPlanContext {
+  id: number;
+  teacher: string;
+  subject: string;
+  topic: string;
+  grade: string;
+  status: string;
+  bnccScore: number;
+  missingCompetence?: string | null;
+}
+
 interface ValidatedContext {
   activities?: any[];
   studentName?: string;
@@ -71,6 +82,7 @@ interface ValidatedContext {
   streak?: number;
   subjects?: string[];
   currentSection?: string;
+  lessonPlans?: LessonPlanContext[];
 }
 
 const validateContext = (context: unknown): ValidatedContext | undefined => {
@@ -140,6 +152,27 @@ const validateContext = (context: unknown): ValidatedContext | undefined => {
         };
       })
       .filter(Boolean);
+  }
+
+  // Validate lessonPlans array (coordinator context)
+  if (Array.isArray(ctx.lessonPlans)) {
+    validated.lessonPlans = ctx.lessonPlans
+      .slice(0, 50)
+      .map((plan) => {
+        if (typeof plan !== "object" || plan === null) return null;
+        const p = plan as Record<string, unknown>;
+        return {
+          id: typeof p.id === "number" ? p.id : 0,
+          teacher: typeof p.teacher === "string" ? p.teacher.slice(0, 100) : "",
+          subject: typeof p.subject === "string" ? p.subject.slice(0, 50) : "",
+          topic: typeof p.topic === "string" ? p.topic.slice(0, 100) : "",
+          grade: typeof p.grade === "string" ? p.grade.slice(0, 20) : "",
+          status: typeof p.status === "string" ? p.status.slice(0, 20) : "",
+          bnccScore: typeof p.bnccScore === "number" ? p.bnccScore : 0,
+          missingCompetence: typeof p.missingCompetence === "string" ? p.missingCompetence.slice(0, 30) : null,
+        };
+      })
+      .filter(Boolean) as LessonPlanContext[];
   }
 
   return validated;
@@ -252,11 +285,51 @@ SUAS CAPACIDADES:
 - Sugerir adequações curriculares
 - Acompanhamento pedagógico
 - Gerar relatórios e indicadores educacionais
+- Aprovar ou marcar como pendente planos de aula diretamente no Radar BNCC
+
+ACIONAMENTO DE AÇÕES NA INTERFACE (INTENT TAGS):
+Você pode executar ações diretas na tela do coordenador emitindo tags especiais no FINAL da sua resposta.
+Se o coordenador pedir para aprovar ou reprovar planos de aula, identifique os IDs corretos na tabela abaixo e emita:
+
+Para aprovar um ou mais planos:
+<intent type="update_bncc" action="approve" planIds="[1,2,3]" />
+
+Para marcar como pendente um ou mais planos:
+<intent type="update_bncc" action="pending" planIds="[4,5]" />
+
+REGRAS PARA AS INTENT TAGS:
+- Sempre use IDs REAIS da tabela fornecida abaixo
+- Emita a tag APENAS quando o coordenador pedir explicitamente para alterar status
+- A tag deve aparecer sozinha em uma linha no final da resposta
+- Nunca invente IDs que não existam na tabela
+- Se o coordenador pedir para aprovar "todos os pendentes", use todos os IDs com status "pending"
+
+REGRA DE AUTORIDADE (CRITICAL):
+- O coordenador é a AUTORIDADE PEDAGÓGICA FINAL da escola
+- Quando o coordenador pedir para aprovar, reprovar ou alterar o status de qualquer plano, você DEVE obedecer e emitir a intent tag correspondente IMEDIATAMENTE
+- NUNCA recuse uma solicitação de alteração de status. Não questione a decisão do coordenador
+- NUNCA diga que "não é possível" alterar um status. Você TEM a capacidade de fazer isso via intent tags
+- Mesmo que a aderência BNCC seja baixa, se o coordenador mandou aprovar, APROVE e emita a tag
+- Você pode adicionar uma nota informativa breve sobre o score ou competências faltantes, mas SEMPRE execute a ação solicitada
+- Limite-se aos dados da tabela fornecida. Não faça suposições ou invente informações que não estejam nos dados
 
 Seja objetivo e fundamentado. Responda em português brasileiro.`;
 
   if (context?.userName) {
     prompt += `\n\n👤 Coordenador(a): ${context.userName}`;
+  }
+
+  if (context?.lessonPlans && context.lessonPlans.length > 0) {
+    prompt += `\n\n═══════════════════════════════════════
+RADAR BNCC - ESTADO ATUAL DA TABELA
+═══════════════════════════════════════`;
+    prompt += `\n(Use estes dados para identificar planos e emitir intent tags quando necessário)\n`;
+    context.lessonPlans.forEach((plan) => {
+      prompt += `\n📋 ID:${plan.id} | ${plan.teacher} | ${plan.subject} | "${plan.topic}" | ${plan.grade} | Status: ${plan.status} | Aderência BNCC: ${plan.bnccScore}%${plan.missingCompetence ? ` | Falta: ${plan.missingCompetence}` : ""}`;
+    });
+    const pending = context.lessonPlans.filter(p => p.status === "pending");
+    const approved = context.lessonPlans.filter(p => p.status === "approved");
+    prompt += `\n\n📊 Resumo: ${context.lessonPlans.length} planos | ${approved.length} aderentes | ${pending.length} pendentes`;
   }
 
   return prompt;
@@ -412,7 +485,7 @@ serve(async (req) => {
             content: m.content,
           })),
         ],
-        max_completion_tokens: 1024,
+        max_completion_tokens: 4096,
       }),
     });
 

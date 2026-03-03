@@ -51,7 +51,7 @@ export function SmartPddeAgentDialog() {
   };
 
   if (!isOpen) return null;
-
+  //TODO: Implementar lógica de alocação de verbas
   // Calculo simplificado para a demontração Visual WOW
   const infraShare = amount * 0.65;
   const labShare = amount * 0.35;

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { TrendingUp } from 'lucide-react';
+import { TrendingUp, Gamepad2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { LearningProgressView } from './student/LearningProgressView';
@@ -13,8 +13,9 @@ import { StudentSubjectsList } from './student/StudentSubjectsList';
 import { StudentTasksList } from './student/StudentTasksList';
 import { StudentTaskDetailView } from './student/StudentTaskDetailView';
 import { StudentSubjectView } from './student/StudentSubjectView';
+import { InteractiveResourcesView } from './student/InteractiveResourcesView';
 
-type StudentView = 'dashboard' | 'progress' | 'objectives' | 'study-chat';
+type StudentView = 'dashboard' | 'progress' | 'objectives' | 'study-chat' | 'interactive-resources';
 
 export function StudentDashboard() {
   const { tasks, loading: tasksLoading } = useStudentTasks();
@@ -111,6 +112,13 @@ export function StudentDashboard() {
     );
   }
 
+  // View: Interactive Resources
+  if (currentView === 'interactive-resources') {
+    return (
+      <InteractiveResourcesView onBack={() => setCurrentView('dashboard')} />
+    );
+  }
+
   // Main Dashboard View
   return (
     <div className="space-y-6">
@@ -130,6 +138,27 @@ export function StudentDashboard() {
             <div>
               <h3 className="font-semibold text-lg">Meu Progresso de Aprendizagem</h3>
               <p className="text-muted-foreground text-sm">Acompanhe seu engajamento, sessões e dificuldades</p>
+            </div>
+          </div>
+          <Button variant="outline" className="gap-2">
+            Acessar
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Interactive Resources Button */}
+      <Card
+        className="cursor-pointer hover:border-primary/50 transition-all group"
+        onClick={() => setCurrentView('interactive-resources')}
+      >
+        <CardContent className="p-4 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="p-3 rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+              <Gamepad2 className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-lg">Recursos Interativos</h3>
+              <p className="text-muted-foreground text-sm">Explore simulações e ferramentas práticas</p>
             </div>
           </div>
           <Button variant="outline" className="gap-2">

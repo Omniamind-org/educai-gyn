@@ -13,6 +13,7 @@ import { TeacherDisciplinesCard } from './teacher/TeacherDisciplinesCard';
 import { TeacherProgressCard } from './teacher/TeacherProgressCard';
 import { TeacherAgentMaker } from './teacher/TeacherAgentMaker';
 import { TeacherClassesList } from './teacher/TeacherClassesList';
+import { InteractiveResourcesView } from './teacher/InteractiveResourcesView';
 
 export function TeacherDashboard() {
   const { 
@@ -145,6 +146,11 @@ export function TeacherDashboard() {
     );
   }
 
+  // Show Interactive Resources View
+  if (currentView === 'interactive-resources') {
+    return <InteractiveResourcesView onBack={() => setCurrentView('dashboard')} />;
+  }
+
   return (
     <div className="space-y-6">
       <TeacherSurveyAlert 
@@ -169,6 +175,7 @@ export function TeacherDashboard() {
         }}
         onViewSavedPlans={() => setCurrentView('saved-plans')}
         onViewSavedLists={() => setCurrentView('saved-exercise-lists')}
+        onViewInteractiveResources={() => setCurrentView('interactive-resources')}
       />
 
       <TeacherClassesList 

@@ -46,7 +46,7 @@ export function InteractiveResourcesView({ onBack }: InteractiveResourcesViewPro
               Recursos Interativos
             </h2>
             <p className="text-muted-foreground">
-              Explore simulações e ferramentas práticas para complementar seus estudos.
+              Explore recursos digitais e ferramentas práticas para complementar seus estudos.
             </p>
           </div>
         </div>
@@ -82,7 +82,7 @@ export function InteractiveResourcesView({ onBack }: InteractiveResourcesViewPro
             {filteredSimulations.length === 0 ? (
               <div className="text-center py-12 text-muted-foreground">
                 <Gamepad2 className="w-12 h-12 mx-auto mb-4 opacity-20" />
-                <p>Nenhuma simulação encontrada para os filtros selecionados.</p>
+                <p>Nenhum recurso encontrado para os filtros selecionados.</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -103,7 +103,7 @@ export function InteractiveResourcesView({ onBack }: InteractiveResourcesViewPro
                       <Button className="w-full gap-2" asChild>
                         <a href={sim.link} target="_blank" rel="noopener noreferrer">
                           <ExternalLink className="w-4 h-4" />
-                          Abrir Simulação
+                          Explorar Conteúdo
                         </a>
                       </Button>
                     </CardFooter>
@@ -117,7 +117,7 @@ export function InteractiveResourcesView({ onBack }: InteractiveResourcesViewPro
 
       <div className="mt-8 pt-6 border-t border-border/50 text-center">
         <p className="text-xs text-muted-foreground">
-          Algumas das simulações fornecidas utilizam o projeto <a href="https://phet.colorado.edu/pt_BR" target="_blank" rel="noopener noreferrer" className="underline hover:text-primary transition-colors">PhET Interactive Simulations</a> da Universidade do Colorado Boulder.
+          Alguns dos conteúdos fornecidos utilizam o projeto <a href="https://phet.colorado.edu/pt_BR" target="_blank" rel="noopener noreferrer" className="underline hover:text-primary transition-colors">PhET Interactive Simulations</a> da Universidade do Colorado Boulder.
         </p>
       </div>
     </div>

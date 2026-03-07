@@ -217,8 +217,8 @@ export const MOCKED_SIMULATIONS: InteractiveSimulation[] = [
   },
   {
     id: 26,
-    title: 'Balançando',
-    description: 'Explore simulações interativas de Balançando.',
+    title: 'Equações na Balança',
+    description: 'Aprenda princípios de igualdade e balanciamento de equações usando uma balança interativa.',
     category: 'Matemática',
     series: '1° ano EM',
     link: 'https://phet.colorado.edu/sims/html/balancing-act/latest/balancing-act_all.html?locale=pt_BR'
@@ -298,15 +298,7 @@ export const MOCKED_SIMULATIONS: InteractiveSimulation[] = [
     link: 'https://www.bighistoryproject.com/home'
   },
   {
-    id: 46,
-    title: 'Acervo Histórico de Goiás',
-    description: 'Explore documentos, fotos e mapas antigos do acervo do Arquivo Histórico Estadual de Goiás.',
-    category: 'História',
-    series: '1° e 2° ano EM',
-    link: 'https://site.educacao.go.gov.br/' // Placeholder real para o portal goiano
-  },
-  {
-    id: 47,
+    id: 36,
     title: 'Tour Virtual: Museu das Bandeiras (Goiás Velho)',
     description: 'Passeio em 360 graus pelo museu localizado na antiga capital que preserva a história do ciclo do ouro.',
     category: 'História',
@@ -316,7 +308,7 @@ export const MOCKED_SIMULATIONS: InteractiveSimulation[] = [
 
   // Geografia
   {
-    id: 36,
+    id: 37,
     title: 'Google Earth Timelapse',
     description: 'Visualize as mudanças drásticas do planeta Terra (desmatamento, urbanização) de 1984 até hoje.',
     category: 'Geografia',
@@ -324,7 +316,7 @@ export const MOCKED_SIMULATIONS: InteractiveSimulation[] = [
     link: 'https://earthengine.google.com/timelapse/'
   },
   {
-    id: 37,
+    id: 38,
     title: 'Gapminder: O Mundo em Bolhas',
     description: 'Gráficos interativos impressionantes sobre renda vs expectativa de vida de países nos últimos 200 anos.',
     category: 'Geografia',
@@ -332,7 +324,7 @@ export const MOCKED_SIMULATIONS: InteractiveSimulation[] = [
     link: 'https://www.gapminder.org/tools/'
   },
   {
-    id: 38,
+    id: 39,
     title: 'Seterra: Jogos Geográficos',
     description: 'Gamifique a aula de geografia identificando países, capitais e rios no mapa interativo.',
     category: 'Geografia',
@@ -340,7 +332,7 @@ export const MOCKED_SIMULATIONS: InteractiveSimulation[] = [
     link: 'https://www.geoguessr.com/seterra/pt'
   },
   {
-    id: 39,
+    id: 40,
     title: 'NASA Earth Observations',
     description: 'Imagens de satélite globais analisando clima, vegetação e oceanos pela NASA.',
     category: 'Geografia',
@@ -348,7 +340,7 @@ export const MOCKED_SIMULATIONS: InteractiveSimulation[] = [
     link: 'https://neo.gsfc.nasa.gov/'
   },
   {
-    id: 49,
+    id: 41,
     title: 'IBGE Cidades: Goiás',
     description: 'Painel interativo com estatísticas, mapas e infográficos sobre todos os municípios goianos.',
     category: 'Geografia',
@@ -356,7 +348,7 @@ export const MOCKED_SIMULATIONS: InteractiveSimulation[] = [
     link: 'https://cidades.ibge.gov.br/brasil/go/panorama'
   },
   {
-    id: 40,
+    id: 42,
     title: 'Explorando Ecossistemas',
     description: 'Tour interativo focado na natureza e ambientes diversos.',
     category: 'Geografia',
@@ -366,7 +358,7 @@ export const MOCKED_SIMULATIONS: InteractiveSimulation[] = [
 
   // Artes
   {
-    id: 41,
+    id: 43,
     title: 'Museus pelo Mundo',
     description: 'Explore museus mundialmente famosos pelas exposições virtuais.',
     category: 'Artes',
@@ -374,7 +366,7 @@ export const MOCKED_SIMULATIONS: InteractiveSimulation[] = [
     link: 'https://artsandculture.google.com/project/streetviews'
   },
   {
-    id: 42,
+    id: 44,
     title: 'Movimentos Artísticos',
     description: 'Explore interativamente as técnicas artísticas, pinceladas e estilos.',
     category: 'Artes',
@@ -382,7 +374,7 @@ export const MOCKED_SIMULATIONS: InteractiveSimulation[] = [
     link: 'https://artsandculture.google.com/category/art-movement'
   },
   {
-    id: 43,
+    id: 45,
     title: 'MoMA Learning',
     description: 'Recursos educacionais do Museu de Arte Moderna para analisar arte e artistas.',
     category: 'Artes',
@@ -390,7 +382,7 @@ export const MOCKED_SIMULATIONS: InteractiveSimulation[] = [
     link: 'https://www.moma.org/learn/moma_learning/'
   },
   {
-    id: 44,
+    id: 46,
     title: 'Artistas Históricos',
     description: 'Linha do tempo e visualização em altíssima resolução de obras.',
     category: 'Artes',
@@ -398,7 +390,7 @@ export const MOCKED_SIMULATIONS: InteractiveSimulation[] = [
     link: 'https://artsandculture.google.com/category/artist'
   },
   {
-    id: 45,
+    id: 47,
     title: 'A Coleção do MET',
     description: 'Explore centenas de milhares de obras de arte da coleção The Metropolitan Museum of Art.',
     category: 'Artes',
@@ -406,3 +398,4 @@ export const MOCKED_SIMULATIONS: InteractiveSimulation[] = [
     link: 'https://www.metmuseum.org/art/collection'
   }
 ];
+

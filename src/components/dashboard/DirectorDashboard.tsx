@@ -5,6 +5,7 @@ import { DirectorStatsGrid } from './director/DirectorStatsGrid';
 import { DirectorFinancialCards } from './director/DirectorFinancialCards';
 import { DirectorCharts } from './director/DirectorCharts';
 import { DirectorProjectsList } from './director/DirectorProjectsList';
+import { SmartPddeAgentDialog } from './director/SmartPddeAgentDialog';
 
 export function DirectorDashboard() {
   const { 
@@ -62,6 +63,9 @@ export function DirectorDashboard() {
           schoolId={schoolId} 
         />
       )}
+
+      {/* Agente Copiloto Orçamentário */}
+      <SmartPddeAgentDialog />
     </div>
   );
 }

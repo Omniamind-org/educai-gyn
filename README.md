@@ -4,7 +4,7 @@
 ![Stack](https://img.shields.io/badge/Tech-React%20%7C%20Supabase%20%7C%20AI-blue)
 ![Node](https://img.shields.io/badge/Node-22+-green)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue)
-![License](https://img.shields.io/badge/License-Proprietary-red)
+![License](https://img.shields.io/badge/License-Apache--2.0-blue)
 
 **Aprendu** é uma plataforma integrada de gestão educacional (EdTech) desenhada para transformar dados dispersos em inteligência estratégica. O sistema conecta a gestão Regional, Diretores Escolares, Professores e Alunos em um ecossistema unificado, eliminando ilhas de informação e permitindo intervenções pedagógicas baseadas em dados em tempo real.
 

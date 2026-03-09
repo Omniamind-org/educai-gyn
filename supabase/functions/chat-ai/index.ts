@@ -1,21 +1,27 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const openAIApiKey = Deno.env.get("OPENAI_API_KEY");
-
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
 };
 
 // Validation constants
 const MAX_MESSAGE_LENGTH = 4000;
 const MAX_MESSAGES_COUNT = 50;
-const VALID_ROLES = ["aluno", "professor", "coordenacao", "diretor"];
+const VALID_ROLES = [
+  "aluno",
+  "professor",
+  "coordenacao",
+  "diretor",
+  "secretaria",
+];
 const VALID_PERSONAS = ["Padrão", "Cora Coralina (Regional)", "Cientista"];
 
 // Validation functions
-const validateMessages = (messages: unknown): { role: string; content: string }[] => {
+const validateMessages = (
+  messages: unknown,
+): { role: string; content: string }[] => {
   if (!Array.isArray(messages)) {
     throw new Error("Messages must be an array");
   }
@@ -40,7 +46,9 @@ const validateMessages = (messages: unknown): { role: string; content: string }[
     }
 
     if (content.length > MAX_MESSAGE_LENGTH) {
-      throw new Error(`Message at index ${index} exceeds ${MAX_MESSAGE_LENGTH} characters`);
+      throw new Error(
+        `Message at index ${index} exceeds ${MAX_MESSAGE_LENGTH} characters`,
+      );
     }
 
     return { role, content: content.trim() };
@@ -112,7 +120,10 @@ const validateContext = (context: unknown): ValidatedContext | undefined => {
   }
 
   // Validate currentSection
-  if (typeof ctx.currentSection === "string" && ctx.currentSection.length <= 100) {
+  if (
+    typeof ctx.currentSection === "string" &&
+    ctx.currentSection.length <= 100
+  ) {
     validated.currentSection = ctx.currentSection.trim();
   }
 
@@ -121,7 +132,7 @@ const validateContext = (context: unknown): ValidatedContext | undefined => {
     validated.subjects = ctx.subjects
       .filter((s): s is string => typeof s === "string")
       .slice(0, 10)
-      .map(s => s.slice(0, 50));
+      .map((s) => s.slice(0, 50));
   }
 
   // Validate activities array
@@ -186,7 +197,7 @@ DADOS DO ALUNO (USE ESTAS INFORMAÇÕES!)
       prompt += `\n🔥 Sequência de estudos: ${context.streak} dias consecutivos`;
     }
     if (context.subjects && context.subjects.length > 0) {
-      prompt += `\n📚 Matérias: ${context.subjects.join(', ')}`;
+      prompt += `\n📚 Matérias: ${context.subjects.join(", ")}`;
     }
     if (context.currentSection) {
       prompt += `\n📍 Seção atual: ${context.currentSection}`;
@@ -201,7 +212,7 @@ DADOS DO ALUNO (USE ESTAS INFORMAÇÕES!)
         prompt += `\n   📝 Tipo: ${act.type === "essay" ? "Redação" : act.type === "exercise" ? "Exercício" : "Quiz"}`;
         prompt += `\n   ⭐ XP: ${act.xp} pontos`;
       });
-      
+
       prompt += `\n\n⚠️ IMPORTANTE: Quando o aluno perguntar sobre próxima tarefa, atividades pendentes, ou o que precisa fazer, USE ESTAS INFORMAÇÕES ACIMA para responder de forma específica e útil!`;
     }
   }
@@ -285,6 +296,32 @@ Seja formal e profissional. Responda em português brasileiro.`;
   return prompt;
 };
 
+const buildSecretaryPrompt = (context?: ValidatedContext) => {
+  let prompt = `Você é o APRENDU, a inteligência artificial da plataforma educacional Aprendu para a SECRETARIA.
+
+IMPORTANTE - SUA IDENTIDADE:
+- Você É a plataforma Aprendu
+- Nunca mencione outras plataformas
+
+SUAS CAPACIDADES:
+- Auxiliar na gestão administrativa
+- Identificar a intenção de alterar professores de uma turma.
+
+REGRA CRÍTICA PARA ALTERAÇÃO DE PROFESSORES:
+Se o usuário pedir para alterar o professor de uma turma ou alocar um professor em uma turma (ex: "Mude o professor da Turma A para o João", "Coloque a Maria na 1ª Série"), você DEVE obrigatoriamente incluir na sua resposta o seguinte código exato:
+<intent type="change_teacher" class="NOME_DA_TURMA" teacher="NOME_DO_PROFESSOR" />
+Além disso, responda amigavelmente informando que preparou a alteração.
+Exemplo de resposta: <intent type="change_teacher" class="Turma A" teacher="João" /> Claro! Preparei a alteração do professor João para a Turma A. Por favor, confirme na janela que se abriu.
+
+Seja prestativo e claro. Responda em português brasileiro.`;
+
+  if (context?.userName) {
+    prompt += `\n\n👤 Secretário(a): ${context.userName}`;
+  }
+
+  return prompt;
+};
+
 const ROLE_SYSTEM_PROMPTS: Record<string, string> = {
   professor: `Você é um assistente pedagógico inteligente chamado Aprendu para professores. Você ajuda com:
 - Criação de planos de aula alinhados à BNCC
@@ -315,7 +352,8 @@ const PERSONA_STYLES: Record<string, string> = {
   Padrão: "",
   "Cora Coralina (Regional)":
     "Responda com o estilo poético e regional de Cora Coralina, usando expressões goianas e metáforas da terra.",
-  Cientista: "Responda com rigor científico, citando dados e metodologias quando possível.",
+  Cientista:
+    "Responda com rigor científico, citando dados e metodologias quando possível.",
 };
 
 serve(async (req) => {
@@ -324,8 +362,11 @@ serve(async (req) => {
   }
 
   try {
+    const openAIApiKey = Deno.env.get("OPENAI_API_KEY");
     const authHeader = req.headers.get("authorization") ?? "";
-    const token = authHeader.toLowerCase().startsWith("bearer ") ? authHeader.slice(7) : "";
+    const token = authHeader.toLowerCase().startsWith("bearer ")
+      ? authHeader.slice(7)
+      : "";
 
     if (!token) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -387,14 +428,23 @@ serve(async (req) => {
       systemPrompt = buildCoordinatorPrompt(validatedContext);
     } else if (validatedRole === "diretor") {
       systemPrompt = buildDirectorPrompt(validatedContext);
+    } else if (validatedRole === "secretaria") {
+      systemPrompt = buildSecretaryPrompt(validatedContext);
     } else {
       systemPrompt = buildStudentPrompt(validatedContext);
     }
 
     const personaStyle = PERSONA_STYLES[validatedPersona] || "";
-    const fullSystemPrompt = personaStyle ? `${systemPrompt}\n\n${personaStyle}` : systemPrompt;
+    const fullSystemPrompt = personaStyle
+      ? `${systemPrompt}\n\n${personaStyle}`
+      : systemPrompt;
 
-    console.log("Calling OpenAI with role:", validatedRole, "persona:", validatedPersona);
+    console.log(
+      "Calling OpenAI with role:",
+      validatedRole,
+      "persona:",
+      validatedPersona,
+    );
     console.log("Messages count:", validatedMessages.length);
 
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -439,7 +489,8 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error("Error in chat-ai function:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
     return new Response(JSON.stringify({ error: errorMessage }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

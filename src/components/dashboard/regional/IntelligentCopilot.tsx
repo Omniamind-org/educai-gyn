@@ -1,10 +1,21 @@
-import { useState, useRef, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Sparkles, Send, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { ChatMessage, DashboardConfig, EduGovResponseV2 } from '@/types/dashboard';
+import { useState, useRef, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Sparkles,
+  Send,
+  Loader2,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { jsonrepair } from "jsonrepair";
+import {
+  ChatMessage,
+  DashboardConfig,
+  EduGovResponseV2,
+} from "@/types/dashboard";
 
 interface IntelligentCopilotProps {
   isOpen: boolean;
@@ -13,21 +24,24 @@ interface IntelligentCopilotProps {
   onDashboardUpdate: (patches: any[]) => void;
 }
 
-export function IntelligentCopilot({ 
-  isOpen, 
-  onToggle, 
+export function IntelligentCopilot({
+  isOpen,
+  onToggle,
   onDashboardGenerated,
-  onDashboardUpdate 
+  onDashboardUpdate,
 }: IntelligentCopilotProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
-      id: '1',
-      role: 'assistant',
-      content: 'Gestão Regional conectada.',
-      timestamp: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-    }
+      id: "1",
+      role: "assistant",
+      content: "Gestão Regional conectada.",
+      timestamp: new Date().toLocaleTimeString("pt-BR", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    },
   ]);
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -47,56 +61,62 @@ export function IntelligentCopilot({
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
 
-    const userMessage: ChatMessage = { 
+    const userMessage: ChatMessage = {
       id: Date.now().toString(),
-      role: 'user', 
+      role: "user",
       content: input.trim(),
-      timestamp: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+      timestamp: new Date().toLocaleTimeString("pt-BR", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
     };
-    
-    setMessages(prev => [...prev, userMessage]);
-    setInput('');
+
+    setMessages((prev) => [...prev, userMessage]);
+    setInput("");
     setIsLoading(true);
 
     try {
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/edugov-copilot`,
         {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
             Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
           },
-          body: JSON.stringify({ 
-            messages: messages.map(m => ({ role: m.role, content: m.content })).concat([
-              { role: 'user', content: input.trim() }
-            ])
+          body: JSON.stringify({
+            messages: messages
+              .map((m) => ({
+                role: m.role,
+                content: m.rawContent || m.content,
+              }))
+              .concat([{ role: "user", content: input.trim() }]),
           }),
-        }
+        },
       );
 
       if (!response.ok) {
-        throw new Error('Failed to get response');
+        throw new Error("Failed to get response");
       }
 
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
 
-      if (!reader) throw new Error('No reader');
+      if (!reader) throw new Error("No reader");
 
-      let fullContent = '';
+      let fullContent = "";
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
         const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split('\n');
+        const lines = chunk.split("\n");
 
         for (const line of lines) {
-          if (!line.startsWith('data: ')) continue;
+          if (!line.startsWith("data: ")) continue;
           const jsonStr = line.slice(6).trim();
-          if (jsonStr === '[DONE]') continue;
+          if (jsonStr === "[DONE]") continue;
 
           try {
             const parsed = JSON.parse(jsonStr);
@@ -111,83 +131,113 @@ export function IntelligentCopilot({
       }
 
       // Try to parse as EduGovResponseV2
-      let assistantMessage = '';
+      let assistantMessage = "";
       let generatedDashboard: DashboardConfig | null = null;
       let isJson = false;
 
       try {
         // 1. Clean markdown code blocks if present
         let cleanContent = fullContent;
-        if (cleanContent.includes('```')) {
-          cleanContent = cleanContent.replace(/```json/g, '').replace(/```/g, '');
+        if (cleanContent.includes("```")) {
+          cleanContent = cleanContent
+            .replace(/```json/g, "")
+            .replace(/```/g, "");
         }
 
         // 2. Try to find the JSON object boundaries
-        const firstBrace = cleanContent.indexOf('{');
-        const lastBrace = cleanContent.lastIndexOf('}');
+        const firstBrace = cleanContent.indexOf("{");
+        const lastBrace = cleanContent.lastIndexOf("}");
 
         if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
           const potentialJson = cleanContent.slice(firstBrace, lastBrace + 1);
-          const parsed = JSON.parse(potentialJson) as EduGovResponseV2;
-          
-          if (parsed.intent && parsed.decision) {
+          let parsed;
+          try {
+            parsed = JSON.parse(potentialJson) as EduGovResponseV2;
+          } catch (e1) {
+            // Ai is known to hallucinate JSON formatting (missing colons, quotes). Attempt repair:
+            console.warn("Malfomatted JSON detected. Attempting repair...", e1);
+            const repairedJson = jsonrepair(potentialJson);
+            parsed = JSON.parse(repairedJson) as EduGovResponseV2;
+          }
+
+          if (parsed && parsed.intent && parsed.decision) {
             isJson = true;
             assistantMessage = parsed.message || "Painel gerado com sucesso.";
-            
-            if (parsed.decision === 'CREATE_DASHBOARD' && parsed.dashboard) {
+
+            const isCreate =
+              parsed.decision.startsWith("CREATE") ||
+              parsed.decision === "CREATE_DASH";
+            const isUpdate =
+              parsed.decision.startsWith("UPDATE") ||
+              parsed.decision === "UPDATE_DASH";
+
+            if (isCreate && parsed.dashboard) {
               generatedDashboard = parsed.dashboard;
               console.log("Dashboard Generated:", generatedDashboard);
               onDashboardGenerated(parsed.dashboard);
-            } else if (parsed.decision === 'UPDATE_DASHBOARD' && parsed.patch) {
+            } else if (isUpdate && parsed.patch) {
               console.log("Dashboard Updating:", parsed.patch);
               onDashboardUpdate(parsed.patch);
             }
           }
         }
-        
-        if (!isJson) {
-           assistantMessage = fullContent;
-        }
 
+        if (!isJson) {
+          assistantMessage = fullContent;
+        }
       } catch (e) {
         console.error("JSON Parse Error:", e);
         // Not JSON or Malformed, use as plain text
         assistantMessage = fullContent;
       }
 
-      setMessages(prev => [...prev, {
-        id: Date.now().toString(),
-        role: 'assistant',
-        content: assistantMessage,
-        timestamp: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-        dashboardId: generatedDashboard?.id,
-      }]);
-
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now().toString(),
+          role: "assistant",
+          content: assistantMessage,
+          rawContent: isJson ? fullContent : undefined,
+          timestamp: new Date().toLocaleTimeString("pt-BR", {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          dashboardId: generatedDashboard?.id,
+        },
+      ]);
     } catch (error) {
-      console.error('Error:', error);
-      setMessages(prev => [...prev, {
-        id: Date.now().toString(),
-        role: 'assistant',
-        content: 'Desculpe, ocorreu um erro ao processar sua solicitação.',
-        timestamp: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-      }]);
+      console.error("Error:", error);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now().toString(),
+          role: "assistant",
+          content: "Desculpe, ocorreu um erro ao processar sua solicitação.",
+          timestamp: new Date().toLocaleTimeString("pt-BR", {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+        },
+      ]);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
     }
   };
 
   return (
-    <div className={cn(
-      'fixed right-0 top-0 h-screen bg-card border-l border-border/50 shadow-xl transition-all duration-300 z-50 flex flex-col',
-      isOpen ? 'w-80' : 'w-0 overflow-hidden'
-    )}>
+    <div
+      className={cn(
+        "fixed right-0 top-0 h-screen bg-card border-l border-border/50 shadow-xl transition-all duration-300 z-50 flex flex-col",
+        isOpen ? "w-80" : "w-0 overflow-hidden",
+      )}
+    >
       {isOpen && (
         <>
           {/* Header */}
@@ -197,11 +247,20 @@ export function IntelligentCopilot({
                 <Sparkles className="w-4 h-4 text-primary" />
               </div>
               <div>
-                <h3 className="font-semibold text-sm text-foreground">EduGov Copilot</h3>
-                <p className="text-[10px] text-primary uppercase tracking-wider">Enterprise Intelligence</p>
+                <h3 className="font-semibold text-sm text-foreground">
+                  EduGov Copilot
+                </h3>
+                <p className="text-[10px] text-primary uppercase tracking-wider">
+                  Enterprise Intelligence
+                </p>
               </div>
             </div>
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onToggle}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={onToggle}
+            >
               <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
@@ -213,30 +272,32 @@ export function IntelligentCopilot({
                 <div
                   key={message.id}
                   className={cn(
-                    'flex',
-                    message.role === 'user' ? 'justify-end' : 'justify-start'
+                    "flex",
+                    message.role === "user" ? "justify-end" : "justify-start",
                   )}
                 >
                   <div className="flex flex-col gap-1 max-w-[85%]">
-                    {message.role === 'assistant' && (
+                    {message.role === "assistant" && (
                       <div className="flex items-center gap-1.5">
                         <Sparkles className="w-3 h-3 text-primary" />
                       </div>
                     )}
                     <div
                       className={cn(
-                        'rounded-xl px-3 py-2 text-sm',
-                        message.role === 'user'
-                          ? 'bg-primary text-primary-foreground rounded-br-sm'
-                          : 'bg-muted rounded-bl-sm'
+                        "rounded-xl px-3 py-2 text-sm",
+                        message.role === "user"
+                          ? "bg-primary text-primary-foreground rounded-br-sm"
+                          : "bg-muted rounded-bl-sm",
                       )}
                     >
                       {message.content}
                     </div>
-                    <span className={cn(
-                      'text-[10px] text-muted-foreground',
-                      message.role === 'user' ? 'text-right' : 'text-left'
-                    )}>
+                    <span
+                      className={cn(
+                        "text-[10px] text-muted-foreground",
+                        message.role === "user" ? "text-right" : "text-left",
+                      )}
+                    >
                       {message.timestamp}
                     </span>
                   </div>
@@ -246,7 +307,9 @@ export function IntelligentCopilot({
                 <div className="flex justify-start">
                   <div className="flex items-center gap-2 bg-muted rounded-xl px-3 py-2">
                     <Loader2 className="w-3 h-3 animate-spin text-primary" />
-                    <span className="text-xs text-muted-foreground">Analisando...</span>
+                    <span className="text-xs text-muted-foreground">
+                      Analisando...
+                    </span>
                   </div>
                 </div>
               )}
@@ -265,9 +328,9 @@ export function IntelligentCopilot({
                 disabled={isLoading}
                 className="flex-1 text-sm h-9 bg-muted/50 border-border/50"
               />
-              <Button 
-                onClick={handleSend} 
-                disabled={isLoading || !input.trim()} 
+              <Button
+                onClick={handleSend}
+                disabled={isLoading || !input.trim()}
                 size="icon"
                 className="h-9 w-9"
               >

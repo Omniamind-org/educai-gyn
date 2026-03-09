@@ -27,5 +27,5 @@ export interface GeneratedExerciseList {
   bnccObjective: string;
 }
 
-export type TeacherView = 'dashboard' | 'progress-analysis' | 'class-detail' | 'lesson-plan-editor' | 'saved-plans' | 'exercise-list-editor' | 'saved-exercise-lists';
+export type TeacherView = 'dashboard' | 'progress-analysis' | 'class-detail' | 'lesson-plan-editor' | 'saved-plans' | 'exercise-list-editor' | 'saved-exercise-lists' | 'interactive-resources';
 

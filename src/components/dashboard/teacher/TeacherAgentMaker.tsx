@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Lightbulb, Plus, ListChecks, Loader2, FolderOpen } from 'lucide-react';
+import { Lightbulb, Plus, ListChecks, Loader2, FolderOpen, Gamepad2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,13 +15,15 @@ interface TeacherAgentMakerProps {
   onExerciseListGenerated: (list: any) => void;
   onViewSavedPlans: () => void;
   onViewSavedLists: () => void;
+  onViewInteractiveResources: () => void;
 }
 
 export function TeacherAgentMaker({ 
   onPlanGenerated, 
   onExerciseListGenerated,
   onViewSavedPlans,
-  onViewSavedLists 
+  onViewSavedLists,
+  onViewInteractiveResources 
 }: TeacherAgentMakerProps) {
   const { toast } = useToast();
   const [lessonTopic, setLessonTopic] = useState('');
@@ -324,6 +326,14 @@ export function TeacherAgentMaker({
           >
             <FolderOpen className="w-4 h-4" />
             Listas Salvas
+          </Button>
+          <Button 
+            variant="secondary" 
+            className="gap-2"
+            onClick={onViewInteractiveResources}
+          >
+            <Gamepad2 className="w-4 h-4" />
+            Recursos Interativos
           </Button>
         </div>
       </CardContent>

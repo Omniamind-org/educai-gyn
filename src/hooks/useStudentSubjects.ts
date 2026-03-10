@@ -4,6 +4,7 @@ import { useAuth } from './useAuth';
 
 export interface StudentSubject {
   id: string;
+  disciplineId: string;
   name: string;
   color: string;
   icon: string;
@@ -33,13 +34,20 @@ function getSubjectIcon(subjectName: string): string {
   return 'BookOpen';
 }
 
-export function useStudentSubjects() {
+export function useStudentSubjects(enabled = true) {
   const { user } = useAuth();
   const [subjects, setSubjects] = useState<StudentSubject[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!enabled) {
+      setSubjects([]);
+      setError(null);
+      setLoading(false);
+      return;
+    }
+
     if (!user) {
       setLoading(false);
       return;
@@ -143,6 +151,7 @@ export function useStudentSubjects() {
           if (!subjectsMap.has(subjectKey)) {
             subjectsMap.set(subjectKey, {
               id: subjectKey,
+              disciplineId: discipline.id,
               name: discipline.name,
               color: SUBJECT_COLORS[colorIndex % SUBJECT_COLORS.length],
               icon: getSubjectIcon(discipline.name),
@@ -163,7 +172,7 @@ export function useStudentSubjects() {
     };
 
     fetchSubjects();
-  }, [user]);
+  }, [enabled, user]);
 
   return { subjects, loading, error };
 }

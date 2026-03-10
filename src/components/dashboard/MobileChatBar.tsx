@@ -1,89 +1,39 @@
-import { useState, useRef, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
-  Send,
-  Plus,
-  Settings,
-  Mic,
+  FileText,
   Loader2,
-  X,
+  Paperclip,
+  Send,
   ChevronDown,
+  X,
 } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
-import { useApp } from "@/contexts/AppContext";
+import { useDashboardChat } from "@/hooks/useDashboardChat";
+import { StudentCopilotRichMessage } from "@/components/dashboard/student/StudentCopilotRichMessage";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { STUDENT_CONTEXT } from "@/data/studentData";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { ScrollArea } from "@/components/ui/scroll-area";
-
-interface ChatMessage {
-  id: string;
-  role: "assistant" | "user";
-  content: string;
-}
-
-const INITIAL_MESSAGES: Record<string, ChatMessage[]> = {
-  aluno: [
-    {
-      id: "1",
-      role: "assistant",
-      content:
-        "Olá! 👋 Sou seu assistente de estudos com IA. Como posso ajudar?",
-    },
-  ],
-  professor: [
-    {
-      id: "1",
-      role: "assistant",
-      content:
-        "Olá, Professor! 📚 Estou aqui para ajudar com materiais didáticos e atividades.",
-    },
-  ],
-  coordenacao: [
-    {
-      id: "1",
-      role: "assistant",
-      content:
-        "Bem-vindo(a)! 📋 Posso analisar planos de aula e verificar aderência à BNCC.",
-    },
-  ],
-  diretor: [
-    {
-      id: "1",
-      role: "assistant",
-      content:
-        "Bom dia! 🏫 Posso ajudar com gestão escolar e gerar documentos formais.",
-    },
-  ],
-  secretaria: [
-    {
-      id: "1",
-      role: "assistant",
-      content: "Olá! 📝 Posso ajudar com documentos e gestão administrativa.",
-    },
-  ],
-};
 
 export function MobileChatBar() {
-  const { role } = useAuth();
-  const { aiPersona } = useApp();
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
-  const { toast } = useToast();
   const scrollRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (role) {
-      setMessages(INITIAL_MESSAGES[role] || []);
-    }
-  }, [role]);
+  const {
+    isStudent,
+    messages,
+    input,
+    setInput,
+    pendingFile,
+    setPendingFile,
+    isLoading,
+    isUploadingFile,
+    confirmingTaskId,
+    handleSend,
+    handleChooseStudentTask,
+    handleConfirmStudentSubmission,
+  } = useDashboardChat();
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -91,19 +41,7 @@ export function MobileChatBar() {
     }
   }, [messages]);
 
-  const handleSend = async () => {
-    if (!input.trim() || isLoading) return;
-
-    const userMessage: ChatMessage = {
-      id: Date.now().toString(),
-      role: "user",
-      content: input,
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
-    setInput("");
-    setIsLoading(true);
-
+  const handleMobileSend = async () => {
     // Animate to expanded view when sending
     setIsAnimating(true);
     setTimeout(() => {
@@ -112,73 +50,7 @@ export function MobileChatBar() {
     }, 50);
 
     try {
-      const apiMessages = [...messages, userMessage]
-        .filter((m) => m.id !== "1")
-        .map((m) => ({ role: m.role, content: m.content }));
-
-      const context = role === "aluno" ? STUDENT_CONTEXT : undefined;
-
-      const { data, error } = await supabase.functions.invoke("chat-ai", {
-        body: {
-          messages: apiMessages,
-          role: role,
-          persona: aiPersona,
-          context,
-        },
-      });
-
-      if (error) {
-        if (
-          error.message?.includes("401") ||
-          error.message?.includes("Invalid JWT")
-        ) {
-          toast({
-            title: "Sessão expirada",
-            description: "Por favor, faça login novamente.",
-            variant: "destructive",
-          });
-          try {
-            await supabase.auth.signOut({ scope: "local" });
-          } catch {
-            // ignore
-          }
-          return;
-        }
-        throw new Error(error.message);
-      }
-
-      let displayContent = data.message;
-      // Tratar a tag <intent>
-      const teacherIntentMatch = displayContent.match(
-        /<intent\s+type="change_teacher"\s+class="([^"]+)"\s+teacher="([^"]+)"\s*\/>/,
-      );
-      if (teacherIntentMatch) {
-        const event = new CustomEvent("changeTeacherIntent", {
-          detail: { className: teacherIntentMatch[1], teacherName: teacherIntentMatch[2] },
-        });
-        window.dispatchEvent(event);
-        // Oculta a intent da visualização
-        displayContent = displayContent.replace(teacherIntentMatch[0], "").trim();
-      }
-
-      const pddeIntentMatch = displayContent.match(
-        /<intent\s+type="smart_pdde"\s+amount="(\d+)"\s*\/>/i,
-      );
-      if (pddeIntentMatch) {
-        const event = new CustomEvent("smartPddeIntent", {
-          detail: { amount: parseInt(pddeIntentMatch[1], 10) },
-        });
-        window.dispatchEvent(event);
-        displayContent = displayContent.replace(pddeIntentMatch[0], "").trim();
-      }
-
-      const aiResponse: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: displayContent,
-      };
-
-      setMessages((prev) => [...prev, aiResponse]);
+      await handleSend();
     } catch (error) {
       console.error("Error calling AI:", error);
       toast({
@@ -186,15 +58,6 @@ export function MobileChatBar() {
         description: error instanceof Error ? error.message : "Tente novamente",
         variant: "destructive",
       });
-
-      const errorMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: "❌ Desculpe, ocorreu um erro. Tente novamente.",
-      };
-      setMessages((prev) => [...prev, errorMessage]);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -205,6 +68,16 @@ export function MobileChatBar() {
       setIsAnimating(false);
     }, 300);
   };
+
+  useEffect(() => {
+    window.openAIChat = () => {
+      setIsExpanded(true);
+    };
+
+    return () => {
+      delete window.openAIChat;
+    };
+  }, []);
 
   return (
     <>
@@ -241,9 +114,33 @@ export function MobileChatBar() {
                   message.role === "assistant"
                     ? "chat-bubble-ai"
                     : "chat-bubble-user",
+                  "flex flex-col gap-2 max-w-full",
                 )}
               >
                 <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+
+                {message.attachments?.length ? (
+                  <div className="space-y-2">
+                    {message.attachments.map((attachment) => (
+                      <div
+                        key={attachment.path}
+                        className="rounded-lg bg-white/10 px-3 py-2 flex items-center gap-2"
+                      >
+                        <FileText className="w-4 h-4 shrink-0" />
+                        <span className="text-xs truncate">{attachment.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+
+                {message.role === "assistant" && message.studentCopilot ? (
+                  <StudentCopilotRichMessage
+                    message={message}
+                    confirmingTaskId={confirmingTaskId}
+                    onChooseTask={handleChooseStudentTask}
+                    onConfirmSubmission={handleConfirmStudentSubmission}
+                  />
+                ) : null}
               </div>
             </div>
           ))}
@@ -252,7 +149,9 @@ export function MobileChatBar() {
             <div className="flex justify-start animate-fade-in">
               <div className="chat-bubble chat-bubble-ai flex items-center gap-2">
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span className="text-sm">Pensando...</span>
+                <span className="text-sm">
+                  {isUploadingFile ? "Anexando PDF..." : "Pensando..."}
+                </span>
               </div>
             </div>
           )}
@@ -260,22 +159,76 @@ export function MobileChatBar() {
 
         {/* Input in Expanded View */}
         <div className="p-4 border-t border-border bg-secondary rounded-t-2xl">
+          {isStudent ? (
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="application/pdf,.pdf"
+              className="hidden"
+              onChange={(event) => {
+                setPendingFile(event.target.files?.[0] || null);
+                setIsExpanded(true);
+              }}
+            />
+          ) : null}
+
+          {isStudent && pendingFile ? (
+            <div className="mb-3 rounded-lg border border-border/60 bg-muted/40 px-3 py-2 flex items-center gap-2">
+              <FileText className="w-4 h-4 text-primary shrink-0" />
+              <span className="text-sm truncate flex-1">{pendingFile.name}</span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                onClick={() => {
+                  setPendingFile(null);
+                  if (fileInputRef.current) {
+                    fileInputRef.current.value = "";
+                  }
+                }}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          ) : null}
+
           <div className="flex items-center gap-2">
+            {isStudent ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isLoading}
+              >
+                <Paperclip className="w-4 h-4" />
+              </Button>
+            ) : null}
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Pergunte ao Aprendu"
+              placeholder={
+                isStudent
+                  ? "Digite sua mensagem ou anexe um PDF..."
+                  : "Pergunte ao Aprendu"
+              }
               className="flex-1 bg-muted-foreground/20 border-0"
               onKeyDown={(e) =>
-                e.key === "Enter" && !e.shiftKey && handleSend()
+                e.key === "Enter" &&
+                !e.shiftKey &&
+                (() => {
+                  e.preventDefault();
+                  void handleMobileSend();
+                })()
               }
               disabled={isLoading}
               autoFocus
             />
             <Button
               size="icon"
-              onClick={handleSend}
-              disabled={isLoading || !input.trim()}
+              onClick={() => void handleMobileSend()}
+              disabled={isLoading || (!input.trim() && !(isStudent && pendingFile))}
             >
               {isLoading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -296,8 +249,19 @@ export function MobileChatBar() {
       >
         {/* Input Row - Now editable inline */}
         <div className="flex items-center gap-2 bg-muted-foreground/20 rounded-xl px-4 py-2 mb-2">
+          {isStudent ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground shrink-0"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isLoading}
+            >
+              <Paperclip className="w-4 h-4" />
+            </Button>
+          ) : null}
           <Input
-            ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Pergunte ao Aprendu"
@@ -305,52 +269,33 @@ export function MobileChatBar() {
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
-                handleSend();
+                void handleMobileSend();
               }
             }}
             disabled={isLoading}
           />
         </div>
 
-        {/* Action Buttons Row */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9 text-muted-foreground"
-            >
-              <Plus className="w-5 h-5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9 text-muted-foreground"
-            >
-              <Settings className="w-5 h-5" />
-            </Button>
+        {isStudent && pendingFile ? (
+          <div className="flex items-center gap-2 mb-2 text-xs text-muted-foreground">
+            <FileText className="w-3.5 h-3.5" />
+            <span className="truncate flex-1">{pendingFile.name}</span>
           </div>
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9 text-muted-foreground"
-            >
-              <Mic className="w-5 h-5" />
-            </Button>
-            <Button
-              size="icon"
-              className="h-9 w-9"
-              onClick={handleSend}
-              disabled={isLoading || !input.trim()}
-            >
-              {isLoading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Send className="w-4 h-4" />
-              )}
-            </Button>
-          </div>
+        ) : null}
+
+        <div className="flex justify-end">
+          <Button
+            size="icon"
+            className="h-9 w-9"
+            onClick={() => void handleMobileSend()}
+            disabled={isLoading || (!input.trim() && !(isStudent && pendingFile))}
+          >
+            {isLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Send className="w-4 h-4" />
+            )}
+          </Button>
         </div>
       </div>
     </>

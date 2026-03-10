@@ -6,10 +6,19 @@ verify_jwt = false
 [functions.login-teacher]
 verify_jwt = false
 
+[functions.login-student]
+verify_jwt = false
+
 [functions.get-teacher-password]
 verify_jwt = false
 
 [functions.chat-ai]
+verify_jwt = false
+
+[functions.student-copilot]
+verify_jwt = false
+
+[functions.submit-student-task]
 verify_jwt = false
 
 [functions.generate-lesson-plan]

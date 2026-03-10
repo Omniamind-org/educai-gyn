@@ -579,8 +579,72 @@ export type Database = {
         }
         Relationships: []
       }
+      task_submissions: {
+        Row: {
+          confidence: number
+          created_at: string
+          created_by_agent: boolean
+          extracted_text: string | null
+          id: string
+          original_file_name: string | null
+          original_file_path: string | null
+          status: string
+          student_id: string
+          student_message: string | null
+          submitted_at: string | null
+          task_id: string
+          updated_at: string
+        }
+        Insert: {
+          confidence?: number
+          created_at?: string
+          created_by_agent?: boolean
+          extracted_text?: string | null
+          id?: string
+          original_file_name?: string | null
+          original_file_path?: string | null
+          status?: string
+          student_id: string
+          student_message?: string | null
+          submitted_at?: string | null
+          task_id: string
+          updated_at?: string
+        }
+        Update: {
+          confidence?: number
+          created_at?: string
+          created_by_agent?: boolean
+          extracted_text?: string | null
+          id?: string
+          original_file_name?: string | null
+          original_file_path?: string | null
+          status?: string
+          student_id?: string
+          student_message?: string | null
+          submitted_at?: string | null
+          task_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_submissions_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_submissions_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
+          attachment_url: string | null
           class_id: string
           created_at: string
           description: string | null
@@ -595,6 +659,7 @@ export type Database = {
           type: 'exam' | 'assignment' | 'project' | null
         }
         Insert: {
+          attachment_url?: string | null
           class_id: string
           created_at?: string
           description?: string | null
@@ -609,6 +674,7 @@ export type Database = {
           type?: 'exam' | 'assignment' | 'project' | null
         }
         Update: {
+          attachment_url?: string | null
           class_id?: string
           created_at?: string
           description?: string | null

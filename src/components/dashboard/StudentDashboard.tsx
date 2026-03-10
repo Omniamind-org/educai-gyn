@@ -51,8 +51,14 @@ export function StudentDashboard() {
 
   const getSubjectTasks = () => {
     if (!selectedSubject) return [];
-    return tasks.filter(task => task.teacherName === selectedSubject.teacherName);
+    return tasks.filter(
+      (task) =>
+        task.teacherId === selectedSubject.teacherId &&
+        task.disciplineId === selectedSubject.disciplineId,
+    );
   };
+
+  const pendingTasks = tasks.filter((task) => !task.hasSubmission);
 
   // View: Study Chat with selected objective
   if (currentView === 'study-chat' && selectedObjective) {
@@ -169,7 +175,7 @@ export function StudentDashboard() {
 
       {/* Pending Activities */}
       <StudentTasksList 
-        tasks={tasks} 
+        tasks={pendingTasks} 
         loading={tasksLoading} 
         onTaskClick={handleTaskClick} 
       />

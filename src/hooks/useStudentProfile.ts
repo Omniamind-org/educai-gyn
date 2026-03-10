@@ -10,12 +10,18 @@ export interface StudentProfile {
     phone: string | null;
 }
 
-export function useStudentProfile() {
+export function useStudentProfile(enabled = true) {
     const { user } = useAuth();
     const [profile, setProfile] = useState<StudentProfile | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        if (!enabled) {
+            setProfile(null);
+            setLoading(false);
+            return;
+        }
+
         if (!user) {
             setLoading(false);
             return;
@@ -46,7 +52,7 @@ export function useStudentProfile() {
         };
 
         fetchProfile();
-    }, [user]);
+    }, [enabled, user]);
 
     return { profile, loading };
 }

@@ -1,7 +1,18 @@
-import { useState, useEffect } from "react";
-import { Send, Bot, Sparkles, Loader2, Download } from "lucide-react";
+import { useRef } from "react";
+import {
+  Bot,
+  Download,
+  FileText,
+  Loader2,
+  Paperclip,
+  Send,
+  Sparkles,
+  X,
+} from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useApp } from "@/contexts/AppContext";
+import { useDashboardChat } from "@/hooks/useDashboardChat";
+import { StudentCopilotRichMessage } from "@/components/dashboard/student/StudentCopilotRichMessage";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -12,17 +23,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { STUDENT_CONTEXT } from "@/data/studentData";
-import { jsPDF } from "jspdf";
-
-interface ChatMessage {
-  id: string;
-  role: "assistant" | "user";
-  content: string;
-  isDocument?: boolean;
-}
 
 const PERSONAS = [
   { id: "padrao", label: "Padrão" },
@@ -30,302 +30,25 @@ const PERSONAS = [
   { id: "cientista", label: "Cientista" },
 ];
 
-const INITIAL_MESSAGES: Record<string, ChatMessage[]> = {
-  aluno: [
-    {
-      id: "1",
-      role: "assistant",
-      content:
-        "Olá! 👋 Sou seu assistente de estudos com IA. Posso ajudar com suas atividades, tirar dúvidas ou revisar seus textos. Como posso ajudar?",
-    },
-  ],
-  professor: [
-    {
-      id: "1",
-      role: "assistant",
-      content:
-        "Olá, Professor! 📚 Estou aqui para ajudar a criar materiais didáticos, planos de aula e atividades gamificadas. O que gostaria de criar hoje?",
-    },
-  ],
-  coordenacao: [
-    {
-      id: "1",
-      role: "assistant",
-      content:
-        "Bem-vindo(a)! 📋 Posso analisar planos de aula e verificar aderência à BNCC. Selecione um plano ou me descreva o que precisa analisar.",
-    },
-  ],
-  diretor: [
-    {
-      id: "1",
-      role: "assistant",
-      content:
-        "Bom dia! 🏫 Posso ajudar com gestão escolar, gerar documentos formais ou analisar indicadores. O que precisa hoje?",
-    },
-  ],
-  secretaria: [
-    {
-      id: "1",
-      role: "assistant",
-      content:
-        "Olá! 👋 Estou aqui para auxiliar na gestão administrativa. Posso ajudar a localizar informações, alocar ou alterar professores em turmas. O que deseja fazer?",
-    },
-  ],
-};
-
 export function AISidebar() {
   const { role } = useAuth();
   const { aiPersona, setAiPersona } = useApp();
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
-
-  useEffect(() => {
-    if (role) {
-      setMessages(INITIAL_MESSAGES[role] || []);
-    }
-  }, [role]);
-
-  const handleSend = async (
-    customContent?: string,
-    displayContent?: string,
-  ) => {
-    const contentToSend = customContent || input;
-    const contentToDisplay = displayContent || contentToSend;
-
-    if (!contentToSend.trim() || isLoading) return;
-
-    const userMessage: ChatMessage = {
-      id: Date.now().toString(),
-      role: "user",
-      content: contentToDisplay,
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
-    setInput("");
-    setIsLoading(true);
-
-    try {
-      // Prepare messages for API (excluding initial greeting)
-      // Note: We use contentToDisplay for history consistency, but for the LAST message we must use the hidden prompt (contentToSend)
-      // However, usually API expects the conversation history to match what "sent".
-      // If we only show "Ata", but send "Generate Ata...", the API concept of history might get confused if we push "Ata" to history but sent "Generate Ata".
-      // Actually, standard practice for these hidden system/user prompts is to treat them as the user message for the API context,
-      // but usually the history is what the user *sees*.
-      // Let's create a temporary message object for the API call that replaces the last message content.
-
-      const messagesForApi = messages.map((m) => ({
-        role: m.role,
-        content: m.content,
-      }));
-      // Add the current message with the ACTUAL prompt content, not the display content
-      messagesForApi.push({ role: "user", content: contentToSend });
-
-      // Remove initial greeting if it's there (id '1') - wait, mapped array lost IDs.
-      // Re-doing logic closer to original but safer.
-      const apiMessages = [
-        ...messages,
-        { role: "user" as const, content: contentToSend, id: "temp" },
-      ]
-        .filter((m) => m.id !== "1")
-        .map((m) => ({ role: m.role, content: m.content }));
-
-      // Build context based on role - use centralized student data
-      const context = role === "aluno" ? STUDENT_CONTEXT : undefined;
-
-      let invokeResult: { data: any; error: any };
-      try {
-        invokeResult = await supabase.functions.invoke("chat-ai", {
-          body: {
-            messages: apiMessages,
-            role: role,
-            persona: aiPersona,
-            context,
-          },
-        });
-      } catch (invokeErr) {
-        console.error("[chat-ai] INVOKE THREW:", invokeErr);
-        throw new Error(`Erro na chamada: ${invokeErr instanceof Error ? invokeErr.message : String(invokeErr)}`);
-      }
-
-      const { data, error } = invokeResult;
-
-      // Debug detalhado — verifique o Console (F12) para o erro real
-      console.log("[chat-ai] data:", data);
-      console.log("[chat-ai] error:", error);
-      console.log("[chat-ai] data type:", typeof data);
-      console.log("[chat-ai] data?.message exists:", !!data?.message);
-
-      if (error) {
-        console.error("[chat-ai] Error:", error);
-        console.error("[chat-ai] Data alongside error:", data);
-        
-        // Tentativa 1: o SDK pode colocar o body parseado em data mesmo com erro
-        if (data?.error && typeof data.error === "string") {
-          throw new Error(data.error);
-        }
-
-        // Tentativa 2: ler o body da Response no context do FunctionsHttpError
-        const err = error as any;
-        try {
-          if (err?.context && typeof err.context.json === "function") {
-            const body = await err.context.json();
-            console.error("[chat-ai] Error response body:", body);
-            if (body?.error) {
-              throw new Error(typeof body.error === "string" ? body.error : JSON.stringify(body.error));
-            }
-          }
-        } catch (parseErr) {
-          // Se json() já foi consumido, tenta text()
-          if (parseErr instanceof Error && !parseErr.message.includes("IA retornou")) {
-            console.error("[chat-ai] Could not parse error body:", parseErr);
-          } else {
-            throw parseErr; // Re-throw se já é nossa mensagem
-          }
-        }
-        
-        // Fallback
-        const msg = err?.message || "Erro desconhecido na Edge Function";
-        throw new Error(msg);
-      }
-
-      if (data?.message == null || data.message.trim() === "") {
-        console.error("[chat-ai] Empty/null message. Full data:", JSON.stringify(data, null, 2));
-        const serverErr = data?.error;
-        if (serverErr) {
-          throw new Error(typeof serverErr === "string" ? serverErr : JSON.stringify(serverErr));
-        }
-        throw new Error("A IA retornou uma resposta vazia. Tente novamente em alguns segundos.");
-      }
-
-      console.log("[chat-ai] SUCCESS. Message length:", data.message.length);
-
-      const isDocument =
-        data.message.includes("<document>") ||
-        data.message.includes("[DOCUMENTO]");
-
-      let displayContent: string = data.message;
-      
-      // Tratar a tag <intent> — protegido por try-catch
-      try {
-        const teacherIntentMatch = displayContent.match(
-          /<intent\s+type="change_teacher"\s+class="([^"]+)"\s+teacher="([^"]+)"\s*\/>/,
-        );
-        if (teacherIntentMatch) {
-          const event = new CustomEvent("changeTeacherIntent", {
-            detail: { className: teacherIntentMatch[1], teacherName: teacherIntentMatch[2] },
-          });
-          window.dispatchEvent(event);
-          displayContent = displayContent.replace(teacherIntentMatch[0], "").trim();
-        }
-
-        const pddeIntentMatch = displayContent.match(
-          /<intent\s+type="smart_pdde"\s+amount="(\d+)"\s*\/>/i,
-        );
-        if (pddeIntentMatch) {
-          const event = new CustomEvent("smartPddeIntent", {
-            detail: { amount: parseInt(pddeIntentMatch[1], 10) },
-          });
-          window.dispatchEvent(event);
-          displayContent = displayContent.replace(pddeIntentMatch[0], "").trim();
-        }
-      } catch (intentErr) {
-        console.error("[chat-ai] Intent processing error:", intentErr);
-        // Não deixa o erro de processamento de intent impedir a exibição da mensagem
-      }
-
-      const aiResponse: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: displayContent,
-        isDocument,
-      };
-
-      setMessages((prev) => [...prev, aiResponse]);
-    } catch (e) {
-      console.error("[chat-ai] FINAL ERROR:", e);
-      let errMsg = "Falha na conexão com a IA.";
-      if (e instanceof Error && e.message) errMsg = e.message;
-      else if (e && typeof e === "object" && "message" in e)
-        errMsg = String((e as { message: unknown }).message);
-      else if (typeof e === "string") errMsg = e;
-      toast({
-        title: "Erro ao conectar com IA",
-        description: errMsg,
-        variant: "destructive",
-      });
-
-      const errorMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: `❌ Erro: ${errMsg}\n\nTente novamente ou reduza o tamanho do texto.`,
-      };
-      setMessages((prev) => [...prev, errorMessage]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const addAIMessage = (content: string) => {
-    const aiMessage: ChatMessage = {
-      id: Date.now().toString(),
-      role: "assistant",
-      content,
-    };
-    setMessages((prev) => [...prev, aiMessage]);
-  };
-
-  const sendUserMessage = (content: string, displayContent?: string) => {
-    handleSend(content, displayContent);
-  };
-
-  // Expose addAIMessage and sendUserMessage to window for external triggers
-
-  useEffect(() => {
-    (window as unknown as Record<string, unknown>).addAIMessage = addAIMessage;
-    (window as unknown as Record<string, unknown>).sendUserMessage =
-      sendUserMessage;
-    return () => {
-      delete (window as unknown as Record<string, unknown>).addAIMessage;
-      delete (window as unknown as Record<string, unknown>).sendUserMessage;
-    };
-  }, [messages, role, aiPersona]);
-
-  const generatePDF = (content: string) => {
-    try {
-      const doc = new jsPDF();
-
-      // Clean up tags if present
-      const cleanContent = content
-        .replace(/<document>/g, "")
-        .replace(/<\/document>/g, "")
-        .replace(/\[DOCUMENTO\]/g, "")
-        .trim();
-
-      // Split text to fit page
-      const splitText = doc.splitTextToSize(cleanContent, 180);
-
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(12);
-      doc.text(splitText, 15, 20);
-
-      doc.save("documento_educai.pdf");
-
-      toast({
-        title: "PDF Gerado!",
-        description: "O download do seu documento começou.",
-        className: "bg-green-500 text-white",
-      });
-    } catch (e) {
-      console.error("Error generating PDF", e);
-      toast({
-        title: "Erro ao gerar PDF",
-        description: "Não foi possível criar o arquivo PDF.",
-        variant: "destructive",
-      });
-    }
-  };
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const {
+    isStudent,
+    messages,
+    input,
+    setInput,
+    pendingFile,
+    setPendingFile,
+    isLoading,
+    isUploadingFile,
+    confirmingTaskId,
+    handleSend,
+    generatePDF,
+    handleChooseStudentTask,
+    handleConfirmStudentSubmission,
+  } = useDashboardChat();
 
   return (
     <aside className="ai-sidebar">
@@ -367,68 +90,147 @@ export function AISidebar() {
 
       {/* Chat Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((message, index) => (
-          <div
-            key={message.id}
-            className={cn(
-              "flex",
-              message.role === "user" ? "justify-end" : "justify-start",
-              index === messages.length - 1 && "animate-fade-in",
-            )}
-          >
+          {messages.map((message, index) => (
             <div
+              key={message.id}
               className={cn(
-                "chat-bubble",
-                message.role === "assistant"
-                  ? "chat-bubble-ai"
-                  : "chat-bubble-user",
-                "flex flex-col gap-2",
+                "flex",
+                message.role === "user" ? "justify-end" : "justify-start",
+                index === messages.length - 1 && "animate-fade-in",
               )}
             >
-              <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-              {message.role === "assistant" &&
+              <div
+                className={cn(
+                  "chat-bubble",
+                  message.role === "assistant"
+                    ? "chat-bubble-ai"
+                    : "chat-bubble-user",
+                  "flex flex-col gap-2 max-w-full",
+                )}
+              >
+                <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+
+                {message.attachments?.length ? (
+                  <div className="space-y-2">
+                    {message.attachments.map((attachment) => (
+                      <div
+                        key={attachment.path}
+                        className="rounded-lg bg-white/10 px-3 py-2 flex items-center gap-2"
+                      >
+                        <FileText className="w-4 h-4 shrink-0" />
+                        <span className="text-xs truncate">{attachment.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+
+                {message.role === "assistant" &&
                 (message.isDocument ||
                   message.content.includes("[DOCUMENTO]") ||
-                  message.content.includes("<document>")) && (
+                  message.content.includes("<document>")) ? (
                   <Button
                     variant="secondary"
                     size="sm"
-                    className="w-full mt-2 gap-2 bg-white/20 hover:bg-white/30 text-inherit border-0"
+                    className="w-full mt-1 gap-2 bg-white/20 hover:bg-white/30 text-inherit border-0"
                     onClick={() => generatePDF(message.content)}
                   >
                     <Download className="w-4 h-4" />
                     Baixar PDF
                   </Button>
-                )}
-            </div>
-          </div>
-        ))}
+                ) : null}
 
-        {isLoading && (
-          <div className="flex justify-start animate-fade-in">
-            <div className="chat-bubble chat-bubble-ai flex items-center gap-2">
-              <Loader2 className="w-4 h-4 animate-spin" />
-              <span className="text-sm">Pensando...</span>
+                {message.role === "assistant" && message.studentCopilot ? (
+                  <StudentCopilotRichMessage
+                    message={message}
+                    confirmingTaskId={confirmingTaskId}
+                    onChooseTask={handleChooseStudentTask}
+                    onConfirmSubmission={handleConfirmStudentSubmission}
+                  />
+                ) : null}
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          ))}
+
+          {isLoading ? (
+            <div className="flex justify-start animate-fade-in">
+              <div className="chat-bubble chat-bubble-ai flex items-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span className="text-sm">
+                  {isUploadingFile ? "Anexando PDF..." : "Pensando..."}
+                </span>
+              </div>
+            </div>
+          ) : null}
+        </div>
 
       {/* Input Area */}
       <div className="p-4 border-t border-sidebar-border">
-        <div className="flex gap-2">
+        {isStudent ? (
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/pdf,.pdf"
+            className="hidden"
+            onChange={(event) =>
+              setPendingFile(event.target.files?.[0] || null)
+            }
+          />
+        ) : null}
+
+        {isStudent && pendingFile ? (
+          <div className="mb-3 rounded-lg border border-border/60 bg-muted/40 px-3 py-2 flex items-center gap-2">
+            <FileText className="w-4 h-4 text-primary shrink-0" />
+            <span className="text-sm truncate flex-1">{pendingFile.name}</span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={() => {
+                setPendingFile(null);
+                if (fileInputRef.current) {
+                  fileInputRef.current.value = "";
+                }
+              }}
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+        ) : null}
+
+        <div className="flex gap-2 items-center">
+          {isStudent ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isLoading}
+            >
+              <Paperclip className="w-4 h-4" />
+            </Button>
+          ) : null}
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Digite sua mensagem..."
+            placeholder={
+              isStudent
+                ? "Digite sua mensagem ou anexe um PDF..."
+                : "Digite sua mensagem..."
+            }
             className="flex-1"
-            onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                void handleSend();
+              }
+            }}
             disabled={isLoading}
           />
           <Button
             size="icon"
-            onClick={() => handleSend()}
-            disabled={isLoading || !input.trim()}
+            onClick={() => void handleSend()}
+            disabled={isLoading || (!input.trim() && !(isStudent && pendingFile))}
           >
             {isLoading ? (
               <Loader2 className="w-4 h-4 animate-spin" />

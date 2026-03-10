@@ -49,6 +49,32 @@ export function StudentTaskDetailView({ task, onBack }: StudentTaskDetailViewPro
     }
   };
 
+  const handleOpenSubmissionCopilot = () => {
+    window.openAIChat?.();
+
+    if (window.startStudentTaskSubmission) {
+      window.startStudentTaskSubmission({
+        taskId: task.id,
+        title: task.title,
+        classId: task.classId,
+        className: task.className,
+        teacherId: task.teacherId,
+        teacherName: task.teacherName,
+        disciplineId: task.disciplineId,
+        disciplineName: task.disciplineName,
+        attachmentUrl: task.attachmentUrl,
+        responseContent: responseContent.trim() || undefined,
+      });
+      return;
+    }
+
+    toast({
+      title: "Copilot indisponível",
+      description: "Abra o painel da IA Assistente para enviar a atividade.",
+      variant: "destructive",
+    });
+  };
+
   return (
     <div className="space-y-6">
       <Button
@@ -95,7 +121,7 @@ export function StudentTaskDetailView({ task, onBack }: StudentTaskDetailViewPro
               {isReviewing ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
               🔍 Revisar Texto
             </Button>
-            <Button className="gap-2">
+            <Button className="gap-2" onClick={handleOpenSubmissionCopilot}>
               Enviar Atividade
             </Button>
           </div>
